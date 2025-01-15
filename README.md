@@ -26,7 +26,7 @@ To get started with this tool, follow these steps:
 First, clone the repository to your local machine:
 
 ```bash
-git clone https://github.com/yourusername/ddos-toolkit.git
+git clone https://github.com/Midohajhouj/DDOS
 cd ddos-toolkit
 
 2. Install the Required Dependencies
@@ -92,7 +92,7 @@ We welcome contributions! If you'd like to contribute to this project, feel free
 If you have any questions or suggestions, feel free to reach out to me:
 
     Email: midohajhouj11@gmail..com
-    GitHub: MIDO
+    GitHub: https://github.com/Midohajhouj
 
 Thank you for using the DDoS Toolkit! Stay ethical, and happy hacking! 💻🎉
 
