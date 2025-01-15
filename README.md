@@ -1,6 +1,6 @@
 ## DDoS Toolkit BY MIDO
 
-A simple and lightweight HTTP Flood DDoS attack tool written in Python. This tool is designed to simulate a Distributed Denial of Service (DDoS) attack on a target URL by sending multiple HTTP requests, which may overload the server. It is intended **only for educational purposes**. Use this tool responsibly and always have permission from the target server owner.
+A simple and lightweight HTTP Flood DDoS attack tool written in Python3. This tool is designed to simulate a Distributed Denial of Service (DDoS) attack on a target URL by sending multiple HTTP requests, which may overload the server. It is intended **only for educational purposes**. Use this tool responsibly and always have permission from the target server owner.
 
 ## 🚨 **Warning: Ethical Use Only**
 This tool is designed for **ethical** testing, security research, and educational purposes. Unauthorized use on websites or servers without explicit permission is **illegal** and can result in criminal charges. Always ensure that you have proper authorization before running the tool on any server or website.
@@ -63,19 +63,7 @@ Example:
 python3 attack_script.py -u http://example.com -t 20 -p 0.5
 
 This command will send requests to http://example.com with 20 threads and a 0.5-second pause between each request.
-💻 Example Usage Script
 
-If you want to automate the attack or integrate it into a larger project, you can use the following example shell script to run the attack:
-
-# example_attack.txt
-
-#!/bin/bash
-
-URL="http://example.com"
-THREADS=20
-PAUSE_TIME=0.1
-
-python3 ddos.py -u $URL -t $THREADS -p $PAUSE_TIME
 
 📊 Real-Time Status Reporting
 
@@ -86,14 +74,6 @@ Example output:
 Requests Sent: 1000
 Requests Sent: 2000
 Requests Sent: 3000
-
-🧪 Testing the Tool
-
-If you'd like to contribute or test the functionality of this tool, unit tests are available for certain functions like the attack process and utility methods. You can find these tests in the tests/ directory.
-
-To run the tests:
-
-python3 -m unittest discover tests/
 
 📄 License
 
