@@ -43,12 +43,17 @@ This will install:
 you may find this error
  error: externally-managed-environment
 
-× This environment is externally managed
-╰─> To install Python packages system-wide, try apt install
-    python3-xyz, where xyz is the package you are trying to
-    install.......
-........
+This environment is externally managed
+
+To install Python packages system-wide, try apt install
+
+python3-xyz, where xyz is the package you are trying to
+
+.......
+
+.......
 ....
+
 note: If you believe this is a mistake, please contact your Python installation or OS distribution provider. You can override this, at the risk of breaking your Python installation or OS, by passing --break-system-packages.
 hint: See PEP 668 for the detailed specification.
  
@@ -56,10 +61,11 @@ don't panic
 
 Here’s how you can resolve or work around it:
 
-    Use a Virtual Environment: Create a virtual environment to install packages locally without affecting the system installation. Here's how to do it:
+ Use a Virtual Environment: Create a virtual environment to install packages locally without affecting the system installation. Here's how to do it:
 
 python3 -m venv myenv
-source myenv/bin/activate  # For Linux/Mac
+
+source myenv/bin/activate
 
 pip install -r requirements.txt
 
@@ -71,6 +77,7 @@ chmod +x install.sh
 
 bash install.sh
 
+cp the directory to /opt/
 
 3. Python 3.x Requirement
 
