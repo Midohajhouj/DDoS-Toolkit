@@ -25,9 +25,9 @@ To get started with this tool, follow these steps:
 
 First, clone the repository to your local machine:
 
-```bash
+
 git clone https://github.com/Midohajhouj/DDOS
-cd ddos-toolkit
+cd DDOS
 
 2. Install the Required Dependencies
 
@@ -40,6 +40,38 @@ This will install:
     requests for sending HTTP requests
     colorama for colored output
 
+you may find this error
+ error: externally-managed-environment
+
+× This environment is externally managed
+╰─> To install Python packages system-wide, try apt install
+    python3-xyz, where xyz is the package you are trying to
+    install.......
+........
+....
+note: If you believe this is a mistake, please contact your Python installation or OS distribution provider. You can override this, at the risk of breaking your Python installation or OS, by passing --break-system-packages.
+hint: See PEP 668 for the detailed specification.
+ 
+don't panic
+
+Here’s how you can resolve or work around it:
+
+    Use a Virtual Environment: Create a virtual environment to install packages locally without affecting the system installation. Here's how to do it:
+
+python3 -m venv myenv
+source myenv/bin/activate  # For Linux/Mac
+
+pip install -r requirements.txt
+
+deactivate
+
+Once inside the virtual environment, you can install packages as usual with pip.
+
+chmod +x install.sh
+
+bash install.sh
+
+
 3. Python 3.x Requirement
 
 Ensure that you have Python 3.x installed on your machine. You can check the version with:
@@ -50,7 +82,7 @@ python --version
 
 Once the setup is complete, you can launch the attack using the following command:
 
-python3 ddos.py -u http://example.com 
+ddos -u http://example.com 
 
 Command-Line Arguments:
 
@@ -60,7 +92,7 @@ Command-Line Arguments:
 
 Example:
 
-python3 attack_script.py -u http://example.com -t 20 -p 0.5
+ddos -u http://example.com -t 20 -p 0.5
 
 This command will send requests to http://example.com with 20 threads and a 0.5-second pause between each request.
 
@@ -75,17 +107,6 @@ Requests Sent: 1000
 Requests Sent: 2000
 Requests Sent: 3000
 
-📄 License
-
-This project is licensed under the MIT License. See the LICENSE file for details.
-🤝 Contributing
-
-We welcome contributions! If you'd like to contribute to this project, feel free to open an issue or a pull request. Make sure to follow the guidelines below:
-
-    Fork the repository.
-    Create a new branch.
-    Commit your changes.
-    Open a pull request with a description of what you've changed.
 
 📞 Contact
 
