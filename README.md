@@ -27,7 +27,7 @@ First, clone the repository to your local machine:
 
 
 ## git clone https://github.com/Midohajhouj/DDOS
-## copy the directory and paste in on /otp/
+## copy the directory and paste in on /opt/ directory
 
 2. Install the Required Dependencies
 
