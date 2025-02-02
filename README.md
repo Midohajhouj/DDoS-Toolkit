@@ -1,4 +1,4 @@
-## DDoS Toolkit BY MIDO
+## DDoS Toolkit 
 
 A simple and lightweight HTTP Flood DDoS attack tool written in Python3. This tool is designed to simulate a Distributed Denial of Service (DDoS) attack on a target URL by sending multiple HTTP requests, which may overload the server. It is intended **only for educational purposes**. Use this tool responsibly and always have permission from the target server owner.
 
