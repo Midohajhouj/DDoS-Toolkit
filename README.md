@@ -26,14 +26,14 @@ To get started with this tool, follow these steps:
 First, clone the repository to your local machine:
 
 
-git clone https://github.com/Midohajhouj/DDOS
-cd DDOS
+## git clone https://github.com/Midohajhouj/DDOS
+## copy the directory and paste in on /otp/
 
 2. Install the Required Dependencies
 
 Install the necessary Python dependencies listed in the requirements.txt file:
 
-pip install -r requirements.txt
+## pip install -r requirements.txt
 
 This will install:
 
@@ -63,21 +63,21 @@ Here’s how you can resolve or work around it:
 
  Use a Virtual Environment: Create a virtual environment to install packages locally without affecting the system installation. Here's how to do it:
 
-python3 -m venv myenv
+## python3 -m venv myenv
 
-source myenv/bin/activate
+## source myenv/bin/activate
 
-pip install -r requirements.txt
+## pip install -r requirements.txt
 
-deactivate
+## deactivate
 
 Once inside the virtual environment, you can install packages as usual with pip.
 
-chmod +x install.sh
+## chmod +x install.sh
 
-bash install.sh
+## bash install.sh
 
-cp the directory to /opt/
+## cp the directory to /opt/ if you didnt do it first
 
 3. Python 3.x Requirement
 
@@ -89,7 +89,7 @@ python --version
 
 Once the setup is complete, you can launch the attack using the following command:
 
-ddos -u http://example.com 
+## ddos -u http://example.com 
 
 Command-Line Arguments:
 
