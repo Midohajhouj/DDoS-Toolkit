@@ -1,2 +1,4 @@
 requests
 colorama
+dnspython
+cloudscraper
