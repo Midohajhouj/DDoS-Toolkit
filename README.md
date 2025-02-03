@@ -46,7 +46,7 @@ Clone the repository to your local machine:
 
 git clone https://github.com/Midohajhouj/DDOS
 
-If not already done, copy the directory to /opt/:
+If not already done, copy the directory to /opt:
 
 sudo cp -r DDOS /opt/
 
