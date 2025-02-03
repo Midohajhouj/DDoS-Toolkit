@@ -138,7 +138,7 @@ def display_status(stop_event, duration):
         time.sleep(1)
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Advanced DDoS by Mido")
+    parser = argparse.ArgumentParser(description="DDoS Toolkit coded by MIDO")
     parser.add_argument("-u", "--url", required=True, help="Target URL")
     parser.add_argument("-t", "--threads", type=int, default=10, help="Number of threads")
     parser.add_argument("-p", "--pause", type=float, default=0.1, help="Pause time between requests")
