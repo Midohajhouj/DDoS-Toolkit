@@ -65,8 +65,11 @@ It means your Python environment is managed externally. To resolve this:
 Use a Virtual Environment:
 
 python3 -m venv myenv
+
 source myenv/bin/activate
+
 pip install -r requirements.txt
+
 deactivate
 
 This ensures package installation does not interfere with your system.
