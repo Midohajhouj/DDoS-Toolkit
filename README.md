@@ -1,126 +1,121 @@
-## DDoS Toolkit 
+DDoS Toolkit
 
-A simple and lightweight HTTP Flood DDoS attack tool written in Python3. This tool is designed to simulate a Distributed Denial of Service (DDoS) attack on a target URL by sending multiple HTTP requests, which may overload the server. It is intended **only for educational purposes**. Use this tool responsibly and always have permission from the target server owner.
+A simple and lightweight HTTP Flood DDoS attack tool written in Python3. This tool is designed to simulate a Distributed Denial of Service (DDoS) attack by sending multiple HTTP requests to a target URL, potentially overloading the server. This tool is for educational and ethical purposes only. Use it responsibly and only with explicit permission from the target server owner.
 
-## 🚨 **Warning: Ethical Use Only**
-This tool is designed for **ethical** testing, security research, and educational purposes. Unauthorized use on websites or servers without explicit permission is **illegal** and can result in criminal charges. Always ensure that you have proper authorization before running the tool on any server or website.
+🚨 Ethical Use Only
 
----
+This tool is intended strictly for:
 
-## Table of Contents
-- [Installation](#installation)
-- [Usage](#usage)
-- [Examples](#examples)
+Ethical testing of server resilience.
 
----
+Security research and vulnerability assessments.
 
-## 📋 Features
+Educational purposes to understand DDoS attack mechanics.
 
-- **HTTP Flood Simulation**: Sends multiple HTTP requests to a target URL in quick succession.
-- **Multi-threaded Requests**: Distribute the requests across multiple threads to simulate a larger-scale attack.
-- **Customizable Parameters**: Adjust the number of threads and pause time between requests.
-- **Real-Time Attack Status**: Displays the number of requests sent in real-time.
-- **Graceful Shutdown**: Allows users to stop the attack with a `KeyboardInterrupt`.
+Unauthorized use on websites or servers without explicit permission is illegal and may result in severe legal consequences. Always obtain proper authorization before running this tool.
 
----
+Table of Contents
 
-## 🛠️ Installation
+Features
 
-To get started with this tool, follow these steps:
+Installation
 
-### 1. Clone the Repository
+Usage
 
-First, clone the repository to your local machine:
+Examples
 
+Contact
 
-## git clone https://github.com/Midohajhouj/DDOS
-## copy the directory and paste in on /opt/ directory
+📋 Features
 
-2. Install the Required Dependencies
+HTTP Flood Simulation: Sends multiple HTTP requests to a target URL in quick succession.
 
-Install the necessary Python dependencies listed in the requirements.txt file:
+Multi-threaded Requests: Distributes requests across multiple threads to simulate larger-scale attacks.
 
-## pip install -r requirements.txt
+Customizable Parameters: Adjust thread count and pause time between requests.
 
-This will install:
+Real-Time Status: Displays the number of requests sent in real-time.
 
-    requests for sending HTTP requests
-    colorama for colored output
+Graceful Shutdown: Allows stopping the attack with a KeyboardInterrupt (Ctrl+C).
 
-you may find this error
- error: externally-managed-environment
+🛠️ Installation
 
-This environment is externally managed
+1. Clone the Repository
 
-To install Python packages system-wide, try apt install
+Clone the repository to your local machine:
 
-python3-xyz, where xyz is the package you are trying to
+git clone https://github.com/Midohajhouj/DDOS
 
-.......
+If not already done, copy the directory to /opt/:
 
-.......
-....
+sudo cp -r DDOS /opt/
 
-note: If you believe this is a mistake, please contact your Python installation or OS distribution provider. You can override this, at the risk of breaking your Python installation or OS, by passing --break-system-packages.
-hint: See PEP 668 for the detailed specification.
- 
-don't panic
+2. Install Dependencies
 
-Here’s how you can resolve or work around it:
+Install the required Python dependencies listed in the requirements.txt file:
 
- Use a Virtual Environment: Create a virtual environment to install packages locally without affecting the system installation. Here's how to do it:
+pip install -r requirements.txt
 
-## python3 -m venv myenv
+If you encounter the error:
 
-## source myenv/bin/activate
+error: externally-managed-environment
 
-## pip install -r requirements.txt
+It means your Python environment is managed externally. To resolve this:
 
-## deactivate
+Use a Virtual Environment:
 
-Once inside the virtual environment, you can install packages as usual with pip.
+python3 -m venv myenv
+source myenv/bin/activate
+pip install -r requirements.txt
+deactivate
 
-## chmod +x install.sh
+This ensures package installation does not interfere with your system.
 
-## bash install.sh
+Alternatively, override the restriction (not recommended):
 
-## cp the directory to /opt/ if you didnt do it first
+pip install -r requirements.txt --break-system-packages
 
-3. Python 3.x Requirement
+3. Set Permissions and Install
 
-Ensure that you have Python 3.x installed on your machine. You can check the version with:
+Make the installation script executable and run it:
 
-python --version
+chmod +x install.sh
+bash install.sh
+
+4. Verify Python Installation
+
+Ensure Python 3.x is installed:
+
+python3 --version
 
 ⚙️ Usage
 
-Once the setup is complete, you can launch the attack using the following command:
+After completing the setup, run the tool using:
 
-## ddos -u http://example.com 
+ddos -u <TARGET_URL>
 
-Command-Line Arguments:
+Command-Line Arguments
 
-    -u or --url: Required. The target URL (e.g., http://example.com).
-    -t or --threads: Optional. The number of threads to use for the attack. Default is 10.
-    -p or --pause: Optional. The time in seconds to pause between requests. Default is 0.1 seconds.
+-u or --url (required): Target URL (e.g., http://example.com).
 
-Example:
+-t or --threads (optional): Number of threads to use. Default is 10.
+
+-p or --pause (optional): Pause time (in seconds) between requests. Default is 0.1 seconds.
+
+Example
+
+Send requests to http://example.com using 20 threads with a 0.5-second pause:
 
 ddos -u http://example.com -t 20 -p 0.5
 
-This command will send requests to http://example.com with 20 threads and a 0.5-second pause between each request.
-
-
 📞 Contact
 
-If you have any questions or suggestions, feel free to reach out to me:
+For questions, suggestions, or contributions, feel free to reach out:
 
-    Email: midohajhouj11@gmail..com
-    GitHub: https://github.com/Midohajhouj
+Email: midohajhouj11@gmail.com
 
-Thank you for using the DDoS Toolkit! Stay ethical, and happy hacking! 💻🎉
+GitHub: Midohajhouj
 
----
+Thank you for using the DDoS Toolkit! Stay ethical and responsible. 💻🎉
 
-This README will provide a comprehensive guide for anyone looking to use or contribute to the project.
 
