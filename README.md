@@ -48,8 +48,6 @@ git clone https://github.com/Midohajhouj/DDOS
 
 If not already done, copy the directory to /opt:
 
-sudo cp -r DDOS /opt/
-
 2. Install Dependencies
 
 Install the required Python dependencies listed in the requirements.txt file:
