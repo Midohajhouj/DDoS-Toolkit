@@ -47,7 +47,7 @@ def display_banner():
     #                    DDoS                        #
     #          Advanced HTTP Flood DDoS              #
     #                                                #
-    #               Created by MIDO                  #
+    #               Coded By MIDO                    #
     #                                                #
     ##################################################
     {RESET}""")
