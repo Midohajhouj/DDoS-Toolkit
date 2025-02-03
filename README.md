@@ -7,6 +7,13 @@ This tool is designed for **ethical** testing, security research, and educationa
 
 ---
 
+## Table of Contents
+- [Installation](#installation)
+- [Usage](#usage)
+- [Examples](#examples)
+
+---
+
 ## 📋 Features
 
 - **HTTP Flood Simulation**: Sends multiple HTTP requests to a target URL in quick succession.
@@ -104,17 +111,6 @@ ddos -u http://example.com -t 20 -p 0.5
 This command will send requests to http://example.com with 20 threads and a 0.5-second pause between each request.
 
 
-📊 Real-Time Status Reporting
-
-While the attack is running, the script will show the number of requests sent in real-time. The status will be updated every second and displayed on the console.
-
-Example output:
-
-Requests Sent: 1000
-Requests Sent: 2000
-Requests Sent: 3000
-
-
 📞 Contact
 
 If you have any questions or suggestions, feel free to reach out to me:
@@ -124,18 +120,7 @@ If you have any questions or suggestions, feel free to reach out to me:
 
 Thank you for using the DDoS Toolkit! Stay ethical, and happy hacking! 💻🎉
 
-
 ---
-
-### Key Points of the README:
-
-1. **Clear Explanation**: It explains the purpose of the tool and the ethical usage warnings.
-2. **Installation Instructions**: It includes step-by-step instructions to set up the project locally.
-3. **Command-Line Usage**: It explains the command-line arguments for launching the attack.
-4. **Real-Time Status**: Describes how the real-time status is displayed during the attack.
-5. **Test Instructions**: Mentions how to run tests for validating the tool’s functions.
-6. **Contributing Guidelines**: Invites contributions and provides simple guidelines.
-7. **License**: Specifies that the tool is under the MIT License.
 
 This README will provide a comprehensive guide for anyone looking to use or contribute to the project.
 
