@@ -207,7 +207,7 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Advanced HTTP Load Testing Tool")
+    parser = argparse.ArgumentParser(description="HTTP Flood DDoS coded by MIDO")
     parser.add_argument("-u", "--url", required=True, help="Target URL")
     parser.add_argument("-t", "--threads", type=int, default=10, help="Number of threads")
     parser.add_argument("-p", "--pause", type=float, default=0.1, help="Pause time between requests")
