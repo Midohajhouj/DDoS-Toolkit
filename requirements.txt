@@ -2,3 +2,4 @@ requests
 colorama
 dnspython
 cloudscraper
+argparse
