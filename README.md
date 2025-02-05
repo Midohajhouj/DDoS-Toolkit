@@ -70,7 +70,7 @@ Command-Line Arguments
     -u or --url (required): Target URL (e.g., http://example.com).
     -t or --threads (optional): Number of threads to use. Default is 10.
     -p or --pause (optional): Pause time (in seconds) between requests. Default is 0.1 seconds.
-    -d or --duration (optional): Duration of the test in seconds. Default is 60 seconds.
+    -d or --duration (optional): Duration of the test in seconds. Default is 999999 seconds.
     --proxies (optional): File containing a list of proxy servers.
     --headers (optional): Custom headers in JSON format.
     --payload (optional): Type of payload (json, xml, or form). Default is "json".
