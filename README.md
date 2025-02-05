@@ -48,17 +48,8 @@ If you encounter the error:
 
 error: externally-managed-environment
 
-It means your Python environment is managed externally. To resolve this:
-Use a Virtual Environment:
 
-python3 -m venv myenv
-source myenv/bin/activate
-pip install -r requirements.txt
-deactivate
-
-This ensures package installation does not interfere with your system.
-
-Alternatively, override the restriction (not recommended):
+To override the restriction :
 
 pip install -r requirements.txt --break-system-packages
 
