@@ -54,7 +54,7 @@ def display_banner():
     #                DDoS Toolkit                    #
     #          Advanced HTTP Flood DDoS              #
     #                                                #
-    #               Coded By MIDO                    #
+    #              Coded By MIDO777                  #
     #                                                #
     ##################################################
     {RESET}""")
