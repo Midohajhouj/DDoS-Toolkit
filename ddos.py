@@ -192,7 +192,7 @@ def parse_args():
     parser.add_argument("-u", "--url", required=True, help="Target URL")
     parser.add_argument("-t", "--threads", type=int, default=10, help="Number of threads")
     parser.add_argument("-p", "--pause", type=float, default=0.1, help="Pause time between requests")
-    parser.add_argument("-d", "--duration", type=int, default=9999999, help="Test duration (seconds)")
+    parser.add_argument("-d", "--duration", type=int, default=999999999999999999999, help="Test duration (seconds)")
     parser.add_argument("--proxies", help="File containing proxy list")
     parser.add_argument("--headers", help="Custom headers as JSON string")
     parser.add_argument("--payload", choices=["json", "xml", "form"], default="json", help="Payload type")
