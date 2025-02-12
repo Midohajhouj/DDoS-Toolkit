@@ -17,7 +17,6 @@ Unauthorized use on websites or servers without explicit permission is illegal a
 - [Features](#features)
 - [Installation](#installation)
 - [Usage](#usage)
-- [Examples](#examples)
 - [Contact](#contact)
 
 ## 📋 Features
