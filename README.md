@@ -93,6 +93,6 @@ Email: midohajhouj11@gmail.com
 
 GitHub: Midohajhouj
 
-Thank you for using the DDoS Toolkit! Stay ethical and responsible 777. 💻🎉
+Thank you for using the DDoS Toolkit! Stay ethical and responsible.. *Coded by MIDO777* 
 
 
