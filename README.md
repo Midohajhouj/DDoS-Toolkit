@@ -90,6 +90,8 @@ For questions, suggestions, or contributions, feel free to reach out:
 
 Email: midohajhouj11@gmail.com
 
-Thank you for using the DDoS Toolkit! Stay ethical and responsible.. *Coded by MIDO777* 
+Thank you for using the DDoS Toolkit! Stay ethical and responsible..
+
+<p align="center"> Coded by <a href="https://github.com/Midohajhouj">MIDO777</a> </p>
 
 
