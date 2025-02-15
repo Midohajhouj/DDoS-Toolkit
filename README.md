@@ -41,7 +41,7 @@ Unauthorized use on websites or servers without explicit permission is illegal a
 
 ### Clone the Repository
 
-Clone the repository to your local machine:
+Clone the repository to your local machine::)
 
 git clone https://github.com/Midohajhouj/DDOS.git
 
