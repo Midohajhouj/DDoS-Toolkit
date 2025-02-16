@@ -66,8 +66,9 @@ def display_banner():
     #          Advanced HTTP Flood DDoS              #
     #                                                #
     #              Coded By MIDO777                  #
-    #                                             #
+    #                                                #
     ##################################################
+Do not use it for illegal activities. The author is not responsible for any misuse. Use it at your own risk.
     {RESET}""")
 
 def load_proxies(proxy_file: str):
