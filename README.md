@@ -43,7 +43,7 @@ Unauthorized use on websites or servers without explicit permission is illegal a
 
 Clone the repository to your local machine:
 
-git clone https://github.com/Midohajhouj/DDOS.git
+git clone https://github.com/Midohajhouj/DDoS-Toolkit.git
 
 Install Dependencies
 
