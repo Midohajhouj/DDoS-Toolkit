@@ -45,28 +45,26 @@ Clone the repository to your local machine:
 
 git clone https://github.com/Midohajhouj/DDoS-Toolkit.git
 
-Install Dependencies
-
-Install the required Python dependencies listed in the requirements.txt file:
-
-pip install -r requirements.txt
-
-If you encounter the error:
-
-error: externally-managed-environment
+cd DDoS-Toolkit
 
 
-To override the restriction :
+chmod +x install.sh
 
-pip install -r requirements.txt --break-system-packages
 
-Verify Python Installation
+./intall.sh 
 
-Ensure Python 3.x is installed:
 
-python3 --version
+Debian based distro 
+
+
+download the release 
+
+
+apt install ./ddos-toolkit.deb
+
 
 ---
+
 
 ## ⚙️ Usage
 
