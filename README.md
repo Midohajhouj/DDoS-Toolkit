@@ -51,7 +51,7 @@ cd DDoS-Toolkit
 chmod +x install.sh
 
 
-./intall.sh 
+./install.sh 
 
 
 Debian based distro 
