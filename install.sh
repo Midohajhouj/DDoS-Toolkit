@@ -49,7 +49,7 @@ pip3 freeze > requirements.txt
 # Completion message with a stylish output
 echo -e "\033[1;32m[INFO]\033[0m Setup complete! The necessary packages have been installed system-wide."
 echo -e "\033[1;34mYou can now run the DDoS Toolkit script directly using:\033[0m"
-echo -e "\033[1;32mpython3 your_script.py\033[0m"
+echo -e "\033[1;32mddos\033[0m"
 
 echo -e "\n\033[1;34m######################################################"
 echo -e "#                                                    #"
