@@ -33,7 +33,6 @@ Unauthorized use on websites or servers without explicit permission is illegal a
 - **Proxy Support:** Load testing using proxies to distribute the traffic and prevent IP blocking.
 - **Real-Time Status:** Displays the number of requests sent in real-time, including successful and failed requests.
 - **Graceful Shutdown:** Allows stopping the test gracefully with a KeyboardInterrupt (Ctrl+C).
-- **CSV Results:** Option to save results to a CSV file for later analysis.
 
 ---
 
@@ -84,7 +83,6 @@ Command-Line Arguments
     --headers (optional): Custom headers in JSON format.
     --payload (optional): Type of payload (json, xml, or form). Default is "json".
     --results (optional): File to save results (CSV).
-    -l or --logfile (optional): Log file to store log output.
     -v or --verbose (optional): Enable verbose logging.
 
 Example
