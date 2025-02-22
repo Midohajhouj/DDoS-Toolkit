@@ -61,7 +61,7 @@ chmod +x install.sh
 ### download the release 
 
 
-### dpkg -i ghost-framework.deb
+### dpkg -i ddos-toolkit.deb 
 
 
 ---
