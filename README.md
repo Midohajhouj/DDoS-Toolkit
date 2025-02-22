@@ -60,7 +60,7 @@ Debian based distro
 download the release 
 
 
-apt install ./ddos-toolkit.deb
+dpkg -i ddos-toolkit.deb
 
 
 ---
