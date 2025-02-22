@@ -1,7 +1,0 @@
-requests
-colorama
-dnspython
-cloudscraper
-argparse
-dnspython
-urllib3
