@@ -53,6 +53,8 @@ chmod +x install.sh
 
 ./install.sh 
 
+---
+
 
 ### Debian based distro 
 
