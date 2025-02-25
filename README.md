@@ -58,10 +58,7 @@ chmod +x install.sh
 ### Debian based distro 
 
 
-### download the release 
-
-
-### dpkg -i ddos-toolkit.deb 
+#### dpkg -i ddos-toolkit.deb 
 
 
 ---
