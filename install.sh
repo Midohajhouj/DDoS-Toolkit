@@ -46,6 +46,13 @@ pip3 install requests colorama dnspython cloudscraper --break-system-packages
 echo -e "\033[1;32m[INFO]\033[0m Creating requirements.txt..."
 pip3 freeze > requirements.txt
 
+# Function to create a symlink for easy access
+create_symlink() {
+    echo -e "${YELLOW}[*] Creating symlink for easy access...${NC}"
+    sudo ln -sf "$(pwd)/ddos.py" /usr/local/bin/ddos
+    echo -e "${GREEN}[+] Symlink created! You can now run 'ddos' from anywhere.${NC}"
+}
+
 # Completion message with a stylish output
 echo -e "\033[1;32m[INFO]\033[0m Setup complete! The necessary packages have been installed system-wide."
 echo -e "\033[1;34mYou can now run the DDoS Toolkit script directly using:\033[0m"
