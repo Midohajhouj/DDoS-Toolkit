@@ -18,10 +18,10 @@ Unauthorized use on websites or servers without explicit permission is illegal a
 
 ## Table of Contents
 
-- [Features](#features)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Contact](#contact)
+- [Features](##features)
+- [Installation](##installation)
+- [Usage](##usage)
+- [Contact](##contact)
 
 ---
  
