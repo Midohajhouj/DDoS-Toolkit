@@ -57,7 +57,7 @@ def display_banner():
     #                DDoS Toolkit                    #
     #          Advanced HTTP Flood DDoS              #
     #                                                #
-    #              Coded By MIDO777                  #
+    #              Coded By LIONBAD                  #
     #                                                #
     ##################################################
 The author is not responsible for any misuse. Use it at your own risk.
@@ -211,7 +211,7 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="DDoS Toolkit coded by MIDO777")
+    parser = argparse.ArgumentParser(description="DDoS Toolkit coded by LIONBAD")
     parser.add_argument("-u", "--url", required=True, help="Target URL")
     parser.add_argument("-t", "--threads", type=int, default=10, help="Number of threads")
     parser.add_argument("-p", "--pause", type=float, default=0.1, help="Pause time between requests")
