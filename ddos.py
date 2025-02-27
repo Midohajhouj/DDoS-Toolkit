@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Coded by MIDO777
+# Coded by LIONBAD
 import requests
 import time
 import argparse
