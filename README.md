@@ -100,5 +100,5 @@ Thank you for using the DDoS Toolkit! Stay ethical and responsible..
 
 ---
 
-#### *<p align="center"> Walkthroughs by <a href="https://github.com/Midohajhouj">LIONBAD</a> </p>*
+#### *<p align="center"> Coded by <a href="https://github.com/Midohajhouj">LIONBAD</a> </p>*
 
