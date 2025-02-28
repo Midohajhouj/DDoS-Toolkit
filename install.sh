@@ -2,7 +2,7 @@
 
 # ------------------------------------------------------
 #    DDoS Toolkit - Setup Script
-#    Coded by LIONBAD
+#    Coded by LIONMAD
 #    This script sets up the environment for running the DDoS Toolkit
 # ------------------------------------------------------
 
@@ -12,7 +12,7 @@ function display_banner() {
     echo -e "\033[1;34m######################################################"
     echo -e "#                                                    #"
     echo -e "#                DDoS Toolkit Setup                 #"
-    echo -e "#               Coded by LIONBAD                    #"
+    echo -e "#               Coded by LIONMAD                    #"
     echo -e "#                                                    #"
     echo -e "######################################################\n"
 }
@@ -61,5 +61,5 @@ echo -e "\033[1;32mddos\033[0m"
 echo -e "\n\033[1;34m######################################################"
 echo -e "#                                                    #"
 echo -e "#     DDoS Toolkit Setup is complete!               #"
-echo -e "#         LIONBAD salut u                            #"
+echo -e "#            LIONMAD SALUT YOU                       #"
 echo -e "######################################################\n"
