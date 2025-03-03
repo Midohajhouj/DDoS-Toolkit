@@ -59,19 +59,26 @@ logging.basicConfig(
     ]
 )
 
-# Functions
+# Function to display the banner
 def display_banner():
-    print(f"""{BLUE}
-    ##################################################
-    #                                                #
-    #                DDoS Toolkit                    #
-    #          Advanced HTTP Flood DDoS              #
-    #                                                #
-    #              Coded By LIONMAD                  #
-    #                                                #
-    ##################################################
-The author is not responsible for any misuse. Use it at your own risk.
-    {RESET}""")
+    print(f"""
+{BLUE}
+╔══════════════════════════════════════════════════════════╗
+║                                                          ║
+║               Advanced HTTP Flood DDoS                   ║
+║                                                          ║
+║                  DDoS Toolkit v1.0                       ║
+║                                                          ║
+║                  Coded By: LIONMAD                       ║
+║                                                          ║
+╠══════════════════════════════════════════════════════════╣
+║                                                          ║
+║   ⚠ The author is not responsible for any misuse. ⚠     ║
+║               ⚠ Use it at your own risk. ⚠              ║
+║                                                          ║
+╚══════════════════════════════════════════════════════════╝
+{RESET}
+""")
 
 def load_proxies(proxy_file: str):
     try:
