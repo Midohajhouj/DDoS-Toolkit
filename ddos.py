@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Author: LIONMAD
+
 import aiohttp
 import asyncio
 import time
@@ -76,19 +77,35 @@ def display_banner():
 ║                                                          ║
 ║               Advanced Load Testing Tool                 ║
 ║                                                          ║
-║                     Version 1.3                          ║
-║                   Coded by LIONMAD                       ║
+║                      Version 1.3                         ║
+║                                                          ║
+║                  Coded By: LIONBAD                       ║
 ║                                                          ║
 ╠══════════════════════════════════════════════════════════╣
 ║                                                          ║
-║      ⚠ Use this tool only for legitimate purposes. ⚠     ║
-║            ⚠ Obtain proper authorization. ⚠              ║
+║   ⚠ Use this tool only for legitimate purposes. ⚠        ║
+║               ⚠ Obtain proper authorization. ⚠           ║
 ║                                                          ║
 ╚══════════════════════════════════════════════════════════╝
 {RESET}
 """)
 
+def parse_args():
+    """Parse command-line arguments."""
+    parser = argparse.ArgumentParser(description="Load Testing Tool")
+    parser.add_argument("-u", "--url", required=True, help="Target URL or IP address")
+    parser.add_argument("-t", "--threads", type=int, default=10, help="Number of threads")
+    parser.add_argument("-p", "--pause", type=float, default=0.1, help="Pause time between requests")
+    parser.add_argument("-d", "--duration", type=int, default=1500, help="Test duration (seconds)")
+    parser.add_argument("--proxies", help="File containing proxy list")
+    parser.add_argument("--headers", help="Custom headers as JSON string")
+    parser.add_argument("--payload", choices=["json", "xml", "form"], default="json", help="Payload type")
+    parser.add_argument("--results", help="File to save results (JSON)")
+    parser.add_argument("--rate-limit", type=int, default=100, help="Rate limit for requests per second")
+    return parser.parse_args()
+
 def load_proxies(proxy_file: str):
+    """Load proxies from a file."""
     try:
         with open(proxy_file, "r") as f:
             proxy_list = f.read().splitlines()
@@ -100,6 +117,7 @@ def load_proxies(proxy_file: str):
         return []
 
 def validate_proxies(proxies):
+    """Validate proxies."""
     validated_proxies = []
     with ThreadPoolExecutor(max_workers=10) as executor:
         future_to_proxy = {executor.submit(check_proxy, proxy): proxy for proxy in proxies}
@@ -114,6 +132,7 @@ def validate_proxies(proxies):
     return validated_proxies
 
 async def check_proxy(proxy: str):
+    """Check if a proxy is valid."""
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get("https://httpbin.org/ip", proxy=proxy, timeout=3) as response:
@@ -121,7 +140,20 @@ async def check_proxy(proxy: str):
     except Exception:
         return False
 
-def resolve_target(target_url: str):
+def generate_payload(payload_type: str):
+    """Generate a payload for HTTP requests."""
+    payload_id = str(uuid4())
+    if payload_type == "json":
+        return json.dumps({"id": payload_id, "data": b64encode(os.urandom(64)).decode()})
+    elif payload_type == "xml":
+        return f"<data><id>{payload_id}</id><value>{b64encode(os.urandom(64)).decode()}</value></data>"
+    elif payload_type == "form":
+        return {"id": payload_id, "data": b64encode(os.urandom(64)).decode()}
+    else:
+        return None
+
+async def resolve_target(target_url: str):
+    """Resolve the target URL to an IP address."""
     try:
         domain_or_ip = target_url.split("//")[-1].split("/")[0]
         if is_valid_ip(domain_or_ip):
@@ -137,61 +169,19 @@ def resolve_target(target_url: str):
         return None
 
 def is_valid_ip(ip: str):
+    """Check if the given string is a valid IP address."""
     try:
         socket.inet_aton(ip)
         return True
     except socket.error:
         return False
 
-def check_target_reachable(target: str):
-    try:
-        if is_valid_ip(target):
-            result = subprocess.run(["ping", "-c", "1", "-W", "2", target], capture_output=True, text=True)
-            return result.returncode == 0
-        else:
-            ip = resolve_target(target)
-            if ip:
-                result = subprocess.run(["ping", "-c", "1", "-W", "2", ip], capture_output=True, text=True)
-                return result.returncode == 0
-            else:
-                return False
-    except Exception as e:
-        logging.error(f"Ping check failed: {e}")
-        return False
-
-def generate_payload(payload_type: str):
-    payload_id = str(uuid4())
-    if payload_type == "json":
-        return json.dumps({"id": payload_id, "data": b64encode(os.urandom(64)).decode()})
-    elif payload_type == "xml":
-        return f"<data><id>{payload_id}</id><value>{b64encode(os.urandom(64)).decode()}</value></data>"
-    elif payload_type == "form":
-        return {"id": payload_id, "data": b64encode(os.urandom(64)).decode()}
-    else:
-        return None
-
-def generate_hashed_payload(payload: str, hash_type: str = "sha256"):
-    if hash_type == "sha256":
-        return hashlib.sha256(payload.encode()).hexdigest()
-    elif hash_type == "md5":
-        return hashlib.md5(payload.encode()).hexdigest()
-    elif hash_type == "sha1":
-        return hashlib.sha1(payload.encode()).hexdigest()
-    else:
-        return payload
-
-def compress_payload(payload: str):
-    return zlib.compress(payload.encode())
-
-def generate_hmac_signature(payload: str, key: str):
-    return hmac.new(key.encode(), payload.encode(), hashlib.sha256).hexdigest()
-
 async def rate_limited_attack(target_url, stop_event, pause_time, rate_limit, proxies=None, headers=None, payload_type="json"):
+    """Perform a rate-limited attack."""
     global requests_sent, successful_requests, failed_requests, last_time
     proxy_pool = cycle(proxies) if proxies else None
     semaphore = asyncio.Semaphore(rate_limit)
 
-    # If the target is just an IP, prepend "http://"
     if not target_url.startswith(("http://", "https://")):
         target_url = f"http://{target_url}"
 
@@ -225,6 +215,7 @@ async def rate_limited_attack(target_url, stop_event, pause_time, rate_limit, pr
                 await asyncio.sleep(pause_time)
 
 def display_status(stop_event: threading.Event, duration: int, results_file=None):
+    """Display the status of the load test."""
     start_time = time.time()
     results = []
     with tqdm(total=duration, desc="Progress") as pbar:
@@ -254,6 +245,7 @@ def display_status(stop_event: threading.Event, duration: int, results_file=None
         print(f"Results saved to {results_file}")
 
 def calculate_rps_stats():
+    """Calculate RPS statistics."""
     if not rps_history:
         return {"min": 0, "max": 0, "avg": 0}
     return {
@@ -263,23 +255,12 @@ def calculate_rps_stats():
     }
 
 def signal_handler(sig, frame):
+    """Handle interrupt signals."""
     print(f"{RED}\nInterrupted by user. Exiting gracefully...{RESET}")
     sys.exit(0)
 
-def parse_args():
-    parser = argparse.ArgumentParser(description="DDoS-Toolkit Coded by LIONMAD")
-    parser.add_argument("-u", "--url", required=True, help="Target URL or IP address")
-    parser.add_argument("-t", "--threads", type=int, default=10, help="Number of threads")
-    parser.add_argument("-p", "--pause", type=float, default=0.1, help="Pause time between requests")
-    parser.add_argument("-d", "--duration", type=int, default=9999, help="Test duration (seconds)")
-    parser.add_argument("--proxies", help="File containing proxy list")
-    parser.add_argument("--headers", help="Custom headers as JSON string")
-    parser.add_argument("--payload", choices=["json", "xml", "form"], default="json", help="Payload type")
-    parser.add_argument("--results", help="File to save results (JSON)")
-    parser.add_argument("--rate-limit", type=int, default=100, help="Rate limit for requests per second")
-    return parser.parse_args()
-
 async def main():
+    """Main function to run the load test."""
     args = parse_args()
 
     if args.threads <= 0 or args.pause <= 0 or args.duration <= 0 or args.rate_limit <= 0:
@@ -296,7 +277,7 @@ async def main():
 
     target = args.url.split("//")[-1].split("/")[0]
 
-    if not check_target_reachable(target):
+    if not await resolve_target(target):
         print(f"{RED}Exiting: Target is not reachable.{RESET}")
         exit(1)
 
