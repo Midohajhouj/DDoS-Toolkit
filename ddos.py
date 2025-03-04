@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-# Improved Load Testing Script for Ethical Use
-# Author: Your Name
+# Author: LIONMAD
 import aiohttp
 import asyncio
 import time
@@ -77,14 +76,13 @@ def display_banner():
 ║                                                          ║
 ║               Advanced Load Testing Tool                 ║
 ║                                                          ║
-║                  Version 1.3                             ║
-║                                                          ║
-║                  Coded By: Your Name                     ║
+║                     Version 1.3                          ║
+║                   Coded by LIONMAD                       ║
 ║                                                          ║
 ╠══════════════════════════════════════════════════════════╣
 ║                                                          ║
-║   ⚠ Use this tool only for legitimate purposes. ⚠       ║
-║               ⚠ Obtain proper authorization. ⚠          ║
+║      ⚠ Use this tool only for legitimate purposes. ⚠     ║
+║            ⚠ Obtain proper authorization. ⚠              ║
 ║                                                          ║
 ╚══════════════════════════════════════════════════════════╝
 {RESET}
@@ -269,7 +267,7 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Load Testing Tool")
+    parser = argparse.ArgumentParser(description="DDoS-Toolkit Coded by LIONMAD")
     parser.add_argument("-u", "--url", required=True, help="Target URL or IP address")
     parser.add_argument("-t", "--threads", type=int, default=10, help="Number of threads")
     parser.add_argument("-p", "--pause", type=float, default=0.1, help="Pause time between requests")
