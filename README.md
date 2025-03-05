@@ -2,8 +2,6 @@
 
 HTTP Flood DDoS attack tool written in Python3. This tool is designed to simulate a Distributed Denial of Service (DDoS) attack by sending multiple HTTP requests to a target URL, potentially overloading the server. This tool is for educational and ethical purposes only. Use it responsibly and only with explicit permission from the target server owner.
 
-
-P.S : Releases 100% Stable
 ---
 
 ## 🚨 **Ethical Use Only**
