@@ -41,25 +41,26 @@ Unauthorized use on websites or servers without explicit permission is illegal a
 ### Clone the Repository
 
 Clone the repository to your local machine:
+``` bash
 
 git clone https://github.com/Midohajhouj/DDoS-Toolkit.git
 
 cd DDoS-Toolkit
 
-
 chmod +x install.sh
 
+./install.sh
 
-./install.sh 
+```
 
 ---
 
 
 ### Debian based distro 
 
-
-#### dpkg -i ddos-toolkit.deb 
-
+```bash
+dpkg -i ddos-toolkit.deb
+```
 
 ---
 
