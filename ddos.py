@@ -1,34 +1,38 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Author: LIONMAD
-import aiohttp
-import asyncio
-import time
-import argparse
-import threading
-from concurrent.futures import ThreadPoolExecutor, as_completed
-import random
-import json
-from itertools import cycle
-from collections import deque
-from uuid import uuid4
-from base64 import b64encode
-import hashlib
-import zlib
-import hmac
-import signal
-import sys
-import os
-import subprocess
-import socket
-import struct
-import scapy.all as scapy
-import dns.resolver
-import psutil
-import logging
-from colorama import init, Fore, Style
-from tqdm import tqdm
-import openai
+
+# Standard Libraries
+import aiohttp  # Asynchronous HTTP requests and responses
+import asyncio  # Asynchronous programming and concurrency
+import time  # Time-related functions (e.g., delays, timestamps)
+import argparse  # Command-line argument parsing
+import threading  # Multi-threading support
+from concurrent.futures import ThreadPoolExecutor, as_completed  # Thread/process pools for parallel execution
+import random  # Random number generation and selections
+import json  # JSON serialization and deserialization
+from itertools import cycle  # Cycles through an iterable indefinitely
+from collections import deque  # Double-ended queue for fast appends/pops
+from uuid import uuid4  # Generates unique identifiers (UUIDs)
+from base64 import b64encode  # Encodes binary data into base64 ASCII strings
+import hashlib  # Hashing algorithms like SHA and MD5
+import zlib  # Compression and decompression functions
+import hmac  # HMAC (keyed-hash message authentication)
+import signal  # Handles asynchronous events and signals
+import sys  # System-specific parameters and functions
+import os  # Operating system interactions
+import subprocess  # Running and managing subprocesses
+import socket  # Networking interfaces for communication
+import struct  # Packing/unpacking binary data
+import logging  # Logging for debugging and system events
+import psutil  # Access to system and process utilities (CPU, memory, etc.)
+
+# Third-Party Libraries
+import scapy.all as scapy  # Network packet crafting, sending, and analysis
+import dns.resolver  # DNS queries and resolution (from dnspython)
+from colorama import init, Fore, Style  # Terminal text formatting with colors
+from tqdm import tqdm  # Progress bar display for loops
+import openai  # Interacting with OpenAI APIs (e.g., ChatGPT, DALL-E)
 
 # Initialize colorama for colorized terminal output
 init(autoreset=True)
