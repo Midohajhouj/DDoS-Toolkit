@@ -40,7 +40,7 @@ pip3 install --upgrade pip
 
 # Install required Python packages with --break-system-packages to bypass system package conflicts
 echo -e "\033[1;32m[INFO]\033[0m Installing required Python packages..."
-pip3 install requests colorama dnspython cloudscraper aiohttp scapy tqdm psutil --break-system-packages
+pip3 install aiohttp scapy psutil dnsresolver tqdm colorama openai --break-system-packages
 
 # Optional: Create a requirements.txt file (for easy re-installation)
 echo -e "\033[1;32m[INFO]\033[0m Creating requirements.txt..."
