@@ -78,7 +78,7 @@ def display_banner():
     print(f"""
 {BLUE}
 ╔══════════════════════════════════════════════════════════╗
-║                   DDoS Toolkit v1.3                      ║
+║                   DDoS Toolkit v1.4                      ║
 ║                   Coded By LIONBAD                       ║
 ╠══════════════════════════════════════════════════════════╣
 ║    ⚠ The author is not responsible for any misuse. ⚠     ║
