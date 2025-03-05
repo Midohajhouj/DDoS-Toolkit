@@ -86,9 +86,9 @@ Command-Line Arguments
 Example
 
 Send requests to 192.168.48.165 using 20 threads, with a 0.5-second pause between requests, for a duration of 120 seconds:
-
+```bash
 ddos -u 192.168.48.165 -t 20 -p 0.5 -d 120
-
+```
 ---
 
 ## 📞 Contact
