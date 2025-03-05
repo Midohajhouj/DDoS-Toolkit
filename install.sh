@@ -36,7 +36,7 @@ apt-get install -y python3 python3-pip python3-venv libssl-dev libffi-dev build-
 
 # Upgrade pip to the latest version
 echo -e "\033[1;32m[INFO]\033[0m Upgrading pip..."
-pip3 install --upgrade pip
+pip3 install --upgrade pip --break-system-packages
 
 # Install required Python packages with --break-system-packages to bypass system package conflicts
 echo -e "\033[1;32m[INFO]\033[0m Installing required Python packages..."
