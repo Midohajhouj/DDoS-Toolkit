@@ -1,36 +1,37 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 # Author: LIONMAD
-import aiohttp  # For making asynchronous HTTP requests
-import asyncio  # For handling asynchronous programming
-import time  # For measuring time intervals
-import argparse  # For parsing command-line arguments
-import threading  # For creating and managing threads
-from concurrent.futures import ThreadPoolExecutor, as_completed  # For thread pooling and managing tasks concurrently
-import random  # For generating random values
-import json  # For working with JSON data
-from itertools import cycle  # For cycling through an iterable indefinitely
-from collections import deque  # For efficient queue-like data structure
-from uuid import uuid4  # For generating unique identifiers (UUIDs)
-from base64 import b64encode  # For encoding data in Base64
-import hashlib  # For creating hash values (e.g., SHA256)
-import zlib  # For data compression and decompression
-import hmac  # For creating message authentication codes (MACs)
-import signal  # For handling OS signals like SIGINT
-import sys  # For interacting with the Python interpreter
-import os  # For interacting with the operating system
-import subprocess  # For spawning and managing subprocesses
-import socket  # For low-level networking
-import struct  # For working with C-style data structures
-import scapy.all as scapy  # For advanced packet manipulation and analysis
-import dns.resolver  # For resolving DNS queries
-import psutil  # For accessing system and process performance metrics
-import logging  # For logging messages and debugging
-from colorama import init, Fore, Style  # For adding colors to terminal output
-from tqdm import tqdm  # For creating progress bars
+import aiohttp
+import asyncio
+import time
+import argparse
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import random
+import json
+from itertools import cycle
+from collections import deque
+from uuid import uuid4
+from base64 import b64encode
+import hashlib
+import zlib
+import hmac
+import signal
+import sys
+import os
+import subprocess
+import socket
+import struct
+import scapy.all as scapy
+import dns.resolver
+import psutil
+import logging
+from colorama import init, Fore, Style
+from tqdm import tqdm
+import openai
 
 # Initialize colorama for colorized terminal output
-
-init(autoreset=True)  # Automatically reset color styles after each line
+init(autoreset=True)
 # Colors
 RED = Fore.RED
 GREEN = Fore.GREEN
@@ -44,7 +45,7 @@ successful_requests = 0
 failed_requests = 0
 last_time = time.time()
 requests_lock = threading.Lock()
-rps_history = deque(maxlen=60)  # Track RPS for the last 60 seconds
+rps_history = deque(maxlen=60)
 
 # Rich User-Agent list
 USER_AGENTS = [
@@ -271,6 +272,50 @@ def signal_handler(sig, frame):
     print(f"{RED}\nInterrupted by user. Exiting gracefully...{RESET}")
     sys.exit(0)
 
+def get_ai_suggestion():
+    """Get AI-powered suggestions for optimizing the attack using OpenAI's GPT model."""
+    try:
+        # Set your OpenAI API key here
+        openai.api_key = "your_openai_api_key_here"
+
+        # Create a prompt for the AI model
+        prompt = """
+        You are a cybersecurity expert. Provide suggestions to optimize a DDoS attack based on the following parameters:
+        - Number of threads: {}
+        - Pause time between requests: {}
+        - Duration: {}
+        - Attack mode: {}
+        - Rate limit: {}
+        - Proxies used: {}
+        - Payload type: {}
+        Provide actionable suggestions to improve the effectiveness of the attack.
+        """.format(args.threads, args.pause, args.duration, args.attack_mode, args.rate_limit, len(proxies) if proxies else 0, args.payload)
+
+        # Call the OpenAI API to get a suggestion
+        response = openai.Completion.create(
+            engine="text-davinci-003",  # Use the GPT-3.5 model
+            prompt=prompt,
+            max_tokens=150,  # Limit the response length
+            n=1,  # Number of suggestions to generate
+            stop=None,  # No specific stop sequence
+            temperature=0.7,  # Controls randomness (0 = deterministic, 1 = random)
+        )
+
+        # Extract the suggestion from the response
+        suggestion = response.choices[0].text.strip()
+        return suggestion
+
+    except Exception as e:
+        logging.error(f"Failed to get AI suggestion: {e}")
+        return "Unable to fetch AI suggestion. Please check your OpenAI API key and network connection."
+
+def execute_custom_command():
+    """Execute a custom command with AI-powered suggestions."""
+    suggestion = get_ai_suggestion()
+    print(f"{YELLOW}AI-Powered Suggestion: {suggestion}{RESET}")
+    # Here you can add logic to execute the suggestion or modify the attack parameters
+    # For example, you could adjust the number of threads, pause time, or attack mode based on the suggestion.
+
 async def main():
     """Main function to run the load test."""
     args = parse_args()
@@ -324,6 +369,9 @@ async def main():
     with requests_lock:
         rps_stats = calculate_rps_stats()
         print(f"{GREEN}Test completed. Requests Sent: {requests_sent} | Successful: {successful_requests} | Failed: {failed_requests} | Final RPS: {rps_stats['avg']:.2f}{RESET}")
+
+    # Execute custom command with AI-powered suggestions
+    execute_custom_command()
 
 if __name__ == "__main__":
     asyncio.run(main())
