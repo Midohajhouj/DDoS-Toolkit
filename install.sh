@@ -68,6 +68,7 @@ download_ddos_script
 create_symlink() {
     echo -e "${YELLOW}[*] Creating symlink for easy access...${NC}"
     sudo ln -s "$(pwd)/ddos.py" /usr/local/bin/ddos
+    sudo mv "$(pwd)/ddos.py" /opt
     echo -e "${GREEN}[+] Symlink created! You can now run 'ddos'${NC}"
 }
 
