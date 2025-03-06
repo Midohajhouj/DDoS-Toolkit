@@ -113,7 +113,7 @@ pip3 freeze > requirements.txt
 # Function to create a symlink for easy access
 create_symlink() {
     echo -e "${YELLOW}[*] Creating symlink for easy access...${NC}"
-    sudo ln -s "$(pwd)/ddos.py" /usr/local/bin/ddos
+    sudo cp "$(pwd)/ddos.py" /usr/local/bin/ddos
     echo -e "${GREEN}[+] Symlink created! You can now run 'ddos'${NC}"
 }
 
