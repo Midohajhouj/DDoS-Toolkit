@@ -67,8 +67,8 @@ download_ddos_script
 # Function to create a symlink for easy access
 create_symlink() {
     echo -e "${YELLOW}[*] Creating symlink for easy access...${NC}"
-    sudo ln -s "$(pwd)/ddos.py" /usr/local/bin/ddos
-    sudo mv "$(pwd)/ddos.py" /opt
+    sudo mv -f "$(pwd)/ddos.py" /opt
+    sudo ln -sf "/opt/ddos.py" /usr/local/bin/ddos
     echo -e "${GREEN}[+] Symlink created! You can now run 'ddos'${NC}"
 }
 
