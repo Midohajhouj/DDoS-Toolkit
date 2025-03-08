@@ -41,17 +41,9 @@ apt-get update -y
 echo -e "${GREEN}[INFO]${NC} Installing required system packages..."
 apt-get install -y python3 python3-pip python3-venv libssl-dev libffi-dev build-essential
 
-# Upgrade pip to the latest version
-echo -e "${GREEN}[INFO]${NC} Upgrading pip..."
-pip3 install --upgrade pip
-
 # Install required Python packages
 echo -e "${GREEN}[INFO]${NC} Installing required Python packages..."
 pip3 install requests colorama dnspython cloudscraper aiohttp scapy tqdm psutil --break-system-packages
-
-# Optional: Create a requirements.txt file (for easy re-installation)
-echo -e "${GREEN}[INFO]${NC} Creating requirements.txt..."
-pip3 freeze > requirements.txt
 
 # Function to create a symlink for easy access
 create_symlink() {
