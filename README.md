@@ -137,4 +137,4 @@ This tool is intended for educational purposes only. The author is not responsib
 
 ---
 
-### <p align="center"> Coded by <a href="https://github.com/Midohajhouj">LIONMAD</a> </p>
+### **<p align="center"> Coded by <a href="https://github.com/Midohajhouj">LIONMAD</a> </p>**
