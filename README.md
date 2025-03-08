@@ -38,6 +38,8 @@ DDoS Toolkit is a powerful and customizable tool designed to simulate various ty
 ### 1. Clone the repository:
 ```bash
 git clone https://github.com/Midohajhouj/DDoS-Toolkit.git
+cd DDoS-Toolkit
+chmod +x *
 ```
 
 ### 2. Install dependencies:
@@ -45,8 +47,7 @@ git clone https://github.com/Midohajhouj/DDoS-Toolkit.git
 pip install -r requirements.txt
 ```
 or
-```
-chmod +x *
+```bash
 ./install.sh
 ```
 
