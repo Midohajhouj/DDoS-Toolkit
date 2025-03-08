@@ -3,9 +3,20 @@
 ## Description
 DDoS Toolkit is a powerful and customizable tool designed to simulate various types of Distributed Denial of Service (DDoS) attacks, including HTTP Flood, Slowloris, UDP Flood, and SYN Flood. It offers features like rate-limited attacks, proxy support, custom payload generation, and system resource monitoring, making it suitable for testing and research purposes in ethical cybersecurity simulations.
 
-> **Note:** The author is not responsible for any misuse of this tool. Use at your own risk.
+> 🚨 **Note:** The author is not responsible for any misuse of this tool. Use at your own risk.
 
-## Features
+---
+
+## Table of Contents
+
+- [Features](##features)
+- [Installation](##installation)
+- [Usage](##usage)
+- [Contact](##contact)
+
+---
+
+## 📋 Features
 - **Multiple Attack Modes:** Supports HTTP Flood, Slowloris, UDP Flood, and SYN Flood.
 - **Rate-Limited Attacks:** Customize the rate of requests sent to the target.
 - **Proxy Support:** Use proxies to mask your requests and make attacks more efficient.
@@ -33,7 +44,7 @@ DDoS Toolkit is a powerful and customizable tool designed to simulate various ty
 - Python 3.x
 - Internet access for proxy validation and AI suggestions
 
-## Installation
+## 🛠️ Installation
 
 ### 1. Clone the repository:
 ```bash
@@ -57,7 +68,7 @@ Create a file `.env` and add your OpenAI API key:
 OPENAI_API_KEY=your_openai_api_key_here
 ```
 
-## Usage
+## ⚙️ Usage
 
 ### Basic Attack
 To perform a basic attack with default settings:
