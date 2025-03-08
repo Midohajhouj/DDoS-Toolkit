@@ -89,7 +89,7 @@ def display_banner():
 
 def parse_args():
     """Parse command-line arguments."""
-    parser = argparse.ArgumentParser(description="DDoS Toolkit v1.3 Coded By LIONBAD")
+    parser = argparse.ArgumentParser(description="DDoS Toolkit v1.4 Coded By LIONBAD")
     parser.add_argument("-u", "--url", required=True, help="Target URL or IP address")
     parser.add_argument("-t", "--threads", type=int, default=10, help="Number of threads")
     parser.add_argument("-p", "--pause", type=float, default=0.1, help="Pause time between requests")
