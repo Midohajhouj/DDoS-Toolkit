@@ -6,3 +6,7 @@ colorama
 tqdm
 openai
 psutil
+argparse
+dns.resolver
+hashlib
+zlib
