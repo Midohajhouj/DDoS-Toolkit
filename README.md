@@ -1,3 +1,10 @@
+<p align="center">
+  <img src="https://img.shields.io/github/v/release/Midohajhouj/DDoS-Toolkit?label=Version&color=a80505">
+  <img src="https://img.shields.io/github/stars/Midohajhouj/DDoS-Toolkit?style=flat&label=Stars&color=a80505">
+  <img src="https://img.shields.io/github/repo-size/Midohajhouj/DDoS-Toolkit?label=Size&color=a80505">
+  <img src="https://img.shields.io/github/languages/top/Midohajhouj/DDoS-Toolkit?color=a80505">
+</p>
+
 # 💥 DDoS Toolkit
 
 ## Description
