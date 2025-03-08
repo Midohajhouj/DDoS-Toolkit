@@ -49,6 +49,8 @@ DDoS Toolkit is a powerful and customizable tool designed to simulate various ty
 - Python 3.x
 - Internet access for proxy validation and AI suggestions
 
+---
+
 ## 🛠️ Installation
 
 ### 1. Clone the repository:
@@ -72,6 +74,7 @@ Create a file `.env` and add your OpenAI API key:
 ```
 OPENAI_API_KEY=your_openai_api_key_here
 ```
+---
 
 ## ⚙️ Usage
 
@@ -131,3 +134,7 @@ This project is licensed under the MIT License.
 
 ## Disclaimer
 This tool is intended for educational purposes only. The author is not responsible for any misuse or illegal activity. Use this tool responsibly and with permission.
+
+---
+
+### <p align="center"> Coded by <a href="https://github.com/Midohajhouj">LIONMAD</a> </p>
