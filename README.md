@@ -1,7 +1,7 @@
-# 💥 DDoS Toolkit v1.4
+# 💥 DDoS Toolkit
 
 ## Description
-DDoS Toolkit v1.4 is a powerful and customizable tool designed to simulate various types of Distributed Denial of Service (DDoS) attacks, including HTTP Flood, Slowloris, UDP Flood, and SYN Flood. It offers features like rate-limited attacks, proxy support, custom payload generation, and system resource monitoring, making it suitable for testing and research purposes in ethical cybersecurity simulations.
+DDoS Toolkit is a powerful and customizable tool designed to simulate various types of Distributed Denial of Service (DDoS) attacks, including HTTP Flood, Slowloris, UDP Flood, and SYN Flood. It offers features like rate-limited attacks, proxy support, custom payload generation, and system resource monitoring, making it suitable for testing and research purposes in ethical cybersecurity simulations.
 
 > **Note:** The author is not responsible for any misuse of this tool. Use at your own risk.
 
@@ -37,12 +37,17 @@ DDoS Toolkit v1.4 is a powerful and customizable tool designed to simulate vario
 
 ### 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/ddos-toolkit.git
+git clone https://github.com/Midohajhouj/DDoS-Toolkit.git
 ```
 
 ### 2. Install dependencies:
 ```bash
 pip install -r requirements.txt
+```
+or
+```
+chmod +x *
+./install.sh
 ```
 
 ### 3. Set up OpenAI API key:
@@ -56,7 +61,7 @@ OPENAI_API_KEY=your_openai_api_key_here
 ### Basic Attack
 To perform a basic attack with default settings:
 ```bash
-python3 ddos_toolkit.py -u http://example.com
+ddos -u http://example.com/
 ```
 
 ### Command-Line Arguments:
@@ -76,22 +81,22 @@ python3 ddos_toolkit.py -u http://example.com
 ### Example Usage:
 1. Perform an HTTP flood attack with 20 threads, 0.1s pause time, and for 300 seconds:
 ```bash
-python3 ddos_toolkit.py -u http://example.com -t 20 -p 0.1 -d 300
+ddos -u http://example.com -t 20 -p 0.1 -d 300
 ```
 
-2. Perform a SYN flood attack on IP `192.168.1.1` for 60 seconds:
+2. Perform a SYN flood attack on IP `192.168.48.165` for 60 seconds:
 ```bash
-python3 ddos_toolkit.py -u 192.168.1.1 --attack-mode syn-flood -d 60
+ddos -u 192.168.48.165 --attack-mode syn-flood -d 60
 ```
 
 3. Use proxies for the attack:
 ```bash
-python3 ddos_toolkit.py -u http://example.com --proxies proxies.txt
+ddos -u http://example.com --proxies proxies.txt
 ```
 
 4. Save attack results to a JSON file:
 ```bash
-python3 ddos_toolkit.py -u http://example.com --results attack_results.json
+ddos -u http://example.com --results attack_results.json
 ```
 
 ## Example Output
