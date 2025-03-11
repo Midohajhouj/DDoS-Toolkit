@@ -3,26 +3,19 @@
 # Provides:          ddos_toolkit
 # Required-Start:    $network $remote_fs
 # Required-Stop:     
-# Should-Start:      
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: DDoS attack toolkit for cybersecurity testing
+# Short-Description: DDoS Attack Toolkit for Cybersecurity Testing
+# Description:       Simulate DDoS attacks in environments for testing.
 ### END INIT INFO
-# DDoS Toolkit: Ethical cybersecurity testing tool.
-#
-# This toolkit is designed to simulate Distributed Denial of Service (DDoS)
-# attacks in controlled environments for testing and educational purposes.
-#
-# License: MIT License
-# Full license: https://opensource.org/licenses/MIT
-#
-# Disclaimer: This script is distributed in the hope it will be useful but
-# comes with no warranty of any kind. It is intended strictly for legal
-# and ethical use in authorized testing scenarios.
-#
+
+# License: MIT License - https://opensource.org/licenses/MIT
+# Disclaimer: Use responsibly in authorized testing scenarios.
+
 # -*- coding: utf-8 -*-
 # Author:
 # - LIONMAD <https://github.com/Midohajhouj>
+
 # Standard Libraries
 import aiohttp
 import asyncio
@@ -38,21 +31,22 @@ from uuid import uuid4
 from base64 import b64encode
 import hashlib
 import zlib  
-import hmac 
+import hmac  
 import signal
 import sys
 import os
 import subprocess
 import socket
-import struct 
+import struct  
 import logging
-import psutil 
+import psutil  
+
 # Third-Party Libraries
-import scapy.all as scapy  
+import scapy.all as scapy  # Used for crafting custom packets
 import dns.resolver
 from colorama import init, Fore, Style
 from tqdm import tqdm
-import openai 
+import openai  # Used for AI-powered suggestions
 
 # Initialize colorama for colorized terminal output
 init(autoreset=True)
@@ -71,7 +65,7 @@ last_time = time.time()
 requests_lock = threading.Lock()
 rps_history = deque(maxlen=60)
 
-# Rich User-Agent list
+# User-Agent list
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Safari/605.1.15",
@@ -93,27 +87,29 @@ logging.basicConfig(
     ]
 )
 
-# Function to display the banner
 def display_banner():
     print(f"""
 {BLUE}
-╔══════════════════════════════════════════════════════════╗
-║                   DDoS Toolkit Pro v2.0                  ║
-║                   Coded By LIONBAD                       ║
-╠══════════════════════════════════════════════════════════╣
-║    ⚠ The author is not responsible for any misuse. ⚠     ║
-║            ⚠  Use it at your own risk.. ⚠                ║
-╚══════════════════════════════════════════════════════════╝
+████████████████████████████████████████████████████████████████████
+██                                                                ██
+██              DDoS Toolkit v1.5 Coded by LIONMAD                ██
+██        THIS TOOL CAN BE POWERFUL AND DANGEROUS IF MISUSED      ██                   
+██            USE WITH CAUTION, PROCEED AT YOUR OWN RISK.         ██
+██    AUTHOR TAKES NO RESPONSIBILITY FOR YOUR ACTIONS OR DAMAGE   ██ 
+██                                                                ██ 
+████████████████████████████████████████████████████████████████████
 {RESET}
 """)
 
+
+
 def parse_args():
     """Parse command-line arguments."""
-    parser = argparse.ArgumentParser(description="DDoS Toolkit Pro v2.0 Coded By LIONBAD")
+    parser = argparse.ArgumentParser(description="DDoS Toolkit Pro v1.5 Coded By LIONBAD")
     parser.add_argument("-u", "--url", required=True, help="Target URL or IP address")
     parser.add_argument("-t", "--threads", type=int, default=10, help="Number of threads")
     parser.add_argument("-p", "--pause", type=float, default=0.1, help="Pause time between requests")
-    parser.add_argument("-d", "--duration", type=int, default=1500, help="Test duration (seconds)")
+    parser.add_argument("-d", "--duration", type=int, default=1500, help="Attaque duration (seconds)")
     parser.add_argument("--proxies", help="File containing proxy list")
     parser.add_argument("--headers", help="Custom headers as JSON string")
     parser.add_argument("--payload", choices=["json", "xml", "form"], default="json", help="Payload type")
@@ -126,6 +122,7 @@ def parse_args():
     parser.add_argument("--multi-target", help="File containing multiple target URLs or IPs")
     parser.add_argument("--custom-payload", help="File containing custom payload data")
     parser.add_argument("--dynamic-rate-limit", action="store_true", help="Enable dynamic rate limiting based on target response")
+    parser.add_argument("--ai-optimization", action="store_true", help="Enable AI-powered optimization")
     return parser.parse_args()
 
 def load_proxies(proxy_file: str):
@@ -520,7 +517,8 @@ async def main():
         print(f"{GREEN}Results saved to {args.results}{RESET}")
 
     # Adjust parameters based on AI feedback
-    adjust_parameters_based_on_feedback()
+    if args.ai_optimization:
+        adjust_parameters_based_on_feedback()
 
 if __name__ == "__main__":
     # Handle signals for graceful exit
