@@ -1,20 +1,18 @@
-#!/usr/bin/env python3
+#!/usr/bin/env bash
+# -*- coding: utf-8 -*-
 ### BEGIN INIT INFO
 # Provides:          ddos_toolkit
 # Required-Start:    $network $remote_fs
-# Required-Stop:     
+# Required-Stop:     $remote_fs
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: DDoS Attack Toolkit for Cybersecurity Testing
-# Description:       Simulate DDoS attacks in environments for testing.
-### END INIT INFO
-
-# License: MIT License - https://opensource.org/licenses/MIT
-# Disclaimer: Use responsibly in authorized testing scenarios.
-
-# -*- coding: utf-8 -*-
+# Short-Description: DDoS Attack Simulation Toolkit
+# Description:       A toolkit designed for simulating various types of Distributed Denial of Service (DDoS) attacks for ethical cybersecurity testing.
 # Author:
-# - LIONMAD <https://github.com/Midohajhouj>
+# + LIONMAD <https://github.com/Midohajhouj>
+# Version:           v1.5
+# License:           MIT License - https://opensource.org/licenses/MIT
+### END INIT INFO
 
 # Standard Libraries
 import aiohttp
@@ -42,11 +40,11 @@ import logging
 import psutil  
 
 # Third-Party Libraries
-import scapy.all as scapy  # Used for crafting custom packets
+import scapy.all as scapy
 import dns.resolver
 from colorama import init, Fore, Style
 from tqdm import tqdm
-import openai  # Used for AI-powered suggestions
+import openai
 
 # Initialize colorama for colorized terminal output
 init(autoreset=True)
