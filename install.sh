@@ -43,7 +43,7 @@ apt-get install -y python3 python3-pip python3-venv libssl-dev libffi-dev build-
 
 # Install required Python packages
 echo -e "${GREEN}[INFO]${NC} Installing required Python packages..."
-pip3 install colorama dns.resolver argparse threading asyncio dnspython cloudscraper hashlib zlib aiohttp openai scapy tqdm psutil --break-system-packages
+pip install -r requirement.txt --break-system-packages
 
 # Function to create a symlink for easy access
 create_symlink() {
