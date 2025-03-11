@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 ### BEGIN INIT INFO
 # Provides:          ddos_toolkit
 # Required-Start:    $network $remote_fs
@@ -12,7 +13,6 @@
 # License: MIT License - https://opensource.org/licenses/MIT
 # Disclaimer: Use responsibly in authorized testing scenarios.
 
-# -*- coding: utf-8 -*-
 # Author:
 # - LIONMAD <https://github.com/Midohajhouj>
 
