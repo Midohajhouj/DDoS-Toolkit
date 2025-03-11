@@ -213,6 +213,20 @@ def generate_payload(payload_type: str, custom_payload_file: str = None):
     else:
         return None
 
+def run_network_scanner(target_ip, port_range, output_file):
+    """Run the network_scanner.py script."""
+    try:
+        command = ["python3", "network_scanner.py", "-t", target_ip, "-p", port_range]
+        if output_file:
+            command.extend(["-o", output_file])
+        
+        print(f"{BLUE}[*] Starting network scan on {target_ip}...{RESET}")
+        subprocess.run(command, check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"{RED}[!] Error running network scanner: {e}{RESET}")
+    except FileNotFoundError:
+        print(f"{RED}[!] network_scanner.py not found. Ensure it is in the same directory.{RESET}")
+
 async def resolve_target(target_url: str):
     """Resolve the target URL to an IP address."""
     try:
