@@ -99,8 +99,6 @@ def display_banner():
 {RESET}
 """)
 
-
-
 def parse_args():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description="DDoS Toolkit Pro v1.5 Coded By LIONBAD")
