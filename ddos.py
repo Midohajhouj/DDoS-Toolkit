@@ -115,7 +115,7 @@ def parse_args():
     parser.add_argument("--payload", choices=["json", "xml", "form"], default="json", help="Payload type")
     parser.add_argument("--results", help="File to save results (JSON)")
     parser.add_argument("--rate-limit", type=int, default=100, help="Rate limit for requests per second")
-    parser.add_argument("--attack-mode", choices=["http-flood", "slowloris", "udp-flood", "syn-flood", "icmp-flood", "dns-amplification", "http2-flood"], default="http-flood", help="Type of attack to perform")
+    parser.add_argument("--attack-mode", choices=["http-flood", "slowloris", "udp-flood", "syn-flood", "icmp-flood", "dns-amplification"], default="http-flood", help="Type of attack to perform")
     parser.add_argument("--proxy-auth", help="Proxy authentication (username:password)")
     parser.add_argument("--retry", type=int, default=3, help="Number of retries for failed requests")
     parser.add_argument("--user-agents", help="File containing custom user-agent strings")
