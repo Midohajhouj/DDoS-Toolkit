@@ -124,6 +124,8 @@ def parse_args():
     parser.add_argument("--dynamic-rate-limit", action="store_true", help="Enable dynamic rate limiting based on target response")
     parser.add_argument("--ai-optimization", action="store_true", help="Enable AI-powered optimization")
     parser.add_argument("--scan-output", help="Output file for network scan results")
+    parser.add_argument("--port-range", help="Port range for network scan (e.g., 1-1024)")
+    parser.add_argument("--scan-output", help="Output file for network scan results")
     return parser.parse_args()
 
 def load_proxies(proxy_file: str):
