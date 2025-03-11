@@ -88,14 +88,14 @@ logging.basicConfig(
 def display_banner():
     print(f"""
 {BLUE}
-████████████████████████████████████████████████████████████████████
+██████████████████████████████████████████████████████████
 ██                                                                ██
 ██              DDoS Toolkit v1.5 Coded by LIONMAD                ██
 ██        THIS TOOL CAN BE POWERFUL AND DANGEROUS IF MISUSED      ██                   
 ██            USE WITH CAUTION, PROCEED AT YOUR OWN RISK.         ██
 ██    AUTHOR TAKES NO RESPONSIBILITY FOR YOUR ACTIONS OR DAMAGE   ██ 
 ██                                                                ██ 
-████████████████████████████████████████████████████████████████████
+██████████████████████████████████████████████████████████
 {RESET}
 """)
 
