@@ -63,6 +63,7 @@ create_symlink() {
 
     # Create a new symlink
     sudo cp "$(pwd)/ddos.py" /usr/local/bin/ddos
+    sudo cp "$(pwd)/netscan.py" /usr/local/bin/netscan.py
 
     # Verify symlink creation
     if [ -L "/usr/local/bin/ddos" ]; then
