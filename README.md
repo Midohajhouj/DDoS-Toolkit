@@ -6,7 +6,7 @@
   <img src="https://img.shields.io/badge/Open%20Source-Yes-darkviolet?style=flat-square&color=a80505">
   <img src="https://img.shields.io/github/stars/Midohajhouj/DDoS-Toolkit?style=flat&label=Stars&color=a80505">
   <img src="https://img.shields.io/github/repo-size/Midohajhouj/DDoS-Toolkit?label=Size&color=a80505">
-  <img src="https://img.shields.io/github/languages/top/Midohajhouj/DDoS-Toolkit?color=a80505">
+  <img src="https://img.shields.io/github/languages/python/Midohajhouj/DDoS-Toolkit?color=a80505">
 </p>
 
 DDoS Toolkit is a powerful and customizable tool designed to simulate various types of Distributed Denial of Service (DDoS) attacks, including HTTP Flood, Slowloris, UDP Flood, and SYN Flood. It offers features like rate-limited attacks, proxy support, custom payload generation, and system resource monitoring, making it suitable for testing and research purposes in ethical cybersecurity simulations.
