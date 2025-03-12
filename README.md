@@ -63,7 +63,7 @@ sudo git clone https://github.com/Midohajhouj/DDoS-Toolkit.git /opt/DDoS-Toolki
 cd /opt/DDoS-Toolkit
 ```
 ```bash
-chmod +x *
+sudo chmod +x *
 ```
 
 ### 2. Install dependencies:
