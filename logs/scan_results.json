@@ -1,0 +1,96 @@
+[
+    {
+        "port": 161,
+        "service": "SNMP",
+        "status": "Closed",
+        "risk": "None",
+        "description": "No DDoS risk",
+        "cves": []
+    },
+    {
+        "port": 1900,
+        "service": "UPnP",
+        "status": "Closed",
+        "risk": "None",
+        "description": "No DDoS risk",
+        "cves": []
+    },
+    {
+        "port": 123,
+        "service": "NTP",
+        "status": "Closed",
+        "risk": "None",
+        "description": "No DDoS risk",
+        "cves": []
+    },
+    {
+        "port": 53,
+        "service": "DNS",
+        "status": "Open",
+        "risk": "High",
+        "description": "DNS amplification attacks",
+        "cves": [
+            "CVE-2020-1350",
+            "CVE-2019-6477"
+        ]
+    },
+    {
+        "port": 19,
+        "service": "CHARGEN",
+        "status": "Closed",
+        "risk": "None",
+        "description": "No DDoS risk",
+        "cves": []
+    },
+    {
+        "port": 389,
+        "service": "LDAP",
+        "status": "Closed",
+        "risk": "None",
+        "description": "No DDoS risk",
+        "cves": []
+    },
+    {
+        "port": 137,
+        "service": "NetBIOS",
+        "status": "Closed",
+        "risk": "None",
+        "description": "No DDoS risk",
+        "cves": []
+    },
+    {
+        "port": 443,
+        "service": "HTTPS",
+        "status": "Closed",
+        "risk": "None",
+        "description": "No DDoS risk",
+        "cves": []
+    },
+    {
+        "port": 11211,
+        "service": "Memcached",
+        "status": "Closed",
+        "risk": "None",
+        "description": "No DDoS risk",
+        "cves": []
+    },
+    {
+        "port": 17,
+        "service": "QOTD",
+        "status": "Closed",
+        "risk": "None",
+        "description": "No DDoS risk",
+        "cves": []
+    },
+    {
+        "port": 80,
+        "service": "HTTP",
+        "status": "Open",
+        "risk": "Medium",
+        "description": "Potential HTTP-based attacks (DDoS)",
+        "cves": [
+            "CVE-2017-5638",
+            "CVE-2018-7600"
+        ]
+    }
+]

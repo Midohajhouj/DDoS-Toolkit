@@ -1,0 +1,119 @@
+
+    <html>
+    <head>
+        <title>DDoS Vulnerability Scan Report</title>
+        <style>
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid black; padding: 8px; text-align: left; }
+            th { background-color: #f2f2f2; }
+        </style>
+    </head>
+    <body>
+        <h1>DDoS Vulnerability Scan Report</h1>
+        <h2>Scan Results</h2>
+        <table>
+            <tr><th>Port</th><th>Service</th><th>Status</th><th>Risk</th><th>Description</th><th>CVEs</th></tr>
+    
+            <tr>
+                <td>161</td>
+                <td>SNMP</td>
+                <td>Closed</td>
+                <td>None</td>
+                <td>No DDoS risk</td>
+                <td>None</td>
+            </tr>
+        
+            <tr>
+                <td>1900</td>
+                <td>UPnP</td>
+                <td>Closed</td>
+                <td>None</td>
+                <td>No DDoS risk</td>
+                <td>None</td>
+            </tr>
+        
+            <tr>
+                <td>123</td>
+                <td>NTP</td>
+                <td>Closed</td>
+                <td>None</td>
+                <td>No DDoS risk</td>
+                <td>None</td>
+            </tr>
+        
+            <tr>
+                <td>53</td>
+                <td>DNS</td>
+                <td>Open</td>
+                <td>High</td>
+                <td>DNS amplification attacks</td>
+                <td>CVE-2020-1350, CVE-2019-6477</td>
+            </tr>
+        
+            <tr>
+                <td>19</td>
+                <td>CHARGEN</td>
+                <td>Closed</td>
+                <td>None</td>
+                <td>No DDoS risk</td>
+                <td>None</td>
+            </tr>
+        
+            <tr>
+                <td>389</td>
+                <td>LDAP</td>
+                <td>Closed</td>
+                <td>None</td>
+                <td>No DDoS risk</td>
+                <td>None</td>
+            </tr>
+        
+            <tr>
+                <td>137</td>
+                <td>NetBIOS</td>
+                <td>Closed</td>
+                <td>None</td>
+                <td>No DDoS risk</td>
+                <td>None</td>
+            </tr>
+        
+            <tr>
+                <td>443</td>
+                <td>HTTPS</td>
+                <td>Closed</td>
+                <td>None</td>
+                <td>No DDoS risk</td>
+                <td>None</td>
+            </tr>
+        
+            <tr>
+                <td>11211</td>
+                <td>Memcached</td>
+                <td>Closed</td>
+                <td>None</td>
+                <td>No DDoS risk</td>
+                <td>None</td>
+            </tr>
+        
+            <tr>
+                <td>17</td>
+                <td>QOTD</td>
+                <td>Closed</td>
+                <td>None</td>
+                <td>No DDoS risk</td>
+                <td>None</td>
+            </tr>
+        
+            <tr>
+                <td>80</td>
+                <td>HTTP</td>
+                <td>Open</td>
+                <td>Medium</td>
+                <td>Potential HTTP-based attacks (DDoS)</td>
+                <td>CVE-2017-5638, CVE-2018-7600</td>
+            </tr>
+        
+        </table>
+    </body>
+    </html>
+    

@@ -1,0 +1,21 @@
+2025-03-12 00:28:31,736 - INFO - Scanning target IP: 192.168.48.130 for DDoS vulnerabilities
+2025-03-12 00:28:31,736 - INFO - Running Nmap scan on 192.168.48.130...
+2025-03-12 00:28:38,457 - INFO - Nmap scan successful
+2025-03-12 00:28:38,460 - INFO - Firewall not detected (ICMP allowed)
+2025-03-12 00:28:38,471 - INFO - Scan Report:
+2025-03-12 00:28:38,474 - INFO - HTML report saved to /opt/DDoS-Toolkit/logs/scan_report.html
+2025-03-12 00:28:38,475 - INFO - Scan results saved to /opt/DDoS-Toolkit/logs/scan_results.json
+2025-03-12 00:29:07,013 - INFO - Scanning target IP: 192.168.48.146 for DDoS vulnerabilities
+2025-03-12 00:29:07,013 - INFO - Running Nmap scan on 192.168.48.146...
+2025-03-12 00:29:13,653 - INFO - Nmap scan successful
+2025-03-12 00:29:13,656 - INFO - Firewall not detected (ICMP allowed)
+2025-03-12 00:29:13,668 - INFO - Scan Report:
+2025-03-12 00:29:13,670 - INFO - HTML report saved to /opt/DDoS-Toolkit/logs/scan_report.html
+2025-03-12 00:29:13,670 - INFO - Scan results saved to /opt/DDoS-Toolkit/logs/scan_results.json
+2025-03-12 00:29:30,219 - INFO - Scanning target IP: 192.168.48.159 for DDoS vulnerabilities
+2025-03-12 00:29:30,219 - INFO - Running Nmap scan on 192.168.48.159...
+2025-03-12 00:29:36,841 - INFO - Nmap scan successful
+2025-03-12 00:29:36,844 - INFO - Firewall not detected (ICMP allowed)
+2025-03-12 00:29:36,855 - INFO - Scan Report:
+2025-03-12 00:29:36,857 - INFO - HTML report saved to /opt/DDoS-Toolkit/logs/scan_report.html
+2025-03-12 00:29:36,857 - INFO - Scan results saved to /opt/DDoS-Toolkit/logs/scan_results.json
