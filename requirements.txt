@@ -1,5 +1,4 @@
 colorama
-dns.resolver
 argparse
 threading 
 asyncio
