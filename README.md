@@ -77,15 +77,15 @@ sudo ./install.sh
 
 ---
 
-## ⚙️ Usage
+## ⚙️ Usage (be root or use sudo)
 Any result found in :
 ```bash
-opt/DDoS-Toolkit
+opt/DDoS-Toolkit/logs
 ```
 ### Basic Attack
 To perform a basic attack with default settings:
 ```bash
-ddos -u https://google.com/
+sudo ddos -u https://google.com/
 ```
 
 ### Command-Line Arguments:
