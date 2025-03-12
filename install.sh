@@ -19,7 +19,7 @@ function display_banner() {
     echo -e "${BLUE}######################################################${NC}"
     echo -e "#                                                    #"
     echo -e "#                DDoS Toolkit Setup                 #"
-    echo -e "#               Coded by LIONMAD                    #"
+    echo -e "#               Coded by LIONMAD                     #"
     echo -e "#                                                    #"
     echo -e "${BLUE}######################################################${NC}\n"
 }
