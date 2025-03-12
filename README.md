@@ -57,25 +57,21 @@ DDoS Toolkit is a powerful and customizable tool designed to simulate various ty
 
 ### 1. Clone the repository:
 ```bash
-git clone https://github.com/Midohajhouj/DDoS-Toolkit.git
-cd DDoS-Toolkit
+sudo git clone https://github.com/Midohajhouj/DDoS-Toolkit.git /opt/DDoS-Toolkit
+
+cd /opt/DDoS-Toolkit
 chmod +x *
 ```
 
 ### 2. Install dependencies:
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.txt --break-system-packages
 ```
-or
+and
 ```bash
 ./install.sh
 ```
 
-### 3. Set up OpenAI API key:
-Create a file `.env` and add your OpenAI API key:
-```
-OPENAI_API_KEY=your_openai_api_key_here
-```
 ---
 
 ## ⚙️ Usage
