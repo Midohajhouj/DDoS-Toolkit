@@ -101,7 +101,7 @@ def display_banner():
 
 def parse_args():
     """Parse command-line arguments."""
-    parser = argparse.ArgumentParser(description="DDoS Toolkit v1.6 Coded By LIONBAD")
+    parser = argparse.ArgumentParser(description="DDoS Toolkit Pro v1.5 Coded By LIONBAD")
     parser.add_argument("-u", "--url", required=True, help="Target URL or IP address")
     parser.add_argument("-t", "--threads", type=int, default=10, help="Number of threads")
     parser.add_argument("-p", "--pause", type=float, default=0.1, help="Pause time between requests")
@@ -212,13 +212,27 @@ def generate_payload(payload_type: str, custom_payload_file: str = None):
 def run_network_scanner(target_ip):
     """Run the netscan.py script."""
     try:
-        command = ["python3", "netscan.py", "-t", target_ip]
+        # Get the directory of the current script
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        netscan_path = os.path.join(script_dir, "netscan.py")
+        
+        # Check if netscan.py exists
+        if not os.path.isfile(netscan_path):
+            print(f"{RED}[!] netscan.py not found in the same directory as ddos.py.{RESET}")
+            return
+        
+        # Build the command
+        command = ["python3", netscan_path, "-t", target_ip]
+        
+        # Execute the command
         print(f"{BLUE}[*] Starting network scan on {target_ip}...{RESET}")
         subprocess.run(command, check=True)
+    
     except subprocess.CalledProcessError as e:
         print(f"{RED}[!] Error running network scanner: {e}{RESET}")
-    except FileNotFoundError:
-        print(f"{RED}[!] netscan.py not found. Ensure it is in the same directory.{RESET}")
+    except Exception as e:
+        print(f"{RED}[!] An unexpected error occurred: {e}{RESET}")
+
 
 async def resolve_target(target_url: str):
     """Resolve the target URL to an IP address."""
