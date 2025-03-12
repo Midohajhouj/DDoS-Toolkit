@@ -212,13 +212,12 @@ def generate_payload(payload_type: str, custom_payload_file: str = None):
 def run_network_scanner(target_ip):
     """Run the netscan.py script."""
     try:
-        # Get the directory of the current script
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        netscan_path = os.path.join(script_dir, "netscan.py")
+        # Define the main directory for netscan.py
+        netscan_path = "/opt/DDoS-Toolkit/netscan.py"
         
-        # Check if netscan.py exists
+        # Check if netscan.py exists in the defined directory
         if not os.path.isfile(netscan_path):
-            print(f"{RED}[!] netscan.py not found in the same directory as ddos.py.{RESET}")
+            print(f"{RED}[!] netscan.py not found in /opt/DDoS-Toolkit/. Aborting.{RESET}")
             return
         
         # Build the command
