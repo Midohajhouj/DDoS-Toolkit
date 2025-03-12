@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 ### BEGIN INIT INFO
 # Provides:          ddos_toolkit
