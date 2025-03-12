@@ -75,6 +75,23 @@ and
 sudo ./install.sh
 ```
 
+If you encounter an error related to missing modules or dependencies, you can install each one individually. For example:
+
+```bash
+pip install <module_name>
+```
+
+For example, if the error is:
+
+```
+ModuleNotFoundError: No module named 'aiohttp'
+```
+
+You can resolve it by running:
+
+```bash
+pip install aiohttp
+```
 ---
 
 ## ⚙️ Usage (be root or use sudo)
