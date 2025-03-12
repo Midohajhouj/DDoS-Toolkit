@@ -58,7 +58,6 @@ DDoS Toolkit is a powerful and customizable tool designed to simulate various ty
 ### 1. Clone the repository:
 ```bash
 sudo git clone https://github.com/Midohajhouj/DDoS-Toolkit.git /opt/DDoS-Toolkit
-
 cd /opt/DDoS-Toolkit
 chmod +x *
 ```
@@ -75,7 +74,10 @@ and
 ---
 
 ## ⚙️ Usage
-
+Any result found in :
+```bash
+opt/DDoS-Toolkit
+```
 ### Basic Attack
 To perform a basic attack with default settings:
 ```bash
@@ -112,7 +114,7 @@ ddos -u 192.168.48.165 --attack-mode syn-flood -d 60
 ddos -u http://192.168.48.165 --proxies proxies.txt
 ```
 
-4. Save attack results to a JSON file:
+4. Save attack results to a JSON file. 
 ```bash
 ddos -u http://192.168.48.165 --results attack_results.json
 ```
