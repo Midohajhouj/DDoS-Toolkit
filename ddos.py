@@ -10,7 +10,7 @@
 # Description:       A toolkit designed for simulating various types of Distributed Denial of Service (DDoS) attacks for ethical cybersecurity testing.
 # Author:
 # + LIONMAD <https://github.com/Midohajhouj>
-# Version:           v1.5
+# Version:           v1.6
 # License:           MIT License - https://opensource.org/licenses/MIT
 ### END INIT INFO
 
