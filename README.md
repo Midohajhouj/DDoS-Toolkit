@@ -57,8 +57,12 @@ DDoS Toolkit is a powerful and customizable tool designed to simulate various ty
 
 ### 1. Clone the repository:
 ```bash
-sudo git clone https://github.com/Midohajhouj/DDoS-Toolkit.git /opt/DDoS-Toolkit
+sudo git clone https://github.com/Midohajhouj/DDoS-Toolkit.git /opt/DDoS-Toolki
+```
+```bash
 cd /opt/DDoS-Toolkit
+```
+```bash
 chmod +x *
 ```
 
