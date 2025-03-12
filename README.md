@@ -72,7 +72,7 @@ pip install -r requirements.txt --break-system-packages
 ```
 and
 ```bash
-./install.sh
+sudo ./install.sh
 ```
 
 ---
