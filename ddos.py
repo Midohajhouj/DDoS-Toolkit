@@ -14,7 +14,7 @@
 # License:           MIT License - https://opensource.org/licenses/MIT
 ### END INIT INFO
 
-# ================== Standard Libraries ====================
+# ================== Standard Libraries ===================
 import aiohttp  # Asynchronous HTTP requests for attack simulation.
 import asyncio  # Event loop for handling async tasks.
 import time  # Timing functions for attack intervals.
