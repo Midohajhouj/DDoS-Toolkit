@@ -103,6 +103,7 @@ def parse_args():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description="DDoS Toolkit v1.6 Coded By LIONBAD")
     parser.add_argument("-u", "--url", required=True, help="Target URL or IP address")
+    parser.add_argument("--scan", action="store_true", help="Perform a network scan using netscan.py")
     parser.add_argument("-t", "--threads", type=int, default=10, help="Number of threads")
     parser.add_argument("-p", "--pause", type=float, default=0.1, help="Pause time between requests")
     parser.add_argument("-d", "--duration", type=int, default=1500, help="Attack duration (seconds)")
@@ -116,7 +117,6 @@ def parse_args():
     parser.add_argument("--user-agents", help="File containing custom user-agent strings")
     parser.add_argument("--multi-target", help="File containing multiple target URLs or IPs")
     parser.add_argument("--ai-optimization", action="store_true", help="Enable AI-powered optimization")
-    parser.add_argument("--scan", action="store_true", help="Perform a network scan using netscan.py")
     return parser.parse_args()
 
 def load_proxies(proxy_file: str):
