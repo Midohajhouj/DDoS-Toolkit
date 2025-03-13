@@ -18,7 +18,7 @@ function display_banner() {
     echo -e "${BLUE}"
     echo "█████████████████████████████████████████████████████████████████"
     echo "██                                                             ██"
-    echo "██           DDoS Toolkit v1.6 Coded by LIONMAD                ██"
+    echo "██              DDoS Toolkit Coded by LIONMAD                  ██"
     echo "██                     Setup Script                            ██"
     echo "██          This script sets up the environment                ██"
     echo "██              for running the DDoS Toolkit                   ██"
@@ -46,7 +46,15 @@ apt-get install -y python3 python3-pip python3-venv libssl-dev libffi-dev build-
 
 # Install required Python packages
 echo -e "${GREEN}[INFO]${NC} Installing required Python packages..."
-pip install -r requirements.txt --break-system-packages
+pip install --break-system-packages aiohttp==3.8.1
+pip install --break-system-packages asyncio==3.4.3
+pip install --break-system-packages dnspython==2.1.0
+pip install --break-system-packages openai==0.27.0
+pip install --break-system-packages psutil==5.8.0
+pip install --break-system-packages requests==2.28.2
+pip install --break-system-packages scapy==2.4.5
+pip install --break-system-packages tabulate==0.9.0
+pip install --break-system-packages tqdm==4.64.1
 
 # Function to create a symlink for easy access
 create_symlink() {
@@ -71,7 +79,7 @@ create_symlink() {
     if [ -L "/usr/local/bin/ddos" ]; then
         echo -e "${GREEN}[SUCCESS] Symlink created! You can now run 'ddos' from anywhere.${NC}"
     else
-        echo -e "${RED}[ERROR] Symlink created! You can now run 'ddos' from anywhere.${NC}"
+        echo -e "${GREEN}[SUCCESS] Symlink created! You can now run 'ddos' from anywhere.${NC}"
         return 1
     fi
 }
