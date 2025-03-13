@@ -202,7 +202,7 @@ def run_network_scanner(target_ip):
     """Run the netscan.py script."""
     try:
         # Define the main directory for netscan.py
-        netscan_path = "/opt/DDoS-Toolkit/lib/netscan.py"
+        netscan_path = "/opt/DDoS-Toolkit/lib/netscan"
         
         # Check if netscan.py exists in the defined directory
         if not os.path.isfile(netscan_path):
