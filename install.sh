@@ -11,17 +11,20 @@ YELLOW="\033[1;33m"
 GREEN="\033[1;32m"
 BLUE="\033[1;34m"
 RED="\033[1;31m"
-NC="\033[0m" # No Color
+RESET="\033[0m" # Reset color
 
 # Function to display a banner
 function display_banner() {
-    echo -e "\n"
-    echo -e "${BLUE}######################################################${NC}"
-    echo -e "#                                                    #"
-    echo -e "#                DDoS Toolkit Setup                 #"
-    echo -e "#               Coded by LIONMAD                     #"
-    echo -e "#                                                    #"
-    echo -e "${BLUE}######################################################${NC}\n"
+    echo -e "${BLUE}"
+    echo "█████████████████████████████████████████████████████████████████"
+    echo "██                                                             ██"
+    echo "██           DDoS Toolkit v1.6 Coded by LIONMAD                ██"
+    echo "██                     Setup Script                            ██"
+    echo "██          This script sets up the environment                ██"
+    echo "██              for running the DDoS Toolkit                   ██"
+    echo "██                                                             ██"
+    echo "█████████████████████████████████████████████████████████████████"
+    echo -e "${RESET}"
 }
 
 # Display the banner
@@ -43,7 +46,7 @@ apt-get install -y python3 python3-pip python3-venv libssl-dev libffi-dev build-
 
 # Install required Python packages
 echo -e "${GREEN}[INFO]${NC} Installing required Python packages..."
-pip install -r requirement.txt --break-system-packages
+pip install -r requirements.txt --break-system-packages
 
 # Function to create a symlink for easy access
 create_symlink() {
@@ -63,13 +66,12 @@ create_symlink() {
 
     # Create a new symlink
     sudo cp "$(pwd)/ddos.py" /usr/local/bin/ddos
-    sudo cp "$(pwd)/netscan.py" /usr/local/bin/netscan.py
 
     # Verify symlink creation
     if [ -L "/usr/local/bin/ddos" ]; then
         echo -e "${GREEN}[SUCCESS] Symlink created! You can now run 'ddos' from anywhere.${NC}"
     else
-        echo -e "${RED}[ERROR] Failed to create the symlink.${NC}"
+        echo -e "${RED}[ERROR] Symlink created! You can now run 'ddos' from anywhere.${NC}"
         return 1
     fi
 }
@@ -82,9 +84,14 @@ echo -e "${GREEN}[INFO]${NC} Setup complete! The necessary packages have been in
 echo -e "${BLUE}You can now run the DDoS Toolkit script directly using:${NC}"
 echo -e "${GREEN}ddos${NC}"
 
-echo -e "\n${BLUE}######################################################${NC}"
-echo -e "#                                                    #"
-echo -e "#     DDoS Toolkit Setup is complete!               #"
-echo -e "#            LIONMAD SALUTES YOU                    #"
-echo -e "#                                                    #"
-echo -e "${BLUE}######################################################${NC}\n"
+    echo -e "${BLUE}"
+    echo "█████████████████████████████████████████████████████████████████"
+    echo "██                                                             ██"
+    echo "██           DDoS Toolkit v1.6 Coded by LIONMAD                ██"
+    echo "██             DDoS Toolkit Setup is complete!                 ██"
+    echo "██                 LIONMAD SALUTES YOU                         ██"
+    echo "██                 LIONMAD SALUTES YOU                         ██"
+    echo "██                 LIONMAD SALUTES YOU                         ██"
+    echo "██                                                             ██"
+    echo "█████████████████████████████████████████████████████████████████"
+    echo -e "${RESET}"
