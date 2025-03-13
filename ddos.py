@@ -366,6 +366,7 @@ async def http2_flood(target_url, stop_event, pause_time, rate_limit, proxies=No
                             failed_requests += 1
                         logging.error(f"Unexpected error during request (attempt {attempt + 1}): {e}")
                 await asyncio.sleep(pause_time)
+
 def display_status(stop_event: threading.Event, duration: int, results_file=None):
     """Display the status of the load test."""
     start_time = time.time()
@@ -511,11 +512,11 @@ async def main():
         threading.Thread(target=dns_amplification, args=(target_ip, args.duration)).start()
     elif args.attack_mode == "http2-flood":
         for _ in range(args.threads):
-            task = asyncio.create_task(http2_flood(args.url, stop_event, args.pause, args.rate_limit, proxies, headers, args.payload, args.retry, args.custom_payload))
+            task = asyncio.create_task(http2_flood(args.url, stop_event, args.pause, args.rate_limit, proxies, headers, args.payload, args.retry))
             tasks.append(task)
     else:
         for _ in range(args.threads):
-            task = asyncio.create_task(rate_limited_attack(args.url, stop_event, args.pause, args.rate_limit, proxies, headers, args.payload, args.retry, args.custom_payload))
+            task = asyncio.create_task(rate_limited_attack(args.url, stop_event, args.pause, args.rate_limit, proxies, headers, args.payload, args.retry))
             tasks.append(task)
 
         # Display status in a separate thread
