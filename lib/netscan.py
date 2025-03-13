@@ -9,7 +9,6 @@
 # Short-Description: Network Scanner and Security Analyzer (Extension of DDoS Toolkit)
 # Description:       An extension of the DDoS Toolkit, designed for network scanning, vulnerability assessment.
 # + LIONMAD <https://github.com/Midohajhouj>
-# Version:           v2.0
 # License:           MIT License - https://opensource.org/licenses/MIT
 ### END INIT INFO
 
