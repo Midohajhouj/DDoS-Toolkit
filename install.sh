@@ -16,14 +16,14 @@ RESET="\033[0m" # Reset color
 # Function to display a banner
 function display_banner() {
     echo -e "${BLUE}"
-    echo "█████████████████████████████████████████████████████████████████"
+    echo "████████████████████████████████████████████████████████"
     echo "██                                                             ██"
     echo "██              DDoS Toolkit Coded by LIONMAD                  ██"
     echo "██                     Setup Script                            ██"
     echo "██          This script sets up the environment                ██"
     echo "██              for running the DDoS Toolkit                   ██"
     echo "██                                                             ██"
-    echo "█████████████████████████████████████████████████████████████████"
+    echo "████████████████████████████████████████████████████████"
     echo -e "${RESET}"
 }
 
