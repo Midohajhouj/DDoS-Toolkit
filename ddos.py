@@ -206,7 +206,7 @@ def run_network_scanner(target_ip):
         
         # Check if netscan.py exists in the defined directory
         if not os.path.isfile(netscan_path):
-            print(f"{RED}[!] netscan.py not found in /opt/DDoS-Toolkit/. Aborting.{RESET}")
+            print(f"{RED}[!] netscan.py not found in /opt/DDoS-Toolkit/lib/ ...... Aborting.{RESET}")
             return
         
         # Build the command
