@@ -90,12 +90,13 @@ def display_banner():
 {BLUE}
 ████████████████████████████████████████████████████████
 ██                                                             ██
-██           DDoS Toolkit v2.0 Coded by LIONMAD                ██
-██        USE WITH CAUTION, PROCEED AT YOUR OWN RISK.          ██
-██  AUTHOR TAKES NO RESPONSIBILITY FOR YOUR ACTIONS OR DAMAGE  ██ 
-██   LIONMAD SALUTES YOU              LIONMAD SALUTES YOU      ██
-██                   LIONMAD SALUTES YOU                       ██
-██                                                             ██ 
+██             DDoS Toolkit v2.0 Coded by LIONMAD              ██
+██        USE WITH CAUTION, PROCEED AT YOUR OWN RISK.          ██                                  
+██                LIONMAD SALUTES YOU LIONMAD                  ██
+██        LIONMAD SALUTES YOU      LIONMAD SALUTES YOU         ██
+██        LIONMAD SALUTES YOU      LIONMAD SALUTES YOU         ██
+██        LIONMAD SALUTES YOU      LIONMAD SALUTES YOU         ██
+██                                                             ██
 ████████████████████████████████████████████████████████
 {RESET}
 """)
