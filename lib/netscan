@@ -13,24 +13,24 @@
 ###  END INIT INFO ###
 
 # ================== Standard Libraries ====================
-import socket  # Handling low-level network connections.
-import threading  # Multithreading for simultaneous scans.
-import subprocess  # Running external network tools.
-import sys  # System-level operations (e.g., argument handling).
-import argparse  # Parsing command-line arguments.
-import json  # Managing JSON data for inputs and outputs.
-import os  # Interacting with the operating system.
-import logging  # Recording scan logs and error details.
-from concurrent.futures import ThreadPoolExecutor, as_completed  # Managing parallel scans.
-import asyncio  # Supporting asynchronous scanning tasks.
-import time  # Measuring scan durations and timeouts.
-import configparser  # Handling configuration files.
-from typing import Dict, List, Optional, Tuple  # Defining type hints for better code clarity.
+import socket
+import threading
+import subprocess
+import sys
+import argparse
+import json
+import os
+import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import asyncio
+import time
+import configparser
+from typing import Dict, List, Optional, Tuple
 
 # ================== Third-Party Libraries ==================
-from colorama import init, Fore, Style  # Adding colors to terminal outputs.
-import requests  # Making HTTP/HTTPS requests for web server analysis.
-from tabulate import tabulate  # Displaying scan results in table format.
+from colorama import init, Fore, Style
+import requests
+from tabulate import tabulate
 
 # Initialize colorama
 init(autoreset=True)
@@ -338,6 +338,44 @@ def save_config(config: Dict) -> None:
     with open(CONFIG_FILE, 'w') as configfile:
         config.write(configfile)
 
+def analyze_scan_results(scan_results: List[Dict]) -> Dict:
+    """Analyze scan results and suggest the best attack mode, threads, and rate."""
+    suggestions = {
+        "attack_mode": None,
+        "threads": 10,  # Default number of threads
+        "rate": 100,    # Default rate (requests per second)
+    }
+
+    # Analyze open ports and services
+    open_ports = [result for result in scan_results if result["status"] == "Open"]
+    tcp_ports = [port for port in open_ports if port["service"] in ["HTTP", "HTTPS", "DNS"]]
+    udp_ports = [port for port in open_ports if port["service"] in ["DNS", "NTP", "SNMP", "Memcached"]]
+
+    # Suggest attack mode based on open ports
+    if tcp_ports:
+        suggestions["attack_mode"] = "SYN Flood"
+    elif udp_ports:
+        suggestions["attack_mode"] = "UDP Flood"
+    else:
+        suggestions["attack_mode"] = "ICMP Flood"
+
+    # Adjust threads and rate based on the number of open ports
+    if len(open_ports) > 5:
+        suggestions["threads"] = 50
+        suggestions["rate"] = 500
+    elif len(open_ports) > 2:
+        suggestions["threads"] = 20
+        suggestions["rate"] = 200
+
+    return suggestions
+
+def print_suggestions(suggestions: Dict) -> None:
+    """Print the attack suggestions."""
+    print("\nAttack Suggestions:")
+    print(f"Attack Mode: {suggestions['attack_mode']}")
+    print(f"Threads: {suggestions['threads']}")
+    print(f"Rate: {suggestions['rate']} requests per second")
+
 def interactive_mode() -> None:
     """Run the scanner in interactive mode."""
     target = input("Enter target IP or domain: ")
@@ -349,6 +387,10 @@ def interactive_mode() -> None:
     print(f"Scanning target: {ip}")
     scan_results = scan_for_ddos_vulnerabilities(ip)
     print_scan_report(scan_results)
+
+    # Analyze scan results and suggest attack mode
+    suggestions = analyze_scan_results(scan_results)
+    print_suggestions(suggestions)
 
 async def main_async():
     """Main function to run the advanced network scanner asynchronously."""
@@ -380,6 +422,10 @@ async def main_async():
             logger.info("Scan Report:")
             print_scan_report(scan_results)
 
+            # Analyze scan results and suggest attack mode
+            suggestions = analyze_scan_results(scan_results)
+            print_suggestions(suggestions)
+
             # Generate unique filenames based on IP and timestamp
             timestamp = time.strftime("%Y%m%d_%H%M%S")
             html_filename = f"scan_report_{ip}_{timestamp}.html"
@@ -410,6 +456,10 @@ async def main_async():
 
     logger.info("Scan Report:")
     print_scan_report(scan_results)
+
+    # Analyze scan results and suggest attack mode
+    suggestions = analyze_scan_results(scan_results)
+    print_suggestions(suggestions)
 
     # Generate unique filenames based on IP and timestamp
     timestamp = time.strftime("%Y%m%d_%H%M%S")
