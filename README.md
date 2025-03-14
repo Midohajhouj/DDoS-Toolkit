@@ -72,7 +72,7 @@ pip install -r requirements.txt --break-system-packages
 ```
 and
 ```bash
-sudo ./install.sh
+sudo ./setup.sh
 ```
 
 If you encounter an error related to missing modules or dependencies, you can install each one individually. For example:
