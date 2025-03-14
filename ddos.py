@@ -90,7 +90,7 @@ logging.basicConfig(
 def display_banner():
     print(f"""
 {BLUE}
-███████████████████████████████████████████████████████
+███████████████████████████████████████████████
 ██                                                   ██
 ██         DDoS Toolkit v2.0 Coded by LIONMAD        ██
 ██     USE WITH CAUTION, PROCEED AT YOUR OWN RISK.   ██                                  
@@ -99,7 +99,7 @@ def display_banner():
 ██     LIONMAD SALUTES YOU      LIONMAD SALUTES YOU  ██
 ██     LIONMAD SALUTES YOU      LIONMAD SALUTES YOU  ██
 ██                                                   ██
-███████████████████████████████████████████████████████
+███████████████████████████████████████████████
 {RESET}
 """)
 
