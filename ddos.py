@@ -10,7 +10,7 @@
 # Description:       A toolkit designed for simulating various types of Distributed Denial of Service (DDoS) attacks for ethical cybersecurity testing.
 # Author:
 # + LIONMAD <https://github.com/Midohajhouj>
-# Version:           v2.1
+# Version:           v2.0
 # License:           MIT License - https://opensource.org/licenses/MIT
 ### END INIT INFO
 
@@ -89,21 +89,21 @@ def display_banner():
     print(f"""
 {BLUE}
 ████████████████████████████████████████████████████████
-██                                                             ██
-██             DDoS Toolkit v2.1 Coded by LIONMAD              ██
-██        USE WITH CAUTION, PROCEED AT YOUR OWN RISK.          ██                                  
-██                LIONMAD SALUTES YOU LIONMAD                  ██
-██        LIONMAD SALUTES YOU      LIONMAD SALUTES YOU         ██
-██        LIONMAD SALUTES YOU      LIONMAD SALUTES YOU         ██
-██        LIONMAD SALUTES YOU      LIONMAD SALUTES YOU         ██
-██                                                             ██
+██                                                    ██
+██          DDoS Toolkit v2.0 Coded by LIONMAD        ██                         
+██      USE WITH CAUTION, PROCEED AT YOUR OWN RISK.   ██                                                                 
+██             LIONMAD SALUTES YOU LIONMAD            ██
+██    LIONMAD SALUTES YOU      LIONMAD SALUTES YOU    ██
+██    LIONMAD SALUTES YOU      LIONMAD SALUTES YOU    ██
+██    LIONMAD SALUTES YOU      LIONMAD SALUTES YOU    ██
+██                                                    ██
 ████████████████████████████████████████████████████████
 {RESET}
 """)
 
 def parse_args():
     """Parse command-line arguments."""
-    parser = argparse.ArgumentParser(description="DDoS Toolkit v2.1 Coded By LIONBAD")
+    parser = argparse.ArgumentParser(description="DDoS Toolkit v2.0 Coded By LIONBAD")
     parser.add_argument("-u", "--url", required=True, help="Target URL or IP address")
     parser.add_argument("-s", "--scan", action="store_true", help="Perform a network scan using NetScan lib ")
     parser.add_argument("-t", "--threads", type=int, default=10, help="Number of threads")
