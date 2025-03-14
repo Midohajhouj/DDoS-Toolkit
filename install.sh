@@ -76,6 +76,7 @@ create_symlink() {
 
     # Create a new symlink
     sudo cp "$(pwd)/ddos.py" /usr/local/bin/ddos
+    chmod +x /opt/DDoS-Toolkit/assets/*
 
     # Verify symlink creation
     if [ -L "/usr/local/bin/ddos" ]; then
