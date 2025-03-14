@@ -12,7 +12,7 @@
 # + LIONMAD <https://github.com/Midohajhouj>
 # Version:           v2.0
 # License:           MIT License - https://opensource.org/licenses/MIT
-### END INIT INFO
+### END INIT INFO ###
 
 # ================== Standard Libraries ===================
 import aiohttp # Asynchronous HTTP requests for attack simulation.
