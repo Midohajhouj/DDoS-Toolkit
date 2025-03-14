@@ -1,0 +1,132 @@
+#!/bin/bash
+# -*- coding: utf-8 -*-
+### BEGIN INIT INFO
+# Provides:          ddos_toolkit_anonymizer
+# Required-Start:    $network $remote_fs
+# Required-Stop:     $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: System-wide anonymous tunneling under Tor
+# Description:       Redirects all traffic through the Tor network, providing anonymity.
+# Author:
+# + LIONMAD <https://github.com/Midohajhouj>
+# License:           MIT License - https://opensource.org/licenses/MIT
+### END INIT INFO ###
+export BLUE='\033[1;94m'
+export GREEN='\033[1;92m'
+export RED='\033[1;91m'
+export RESETCOLOR='\033[1;00m'
+
+# Destinations you don't want routed through Tor
+TOR_EXCLUDE="192.168.0.0/16 172.16.0.0/12 10.0.0.0/8"
+
+# The UID Tor runs as
+TOR_UID="debian-tor"
+
+# Tor's TransPort
+TOR_PORT="9040"
+
+# Log file
+LOG_FILE="/var/log/anonsurf.log"
+
+# Logging function
+function log {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> $LOG_FILE
+}
+
+# Make sure only root can run this script
+if [ $(id -u) -ne 0 ]; then
+    echo -e "\n$GREEN[$RED!$GREEN] $RED This script must be run as root$RESETCOLOR\n" >&2
+    exit 1
+fi
+
+function start {
+    echo -e "\n$GREEN[$BLUE i$GREEN ]$BLUE Starting anonymous mode:$RESETCOLOR\n"
+
+    # Check if Tor is running
+    if [ ! -e /var/run/tor/tor.pid ]; then
+        echo -e " $RED*$BLUE Tor is not running! $GREEN starting it $BLUE for you$RESETCOLOR\n" >&2
+        service tor start
+        sleep 1
+    fi
+
+    # Save current iptables rules
+    if ! [ -f /etc/network/iptables.rules ]; then
+        iptables-save > /etc/network/iptables.rules
+        echo -e " $GREEN*$BLUE Saved iptables rules$RESETCOLOR\n"
+    fi
+
+    # Flush iptables
+    iptables -F
+    iptables -t nat -F
+
+    # Redirect DNS queries to Tor
+    iptables -t nat -A OUTPUT -p udp --dport 53 -j REDIRECT --to-ports 53
+    iptables -t nat -A OUTPUT -p tcp --dport 53 -j REDIRECT --to-ports 53
+
+    # Redirect all traffic through Tor
+    iptables -t nat -A OUTPUT -p tcp --syn -j REDIRECT --to-ports $TOR_PORT
+    iptables -t nat -A OUTPUT -p udp -j REDIRECT --to-ports $TOR_PORT
+    iptables -t nat -A OUTPUT -p icmp -j REDIRECT --to-ports $TOR_PORT
+
+    # Exclude local addresses
+    for NET in $TOR_EXCLUDE 127.0.0.0/8; do
+        iptables -t nat -A OUTPUT -d $NET -j RETURN
+    done
+
+    # Accept already established connections
+    iptables -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+    # Allow only Tor output
+    iptables -A OUTPUT -m owner --uid-owner $TOR_UID -j ACCEPT
+    iptables -A OUTPUT -j REJECT
+
+    echo -e "$GREEN *$BLUE All traffic was redirected through Tor$RESETCOLOR\n"
+    echo -e "$GREEN[$BLUE i$GREEN ]$BLUE You are under AnonSurf tunnel$RESETCOLOR\n"
+}
+
+function stop {
+    echo -e "\n$GREEN[$BLUE i$GREEN ]$BLUE Stopping anonymous mode:$RESETCOLOR\n"
+
+    # Flush iptables
+    iptables -F
+    iptables -t nat -F
+    echo -e " $GREEN*$BLUE Deleted all iptables rules\n$RESETCOLOR"
+
+    # Restore original iptables rules
+    if [ -f /etc/network/iptables.rules ]; then
+        iptables-restore < /etc/network/iptables.rules
+        rm /etc/network/iptables.rules
+        echo -e " $GREEN*$BLUE Iptables rules restored"
+    fi
+
+    # Stop Tor service
+    service tor stop
+
+    echo -e " $GREEN*$BLUE Anonymous mode stopped$RESETCOLOR\n"
+}
+
+case "$1" in
+    start)
+        start
+    ;;
+    stop)
+        stop
+    ;;
+    *)
+        echo -e "
+AnonSurf - System-wide anonymous tunneling under Tor
+    Usage:
+    $RED┌──[$GREEN$USER$YELLOW@$BLUE`hostname`$RED]─[$GREEN$PWD$RED]
+    $RED└──╼ \$$GREEN"" anonsurf $RED{$GREEN""start$RED|$GREEN""stop$RED""}
+    
+    $RED start$BLUE -$GREEN Start system-wide anonymous tunneling under Tor
+    $RED stop$BLUE -$GREEN Stop anonymous tunneling and restore original settings
+    
+$RESETCOLOR" >&2
+    exit 1
+    ;;
+esac
+
+echo -e $RESETCOLOR
+exit 0
