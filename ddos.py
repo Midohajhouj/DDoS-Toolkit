@@ -106,7 +106,7 @@ def display_banner():
 def parse_args():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description="DDoS Toolkit v2.0 Coded By LIONBAD")
-    parser.add_argument("-u", "--url", required=True, help="Target URL or IP address")
+    parser.add_argument("-u", "--url", required=False, help="Target URL or IP address")
     parser.add_argument("-a", "--attack-mode", choices=["http-flood", "slowloris", "udp-flood", "syn-flood", "icmp-flood", "dns-amplification", "ftp-flood", "ssh-flood"], default="http-flood", help="Type of attack to perform")
     parser.add_argument("-s", "--scan", action="store_true", help="Perform a network scan using NetScan lib ")
     parser.add_argument("-t", "--threads", type=int, default=10, help="Number of threads")
@@ -603,16 +603,17 @@ async def main():
     global args
     args = parse_args()
 
-    if args.threads <= 0 or args.pause <= 0 or args.duration <= 0 or args.rate_limit <= 0:
-        print(f"{RED}Error: Invalid argument values. Ensure all values are positive.{RESET}")
-        exit(1)
-
     display_banner()
 
-    # If --anonymizer is provided, start or stop anonymizer
+    # If --anonymizer is provided, start or stop anonymizer and exit
     if args.anonymizer:
         print(f"{BLUE}[INFO] {'Starting' if args.anonymizer == 'start' else 'Stopping'} anonymizer...{RESET}")
         run_anonymizer(args.anonymizer)
+        exit(0)
+
+    if args.threads <= 0 or args.pause <= 0 or args.duration <= 0 or args.rate_limit <= 0:
+        print(f"{RED}Error: Invalid argument values. Ensure all values are positive.{RESET}")
+        exit(1)
 
     # If --scan is provided, perform the scan and exit
     if args.scan:
