@@ -16,7 +16,7 @@ RESET="\033[0m" # Reset color
 # Function to display a banner
 function display_banner() {
     echo -e "${BLUE}"
-    echo "██████████████████████████████████████████████████████████"
+    echo "██████████████████████████████████████████████████"
     echo "██                                                      ██"
     echo "██              DDoS Toolkit Coded by LIONMAD           ██"
     echo "██                     Setup Script                     ██"
@@ -25,7 +25,7 @@ function display_banner() {
     echo "██   LIONMAD SALUTES YOU           LIONMAD SALUTES YOU  ██"
     echo "██                   LIONMAD SALUTES YOU                ██"
     echo "██                                                      ██"
-    echo "██████████████████████████████████████████████████████████"
+    echo "██████████████████████████████████████████████████"
     echo -e "${RESET}"
 }
 
@@ -96,7 +96,7 @@ echo -e "${BLUE}You can now run the DDoS Toolkit script directly using:${NC}"
 echo -e "${GREEN}ddos${NC}"
 
     echo -e "${BLUE}"
-    echo "████████████████████████████████████████████████████████████"
+    echo "████████████████████████████████████████████████████"
     echo "██                                                        ██"
     echo "██                    Setup is complete                   ██"
     echo "██   LIONMAD SALUTES YOU             LIONMAD SALUTES YOU  ██"
@@ -104,5 +104,5 @@ echo -e "${GREEN}ddos${NC}"
     echo "██   LIONMAD SALUTES YOU             LIONMAD SALUTES YOU  ██"
     echo "██   LIONMAD SALUTES YOU             LIONMAD SALUTES YOU  ██"
     echo "██                                                        ██"
-    echo "████████████████████████████████████████████████████████████"
+    echo "████████████████████████████████████████████████████"
     echo -e "${RESET}"
