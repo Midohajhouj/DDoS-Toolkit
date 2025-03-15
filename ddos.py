@@ -88,7 +88,7 @@ def display_banner():
 {BLUE}
 ██████████████████████████████████████████████████████
 ██                                                  ██
-██            DDoS Toolkit MultiVector              ██
+██            DDoS MultiVector  Toolkit             ██
 ██   USE WITH CAUTION, PROCEED AT YOUR OWN RISK.    ██                                  
 ██              LIONMAD SALUTES YOU                 ██
 ██                                                  ██
