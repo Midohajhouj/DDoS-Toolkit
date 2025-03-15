@@ -14,7 +14,6 @@
 # License:           MIT License - https://opensource.org/licenses/MIT
 ### END INIT INFO ###
 
-# ================== Standard Libraries ===================
 import aiohttp  # Asynchronous HTTP requests for attack simulation.
 import asyncio  # Event loop for handling async tasks.
 import time  # Timing functions for attack intervals.
@@ -39,8 +38,6 @@ import struct  # Handling low-level data structures.
 import logging  # Logging attack progress and errors.
 import psutil  # Monitoring system resource usage.
 import shutil  # File operations (copy, move, execute, etc.)
-
-# ================== Third-Party Libraries ==================
 import scapy.all as scapy  # Crafting and analyzing packets.
 import dns.resolver  # Resolving DNS queries for amplification.
 from colorama import init, Fore, Style  # Adding color to console outputs.
