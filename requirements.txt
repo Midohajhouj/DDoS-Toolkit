@@ -5,7 +5,6 @@ asyncio
 dnspython
 cloudscraper
 hashlib 
-zlib 
 aiohttp
 openai 
 scapy 
