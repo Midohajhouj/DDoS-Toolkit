@@ -111,7 +111,7 @@ class CustomInstall(install):
         print("████████████████████████████████████████████████████")
         print("██                                                ██")
         print("██               Setup is complete                ██")
-        print("██               LIONMAD SALUTES YOU              ██")
+        print("██                 MIDO SALUTES YOU               ██")
         print("██                                                ██")
         print("████████████████████████████████████████████████████")
         print(f"{RESET}")
