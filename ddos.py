@@ -9,7 +9,7 @@
 # Short-Description: DDoS Attack Toolkit
 # Description:       A toolkit designed for simulating various types of Distributed Denial of Service (DDoS) attacks for ethical cybersecurity testing.
 # Author:
-# + MIDO <https://github.com/Midohajhouj>
+# + MIDØ <https://github.com/Midohajhouj>
 # Version:           v2.0
 # License:           MIT License - https://opensource.org/licenses/MIT
 ## END INIT INFO ##
@@ -95,7 +95,7 @@ def display_banner():
 ██                                                  ██
 ██            DDoS MultiVector Toolkit              ██
 ██   USE WITH CAUTION, PROCEED AT YOUR OWN RISK.    ██                                  
-██                MIDO SALUTES YOU                  ██
+██                MIDØ SALUTES YOU                  ██
 ██                                                  ██
 ██████████████████████████████████████████████████████
 {RESET}
@@ -103,7 +103,7 @@ def display_banner():
 
 def minimal_help():
     print(f"""
-{YELLOW}DDoS MultiVector Toolkit Coded by MIDO
+{YELLOW}DDoS MultiVector Toolkit Coded by MIDØ
 {YELLOW}Usage: ddos [options]
 {RESET}
 Options:
@@ -128,7 +128,7 @@ Example:
 
 def parse_args():
     """Parse command-line arguments."""
-    parser = argparse.ArgumentParser(description="DDoS Toolkit Coded By MIDO")
+    parser = argparse.ArgumentParser(description="DDoS Toolkit Coded By MIDØ")
     parser.add_argument("-u", "--url", required=False, help="Target URL or IP address")
     parser.add_argument("-a", "--attack-mode", choices=["http-flood", "slowloris", "udp-flood", "syn-flood", "icmp-flood", "dns-amplification", "ftp-flood", "ssh-flood"], default="http-flood", help="Type of attack to perform")
     parser.add_argument("-s", "--scan", action="store_true", help="Perform a network scan using NetScan lib ")
