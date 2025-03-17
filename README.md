@@ -154,7 +154,4 @@ This project is licensed under the MIT License.
 
 ## Disclaimer
 This tool is intended for educational purposes only. The author is not responsible for any misuse or illegal activity. Use this tool responsibly and with permission.
-
----
-
 **<p align="center"> Coded by <a href="https://github.com/Midohajhouj">MIDØ</a> </p>**
