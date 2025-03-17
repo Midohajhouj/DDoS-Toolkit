@@ -8,10 +8,11 @@
 # Default-Stop:      0 1 6
 # Short-Description: DDoS Attack Toolkit
 # Description:       A toolkit designed for simulating various types of Distributed Denial of Service (DDoS) attacks for ethical cybersecurity testing.
-# Author:            LIONMAD <https://github.com/Midohajhouj>
+# Author:
+# + LIONMAD <https://github.com/Midohajhouj>
 # Version:           v2.0
 # License:           MIT License - https://opensource.org/licenses/MIT
-### END INIT INFO
+### END INIT INFO ###
 
 # =======================================
 #    Libraries Used in the Script
@@ -46,19 +47,6 @@ import dns.resolver     # Resolving DNS queries for target IP addresses.
 from colorama import init, Fore, Style  # Adding color to terminal output for clarity.
 from tqdm import tqdm  # Progress bar for visual feedback during operations.
 import cmd              # Building interactive command-line interfaces.
-
-# Adding the custom attack mode module to the Python path
-sys.path.append('/opt/DDoS-Toolkit/assets/')
-
-# Importing attack modes
-try:
-    from attack_mode import (
-        syn_flood, icmp_flood, dns_amplification, ftp_flood, ssh_flood,
-        slowloris_attack, http2_flood, rate_limited_attack
-    )
-except ImportError as e:
-    print(f"Error importing attack modes: {e}")
-    sys.exit(1)
 
 # Initialize colorama for colorized terminal output
 init(autoreset=True)
@@ -691,7 +679,7 @@ async def main(target_url, attack_mode, args):
 
     if args.results:
         print(f"{GREEN}Results saved to {args.results}{RESET}")
-        
+
 if __name__ == "__main__":
     # Handle signals for graceful exit
     signal.signal(signal.SIGINT, signal_handler)
