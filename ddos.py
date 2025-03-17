@@ -128,7 +128,7 @@ Example:
 
 def parse_args():
     """Parse command-line arguments."""
-    parser = argparse.ArgumentParser(description="DDoS Toolkit Coded By LIONBAD")
+    parser = argparse.ArgumentParser(description="DDoS Toolkit Coded By MIDO")
     parser.add_argument("-u", "--url", required=False, help="Target URL or IP address")
     parser.add_argument("-a", "--attack-mode", choices=["http-flood", "slowloris", "udp-flood", "syn-flood", "icmp-flood", "dns-amplification", "ftp-flood", "ssh-flood"], default="http-flood", help="Type of attack to perform")
     parser.add_argument("-s", "--scan", action="store_true", help="Perform a network scan using NetScan lib ")
