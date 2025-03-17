@@ -45,7 +45,7 @@ import shutil           # File operations like copying or cleaning up temporary 
 import scapy.all as scapy  # Crafting and analyzing network packets for attacks.
 import dns.resolver     # Resolving DNS queries for target IP addresses.
 from colorama import init, Fore, Style  # Adding color to terminal output for clarity.
-from tqdm import tqdm  # Progress bar for visual feedback during operations.
+from tqdm import tqdm   # Progress bar for visual feedback during operations.
 import cmd              # Building interactive command-line interfaces.
 
 # Initialize colorama for colorized terminal output
