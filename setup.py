@@ -16,7 +16,7 @@ def display_banner():
     print(f"{BLUE}")
     print("██████████████████████████████████████████████████")
     print("██                                              ██")
-    print("██         DDoS Toolkit Coded by MIDO.          ██")
+    print("██         DDoS Toolkit Coded by MIDØ           ██")
     print("██                Setup Script                  ██")
     print("██       This script sets up the environment    ██")
     print("██           for running the DDoS Toolkit       ██")
@@ -111,7 +111,7 @@ class CustomInstall(install):
         print("████████████████████████████████████████████████████")
         print("██                                                ██")
         print("██               Setup is complete                ██")
-        print("██                 MIDO SALUTES YOU               ██")
+        print("██                 MIDØ SALUTES YOU               ██")
         print("██                                                ██")
         print("████████████████████████████████████████████████████")
         print(f"{RESET}")
@@ -120,8 +120,8 @@ class CustomInstall(install):
 setup(
     name="ddos_toolkit",
     version="2.0",
-    author="LIONMAD",
-    author_email="your_email@example.com",
+    author="MIDØ",
+    author_email="midohajhouj11@gmail.com",
     description="A toolkit designed for simulating various types of Distributed Denial of Service (DDoS) attacks for ethical cybersecurity testing.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
