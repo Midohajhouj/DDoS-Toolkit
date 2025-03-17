@@ -9,7 +9,7 @@
 # Short-Description: System-wide anonymous tunneling under Tor
 # Description:       Redirects all traffic through the Tor network, providing anonymity.
 # Author:
-# + LIONMAD <https://github.com/Midohajhouj>
+# + MIDO <https://github.com/Midohajhouj>
 # License:           MIT License - https://opensource.org/licenses/MIT
 ## END INIT INFO ##
 
