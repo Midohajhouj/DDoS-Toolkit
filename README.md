@@ -28,7 +28,6 @@ DDoS Toolkit is a powerful and customizable tool designed to simulate various ty
 - **Rate-Limited Attacks:** Customize the rate of requests sent to the target.
 - **Proxy Support:** Use proxies to mask your requests and make attacks more efficient.
 - **Custom Payloads:** Generate various types of payloads such as JSON, XML, and Form data.
-- **AI-Powered Suggestions:** Use OpenAI GPT to optimize attack parameters.
 - **Real-time Monitoring:** Track system resource usage and attack progress.
 
 ## Requirements
