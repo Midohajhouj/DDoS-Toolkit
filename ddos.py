@@ -9,7 +9,7 @@
 # Short-Description: DDoS Attack Toolkit
 # Description:       A toolkit designed for simulating various types of Distributed Denial of Service (DDoS) attacks for ethical cybersecurity testing.
 # Author:
-# + LIONMAD <https://github.com/Midohajhouj>
+# + MIDO <https://github.com/Midohajhouj>
 # Version:           v2.0
 # License:           MIT License - https://opensource.org/licenses/MIT
 ### END INIT INFO ###
@@ -95,7 +95,7 @@ def display_banner():
 ██                                                  ██
 ██            DDoS MultiVector Toolkit              ██
 ██   USE WITH CAUTION, PROCEED AT YOUR OWN RISK.    ██                                  
-██              LIONMAD SALUTES YOU                 ██
+██                MIDO SALUTES YOU                  ██
 ██                                                  ██
 ██████████████████████████████████████████████████████
 {RESET}
@@ -103,7 +103,7 @@ def display_banner():
 
 def minimal_help():
     print(f"""
-{YELLOW}DDoS MultiVector Toolkit Coded by LIONMAD
+{YELLOW}DDoS MultiVector Toolkit Coded by MIDO
 {YELLOW}Usage: ddos [options]
 {RESET}
 Options:
