@@ -444,6 +444,9 @@ async def main_async():
     parser.add_argument("-t", "--target", required=True, help="Target IP address or domain name")
     parser.add_argument("-i", "--interactive", action="store_true", help="Run in interactive mode")
     parser.add_argument("-m", "--multiple", nargs="+", help="Scan multiple targets")
+    parser.add_argument("-p", "--ports", nargs="+", type=int, help="Custom ports to scan")
+    parser.add_argument("-s", "--sniff", action="store_true", help="Enable packet sniffing")
+    parser.add_argument("-a", "--analyze", action="store_true", help="Analyze HTTP headers")
     args = parser.parse_args()
 
     if args.interactive:
@@ -493,13 +496,17 @@ async def main_async():
 
     logger.info(f"Scanning target IP: {ip} for vulnerabilities")
 
+    # Run Nmap scan
     run_nmap_scan(ip)
 
+    # Detect firewall
     firewall_detected = detect_firewall(ip)
 
+    # Scan for DDoS vulnerabilities
     scan_results = scan_for_ddos_vulnerabilities(ip)
     http_https_scan = scan_http_https(ip)
 
+    # Print scan report
     logger.info("Scan Report:")
     print_scan_report(scan_results)
 
@@ -517,6 +524,13 @@ async def main_async():
 
     # Save scan results to JSON
     save_scan_results_to_json(scan_results, json_filename)
+
+    # Additional features
+    if args.sniff:
+        sniff_packets(ip, save_pcap=True)
+
+    if args.analyze:
+        analyze_headers(f"http://{ip}")
 
 if __name__ == "__main__":
     asyncio.run(main_async())
