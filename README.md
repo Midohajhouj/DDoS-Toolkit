@@ -155,7 +155,4 @@ Requests Sent: 100 | Successful: 98 | Failed: 2 | RPS: 50.00 | CPU: 45% | Memory
 
 Contributions are welcome! If you have suggestions or improvements, feel free to open an issue or submit a pull request.
 
-## License
-This project is licensed under the MIT License.
-
 **<p align="center"> Coded by <a href="https://github.com/Midohajhouj">MIDØ</a> </p>**
