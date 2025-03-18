@@ -42,7 +42,7 @@ import psutil           # Monitoring and managing system resource usage.
 import scapy.all as scapy  # Crafting and analyzing network packets for attacks.
 import dns.resolver     # Resolving DNS queries for target IP addresses.
 from colorama import init, Fore, Style  # Adding color to terminal output for clarity.
-from tqdm import tqdm  # Progress bar for visual feedback during operations.
+from tqdm import tqdm   # Progress bar for visual feedback during operations.
 import cmd              # Building interactive command-line interfaces.
 import ssl              # Secure Sockets Layer for encryption and secure connections.
 
@@ -566,7 +566,7 @@ def display_status(stop_event: threading.Event, duration: int, results_file=None
                 rps_history.append(rps)
 
                 # Calculate network usage in megabytes
-                network_usage_mb = (psutil.net_io_counters().bytes_sent + psutil.net_io_counters().bytes_recv) / (1024 ** 2)
+                network_usage_mb = (psutil.net_io_counters().bytes_sent + psutil.net_io_counters().bytes_recv) / (1024 ** 2.65)
 
                 stats = {
                     "Time": elapsed,
