@@ -544,15 +544,21 @@ def display_status(stop_event: threading.Event, duration: int, results_file=None
     """Display the status of the load test with colorized output."""
     start_time = time.time()
     results = []
+
     with tqdm(total=duration, desc="Progress") as pbar:
         while not stop_event.is_set():
             elapsed = time.time() - start_time
             if elapsed >= duration:
                 break
+
             with requests_lock:
                 current_time = time.time()
                 rps = requests_sent / max(1, current_time - start_time)
                 rps_history.append(rps)
+
+                # Calculate network usage in kilobytes
+                network_usage_kb = (psutil.net_io_counters().bytes_sent + psutil.net_io_counters().bytes_recv) / 1024
+
                 stats = {
                     "Time": elapsed,
                     "Requests Sent": requests_sent,
@@ -561,13 +567,25 @@ def display_status(stop_event: threading.Event, duration: int, results_file=None
                     "RPS": rps,
                     "CPU Usage": psutil.cpu_percent(),
                     "Memory Usage": psutil.virtual_memory().percent,
-                    "Network Usage": psutil.net_io_counters().bytes_sent + psutil.net_io_counters().bytes_recv,
+                    "Network Usage": network_usage_kb,
                 }
                 results.append(stats)
-                print(f"{GREEN}Requests Sent: {requests_sent} | {GREEN}Successful: {successful_requests} | {RED}Failed: {failed_requests} | {BLUE}RPS: {rps:.2f} | {YELLOW}CPU: {stats['CPU Usage']}% | {YELLOW}Memory: {stats['Memory Usage']}% | {BLUE}Network: {stats['Network Usage']} bytes{RESET}")
+
+                # Print formatted statistics
+                print(
+                    f"{GREEN}Requests Sent: {requests_sent} | "
+                    f"{GREEN}Successful: {successful_requests} | "
+                    f"{RED}Failed: {failed_requests} | "
+                    f"{BLUE}RPS: {rps:.2f} | "
+                    f"{YELLOW}CPU: {stats['CPU Usage']}% | "
+                    f"{YELLOW}Memory: {stats['Memory Usage']}% | "
+                    f"{BLUE}Network: {stats['Network Usage']:.2f} KB{RESET}"
+                )
+
             pbar.update(1)
             time.sleep(1)
 
+    # Save results to a file if specified
     if results_file:
         with open(results_file, "w") as f:
             json.dump(results, f, indent=4)
