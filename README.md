@@ -155,4 +155,4 @@ Requests Sent: 100 | Successful: 98 | Failed: 2 | RPS: 50.00 | CPU: 45% | Memory
 
 Contributions are welcome! If you have suggestions or improvements, feel free to open an issue or submit a pull request.
 
-**<p align="center"> Developed by <a href="https://github.com/Midohajhouj">MIDØ</a> </p>**
+**<p align="center"> Developed by <a href="https://github.com/Midohajhouj">MIDO</a> </p>**
