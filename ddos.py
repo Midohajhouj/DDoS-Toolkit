@@ -540,6 +540,7 @@ def teardrop_attack(target_ip, duration):
     logging.info("Teardrop attack completed.")
 
 
+
 def display_status(stop_event: threading.Event, duration: int, results_file=None):
     """Display the status of the load test with colorized output."""
     start_time = time.time()
@@ -556,8 +557,8 @@ def display_status(stop_event: threading.Event, duration: int, results_file=None
                 rps = requests_sent / max(1, current_time - start_time)
                 rps_history.append(rps)
 
-                # Calculate network usage in kilobytes
-                network_usage_kb = (psutil.net_io_counters().bytes_sent + psutil.net_io_counters().bytes_recv) / 1024
+                # Calculate network usage in megabytes
+                network_usage_mb = (psutil.net_io_counters().bytes_sent + psutil.net_io_counters().bytes_recv) / (1024 ** 2)
 
                 stats = {
                     "Time": elapsed,
@@ -567,7 +568,7 @@ def display_status(stop_event: threading.Event, duration: int, results_file=None
                     "RPS": rps,
                     "CPU Usage": psutil.cpu_percent(),
                     "Memory Usage": psutil.virtual_memory().percent,
-                    "Network Usage": network_usage_kb,
+                    "Network Usage": network_usage_mb,
                 }
                 results.append(stats)
 
@@ -579,7 +580,7 @@ def display_status(stop_event: threading.Event, duration: int, results_file=None
                     f"{BLUE}RPS: {rps:.2f} | "
                     f"{YELLOW}CPU: {stats['CPU Usage']}% | "
                     f"{YELLOW}Memory: {stats['Memory Usage']}% | "
-                    f"{BLUE}Network: {stats['Network Usage']:.2f} KB{RESET}"
+                    f"{BLUE}Network: {stats['Network Usage']:.2f} MB{RESET}"
                 )
 
             pbar.update(1)
@@ -590,7 +591,6 @@ def display_status(stop_event: threading.Event, duration: int, results_file=None
         with open(results_file, "w") as f:
             json.dump(results, f, indent=4)
         logging.info(f"Results saved to {results_file}")
-
 
 def calculate_rps_stats():
     """Calculate RPS statistics."""
