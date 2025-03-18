@@ -16,7 +16,7 @@ def display_banner():
     print(f"{BLUE}")
     print("██████████████████████████████████████████████████")
     print("██                                              ██")
-    print("██         DDoS Toolkit Coded by MIDØ           ██")
+    print("██         DDoS Toolkit Coded by MIDO          ██")
     print("██                Setup Script                  ██")
     print("██       This script sets up the environment    ██")
     print("██           for running the DDoS Toolkit       ██")
