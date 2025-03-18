@@ -49,7 +49,6 @@ import ssl              # Secure Sockets Layer for encryption and secure connect
 # =============================
 #  DDoS Toolkit Main Functions
 # =============================
-
 # Initialize colorama for colorized terminal output
 init(autoreset=True)
 
@@ -548,7 +547,6 @@ def teardrop_attack(target_ip, duration):
     logging.info("Teardrop attack completed.")
 
 
-
 def display_status(stop_event: threading.Event, duration: int, results_file=None):
     """Display the status of the load test with colorized output."""
     start_time = time.time()
@@ -599,6 +597,7 @@ def display_status(stop_event: threading.Event, duration: int, results_file=None
         with open(results_file, "w") as f:
             json.dump(results, f, indent=4)
         logging.info(f"Results saved to {results_file}")
+
 
 def calculate_rps_stats():
     """Calculate RPS statistics."""
