@@ -95,7 +95,7 @@ ModuleNotFoundError: No module named 'aiohttp'
 You can resolve it by running:
 
 ```bash
-pip install aiohttp
+pip install aiohttp --break-system-packages
 ```
 ---
 
