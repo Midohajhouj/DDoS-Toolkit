@@ -14,33 +14,41 @@
 # License:           MIT License - https://opensource.org/licenses/MIT
 ### END INIT INFO ###
 
-import aiohttp
-import asyncio
-import time
-import argparse
-import threading
-import random
-import json
-from itertools import cycle
-from collections import deque
-from uuid import uuid4
-from base64 import b64encode
-import hashlib
-import zlib
-import hmac
-import signal
-import sys
-import os
-import socket
-import logging
-from logging.handlers import RotatingFileHandler
-import psutil
-import scapy.all as scapy
-import dns.resolver
-from colorama import init, Fore, Style
-from tqdm import tqdm
-import cmd
-import ssl
+# =======================================
+#      Libraries Used in the Script
+# =======================================
+
+import aiohttp          # Asynchronous HTTP requests for simulating attacks.
+import asyncio          # Managing asynchronous tasks and event loops.
+import time             # Time-based operations like delays and performance tracking.
+import argparse         # Parsing command-line arguments.
+import threading        # Managing multi-threaded execution of tasks.
+import random           # Randomized data generation for attack patterns.
+import json             # Handling JSON data for configuration or logging.
+from itertools import cycle  # Iterating over proxies or targets repeatedly.
+from collections import deque  # High-performance queues for managing tasks or logs.
+from uuid import uuid4  # Generating unique identifiers for sessions or payloads.
+from base64 import b64encode  # Encoding payloads in Base64 format.
+import hashlib          # Cryptographic hashing for secure data handling.
+import zlib             # Data compression for efficient payload delivery.
+import hmac             # Message authentication using cryptographic hashes.
+import signal           # Handling system signals for clean shutdowns.
+import sys              # System-level operations like exit or argument parsing.
+import os               # Interacting with the file system and environment.
+import socket           # Low-level networking operations.
+import logging          # Recording execution logs and errors.
+from logging.handlers import RotatingFileHandler  # Log rotation for managing large log files.
+import psutil           # Monitoring and managing system resource usage.
+import scapy.all as scapy  # Crafting and analyzing network packets for attacks.
+import dns.resolver     # Resolving DNS queries for target IP addresses.
+from colorama import init, Fore, Style  # Adding color to terminal output for clarity.
+from tqdm import tqdm  # Progress bar for visual feedback during operations.
+import cmd              # Building interactive command-line interfaces.
+import ssl              # Secure Sockets Layer for encryption and secure connections.
+
+# =============================
+#  DDoS Toolkit Main Functions
+# =============================
 
 # Initialize colorama for colorized terminal output
 init(autoreset=True)
