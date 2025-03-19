@@ -53,7 +53,6 @@ from tqdm import tqdm   # Progress bar for visual feedback during operations.
 import cmd              # Building interactive command-line interfaces.
 import ssl              # Secure Sockets Layer for encryption and secure connections.
 
-
 # =============================
 #  DDoS Toolkit Main Functions
 # =============================
@@ -139,6 +138,7 @@ Example:
   ddos -i  # Start interactive mode
 """)
 
+# The `minimal_help` function provides a quick reference for using the DDoS toolkit, including available options and examples.
 
 def parse_args():
     """Parse command-line arguments."""
@@ -161,6 +161,7 @@ def parse_args():
     parser.add_argument("-i", "--interactive", action="store_true", help="Start the interactive CLI")
     return parser.parse_args()
 
+# The `parse_args` function handles command-line argument parsing, allowing users to specify various attack parameters.
 
 def load_proxies(proxy_file: str):
     """Load proxies from a file."""
@@ -174,6 +175,7 @@ def load_proxies(proxy_file: str):
         logging.error(f"Proxy file '{proxy_file}' not found.")
         return []
 
+# The `load_proxies` function reads a list of proxies from a file, which can be used to anonymize the attack.
 
 async def validate_proxies(proxies):
     """Validate proxies."""
@@ -185,6 +187,7 @@ async def validate_proxies(proxies):
     logging.info(f"Validated {len(validated_proxies)} proxies.")
     return validated_proxies
 
+# The `validate_proxies` function checks the validity of proxies by attempting to connect to a test URL.
 
 async def check_proxy(session, proxy: str):
     """Check if a proxy is valid."""
@@ -195,6 +198,7 @@ async def check_proxy(session, proxy: str):
         logging.error(f"Proxy validation error: {e}")
         return False
 
+# The `check_proxy` function tests a single proxy by making a request to a known endpoint.
 
 async def monitor_proxy_health(proxies):
     """Continuously monitor the health of proxies."""
@@ -208,6 +212,7 @@ async def monitor_proxy_health(proxies):
                     logging.info(f"Removed unhealthy proxy: {proxy}")
         await asyncio.sleep(60)  # Check every 60 seconds
 
+# The `monitor_proxy_health` function continuously checks the health of proxies and removes any that become unresponsive.
 
 async def check_proxy_health(session, proxy: str):
     """Check the health of a proxy."""
@@ -218,6 +223,7 @@ async def check_proxy_health(session, proxy: str):
         logging.error(f"Proxy health check error: {e}")
         return False
 
+# The `check_proxy_health` function is used by `monitor_proxy_health` to check the status of a single proxy.
 
 def generate_payload(payload_type: str):
     """Generate a payload for HTTP requests."""
@@ -244,6 +250,7 @@ def generate_payload(payload_type: str):
     else:
         return None
 
+# The `generate_payload` function creates a payload for HTTP requests, which can be signed and compressed for security and efficiency.
 
 async def resolve_target(target_url: str):
     """Resolve the target URL to an IP address."""
@@ -261,6 +268,7 @@ async def resolve_target(target_url: str):
         logging.error(f"Failed to resolve domain: {e}")
         return None
 
+# The `resolve_target` function converts a domain name to an IP address using DNS resolution.
 
 def is_valid_ip(ip: str):
     """Check if the given string is a valid IP address."""
@@ -270,6 +278,7 @@ def is_valid_ip(ip: str):
     except socket.error:
         return False
 
+# The `is_valid_ip` function checks if a string is a valid IPv4 address.
 
 async def rate_limited_attack(target_url, stop_event, pause_time, rate_limit, proxies=None, headers=None, payload_type="json", retry=3):
     """Perform an HTTP flood attack with improved concurrency and payload variation."""
@@ -312,6 +321,7 @@ async def rate_limited_attack(target_url, stop_event, pause_time, rate_limit, pr
                         await asyncio.sleep(2 ** attempt)  # Exponential backoff
                 await asyncio.sleep(pause_time)
 
+# The `rate_limited_attack` function performs an HTTP flood attack with rate limiting and retry logic.
 
 async def slowloris_attack(target_url, stop_event, pause_time, rate_limit, proxies=None, headers=None, retry=3):
     """Perform a Slowloris attack with improved connection persistence and dynamic headers."""
@@ -349,6 +359,7 @@ async def slowloris_attack(target_url, stop_event, pause_time, rate_limit, proxi
                         logging.error(f"Unexpected error during request (attempt {attempt + 1}): {e}")
                 await asyncio.sleep(pause_time)
 
+# The `slowloris_attack` function performs a Slowloris attack, which keeps many connections open to exhaust server resources.
 
 def syn_flood(target_ip, target_port, duration):
     """Perform a SYN flood attack with enhanced packet crafting and rate control."""
@@ -366,6 +377,7 @@ def syn_flood(target_ip, target_port, duration):
         time.sleep(0.01)  # Adjust the sleep time to control the attack rate
     logging.info("SYN flood attack completed.")
 
+# The `syn_flood` function performs a SYN flood attack by sending a large number of SYN packets to a target.
 
 def icmp_flood(target_ip, duration):
     """Perform an ICMP flood attack with enhanced packet variation and rate control."""
@@ -381,6 +393,7 @@ def icmp_flood(target_ip, duration):
         time.sleep(0.01)  # Adjust the sleep time to control the attack rate
     logging.info("ICMP flood attack completed.")
 
+# The `icmp_flood` function performs an ICMP flood attack by sending a large number of ICMP packets to a target.
 
 async def dns_amplification(target_ip, duration):
     """Perform a DNS amplification attack with enhanced query variation and rate control."""
@@ -398,6 +411,7 @@ async def dns_amplification(target_ip, duration):
         time.sleep(0.01)  # Adjust the sleep time to control the attack rate
     logging.info("DNS amplification attack completed.")
 
+# The `dns_amplification` function performs a DNS amplification attack by sending DNS queries to a target.
 
 def ftp_flood(target_ip, target_port, duration):
     """Perform an FTP flood attack with improved connection management and payload variation."""
@@ -416,6 +430,7 @@ def ftp_flood(target_ip, target_port, duration):
         time.sleep(0.01)  # Adjust the sleep time to control the attack rate
     logging.info("FTP flood attack completed.")
 
+# The `ftp_flood` function performs an FTP flood attack by sending random data to an FTP server.
 
 def ssh_flood(target_ip, target_port, duration):
     """Perform an SSH flood attack with improved connection management and payload variation."""
@@ -434,6 +449,7 @@ def ssh_flood(target_ip, target_port, duration):
         time.sleep(0.01)  # Adjust the sleep time to control the attack rate
     logging.info("SSH flood attack completed.")
 
+# The `ssh_flood` function performs an SSH flood attack by sending random data to an SSH server.
 
 async def ssl_flood(target_ip, target_port, duration):
     """Perform an SSL/TLS flood attack by exhausting server resources with handshakes."""
@@ -454,6 +470,7 @@ async def ssl_flood(target_ip, target_port, duration):
         time.sleep(0.01)  # Adjust the sleep time to control the attack rate
     logging.info("SSL/TLS flood attack completed.")
 
+# The `ssl_flood` function performs an SSL/TLS flood attack by initiating many SSL/TLS handshakes.
 
 async def http2_flood(target_url, stop_event, pause_time, rate_limit, proxies=None, headers=None, payload_type="json", retry=3):
     """Perform an HTTP/2 flood attack with enhanced features and rate limiting."""
@@ -494,6 +511,7 @@ async def http2_flood(target_url, stop_event, pause_time, rate_limit, proxies=No
                         logging.error(f"Unexpected error during request (attempt {attempt + 1}): {e}")
                 await asyncio.sleep(pause_time)
 
+# The `http2_flood` function performs an HTTP/2 flood attack by sending many HTTP/2 requests to a target.
 
 def ntp_amplification(target_ip, duration):
     """Perform an NTP amplification attack."""
@@ -509,6 +527,7 @@ def ntp_amplification(target_ip, duration):
         time.sleep(0.01)  # Adjust the sleep time to control the attack rate
     logging.info("NTP amplification attack completed.")
 
+# The `ntp_amplification` function performs an NTP amplification attack by sending NTP requests to a target.
 
 def memcached_amplification(target_ip, duration):
     """Perform a Memcached amplification attack."""
@@ -524,6 +543,7 @@ def memcached_amplification(target_ip, duration):
         time.sleep(0.01)  # Adjust the sleep time to control the attack rate
     logging.info("Memcached amplification attack completed.")
 
+# The `memcached_amplification` function performs a Memcached amplification attack by sending requests to a Memcached server.
 
 def smurf_attack(target_ip, duration):
     """Perform a Smurf attack."""
@@ -539,6 +559,7 @@ def smurf_attack(target_ip, duration):
         time.sleep(0.01)  # Adjust the sleep time to control the attack rate
     logging.info("Smurf attack completed.")
 
+# The `smurf_attack` function performs a Smurf attack by sending ICMP packets with a spoofed source IP.
 
 def teardrop_attack(target_ip, duration):
     """Perform a Teardrop attack."""
@@ -556,6 +577,7 @@ def teardrop_attack(target_ip, duration):
         time.sleep(0.01)  # Adjust the sleep time to control the attack rate
     logging.info("Teardrop attack completed.")
 
+# The `teardrop_attack` function performs a Teardrop attack by sending fragmented packets to a target.
 
 def display_status(stop_event: threading.Event, duration: int, results_file=None):
     """Display the status of the load test with colorized output."""
@@ -608,6 +630,7 @@ def display_status(stop_event: threading.Event, duration: int, results_file=None
             json.dump(results, f, indent=4)
         logging.info(f"Results saved to {results_file}")
 
+# The `display_status` function provides real-time statistics on the attack, including requests sent, success/failure rates, and resource usage.
 
 def calculate_rps_stats():
     """Calculate RPS statistics."""
@@ -619,6 +642,7 @@ def calculate_rps_stats():
         "avg": sum(rps_history) / len(rps_history),
     }
 
+# The `calculate_rps_stats` function calculates the minimum, maximum, and average requests per second (RPS) during the attack.
 
 def signal_handler(sig, frame):
     """Handle interrupt signals."""
@@ -627,6 +651,7 @@ def signal_handler(sig, frame):
     stop_event.set()  # Signal all threads to stop
     sys.exit(0)
 
+# The `signal_handler` function allows for a graceful exit when the user interrupts the script.
 
 class DDoSToolkitCLI(cmd.Cmd):
     """Interactive CLI for the DDoS Toolkit."""
@@ -664,6 +689,7 @@ class DDoSToolkitCLI(cmd.Cmd):
         logging.info(f"{GREEN}Exiting DDoS Toolkit CLI.{RESET}")
         return True
 
+# The `DDoSToolkitCLI` class provides an interactive command-line interface for the DDoS toolkit.
 
 async def main(target_url, attack_mode, args):
     """Main function to run the load test."""
@@ -749,6 +775,7 @@ async def main(target_url, attack_mode, args):
     if args.results:
         logging.info(f"{GREEN}Results saved to {args.results}{RESET}")
 
+# The `main` function orchestrates the attack based on the specified parameters and attack mode.
 
 if __name__ == "__main__":
     # Handle signals for graceful exit
@@ -770,3 +797,5 @@ if __name__ == "__main__":
     else:
         # Otherwise, run the attack directly
         asyncio.run(main(args.url, args.attack_mode, args))
+
+# The script entry point handles argument parsing, signal handling, and starts the attack or interactive CLI.
