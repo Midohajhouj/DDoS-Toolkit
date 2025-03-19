@@ -10,14 +10,21 @@
 # Description:       A toolkit designed for simulating various types of Distributed Denial of Service (DDoS) attacks for ethical cybersecurity testing.
 # Author:
 # + MIDO <https://github.com/Midohajhouj>
-# Version:           v.1.0
 # License:           MIT License - https://opensource.org/licenses/MIT
+# Version:           v1.0.0
+# Changelog:         Initial release. Added support for multiple attack types and configurable attack parameters.
+# Bug-Report:        https://github.com/Midohajhouj/ddos_toolkit/issues
+# History:           v1.0.0 - Initial release with support for all DDoS attack types.
+# Depends:           python3, aiohttp, scapy, psutil, tqdm, colorama, dns.resolver
+# Conflicts:         None
+# Enhancements:      Added multi-threading, proxy support, rate limiting, and logging, scanner, anonymizer .
+# Packaging:         Available for manual installation via GitHub.
+# Website:           https://ddostoolkit.vercel.app/
 ### END INIT INFO ###
 
 # =======================================
 #      Libraries Used in the Script
 # =======================================
-
 import aiohttp          # Asynchronous HTTP requests for simulating attacks.
 import asyncio          # Managing asynchronous tasks and event loops.
 import time             # Time-based operations like delays and performance tracking.
@@ -45,6 +52,7 @@ from colorama import init, Fore, Style  # Adding color to terminal output for cl
 from tqdm import tqdm   # Progress bar for visual feedback during operations.
 import cmd              # Building interactive command-line interfaces.
 import ssl              # Secure Sockets Layer for encryption and secure connections.
+
 
 # =============================
 #  DDoS Toolkit Main Functions
