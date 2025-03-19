@@ -93,16 +93,16 @@ logging.basicConfig(
 def display_banner():
     print(f"""
 {BLUE}
-██████████████████████████████████████████████████████
-██                                                  ██
-██            DDoS MultiVector Toolkit              ██
-██   USE WITH CAUTION, PROCEED AT YOUR OWN RISK.    ██                                  
-██                MIDO SALUTES YOU                  ██
-██                                                  ██
-██████████████████████████████████████████████████████
+████████████████████████████████████████████████
+▗▄▖ ▗▄▖  ▄▄  ▄▄     ▄▄▄▖ ▄▄  ▄▄ ▗   ▗  ▖▗▄▄ ▄▄▄▖
+▐ ▝▖▐ ▝▖▗▘▝▖▐▘ ▘     ▐  ▗▘▝▖▗▘▝▖▐   ▐ ▞  ▐   ▐  
+▐  ▌▐  ▌▐  ▌▝▙▄      ▐  ▐  ▌▐  ▌▐   ▐▟   ▐   ▐  
+▐  ▌▐  ▌▐  ▌  ▝▌     ▐  ▐  ▌▐  ▌▐   ▐ ▙  ▐   ▐  
+▐▄▞ ▐▄▞  ▙▟ ▝▄▟▘     ▐   ▙▟  ▙▟ ▐▄▄▖▐ ▝▖▗▟▄  ▐  
+USE THE TOOL  AT YOUR OWN RISK  MIDO SALUTES YOU 
+████████████████████████████████████████████████
 {RESET}
 """)
-
 
 def minimal_help():
     print(f"""
