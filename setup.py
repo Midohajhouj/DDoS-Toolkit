@@ -43,6 +43,31 @@ def install_system_dependencies():
         print(f"{RED}[ERROR]{RESET} Failed to install system packages: {e}")
         sys.exit(1)
 
+# Install required Python packages in the background and log output
+echo -e "${GREEN}[INFO]${NC} Installing required Python packages (output logged to ${PIP_LOG})..."
+
+# Run each pip command in the background and append output to the log file
+pip install --break-system-packages aiohttp==3.8.1 >> "$PIP_LOG" 2>&1 &
+pip install --break-system-packages asyncio==3.4.3 >> "$PIP_LOG" 2>&1 &
+pip install --break-system-packages dnspython==2.1.0 >> "$PIP_LOG" 2>&1 &
+pip install --break-system-packages openai==0.27.0 >> "$PIP_LOG" 2>&1 &
+pip install --break-system-packages psutil==5.8.0 >> "$PIP_LOG" 2>&1 &
+pip install --break-system-packages requests==2.28.2 >> "$PIP_LOG" 2>&1 &
+pip install --break-system-packages scapy==2.4.5 >> "$PIP_LOG" 2>&1 &
+pip install --break-system-packages tabulate==0.9.0 >> "$PIP_LOG" 2>&1 &
+pip install --break-system-packages tqdm==4.64.1 >> "$PIP_LOG" 2>&1 &
+pip install --break-system-packages colorama >> "$PIP_LOG" 2>&1 &
+pip install --break-system-packages threading >> "$PIP_LOG" 2>&1 &
+pip install --break-system-packages itertools >> "$PIP_LOG" 2>&1 &
+pip install --break-system-packages collections >> "$PIP_LOG" 2>&1 &
+pip install --break-system-packages ssl >> "$PIP_LOG" 2>&1 &
+pip install --break-system-packages cmd >> "$PIP_LOG" 2>&1 &
+pip install --break-system-packages argparse >> "$PIP_LOG" 2>&1 &
+
+# Wait for all background pip processes to finish
+wait
+
+
 def create_symlink():
     """Create a symlink for easy access to the DDoS Toolkit."""
     print(f"{YELLOW}[*]{RESET} Creating symlink for easy access...")
