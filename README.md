@@ -80,6 +80,11 @@ and
 sudo python3 setup.py install
 ```
 
+### 3. Install dependencies:
+```bash
+dpkg -i ddos-toolkit.deb
+```
+
 If you encounter an error related to missing modules or dependencies, you can install each one individually. For example:
 
 ```bash
