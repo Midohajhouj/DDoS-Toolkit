@@ -1,0 +1,9 @@
+Package: DDoS-Toolkit
+Version: 1.0
+Section: net
+Priority: optional
+Architecture: all
+Maintainer: MIDO <midohajhouj11@gmail.com>
+Description: A toolkit designed for simulating various types of Distributed Denial of Service (DDoS) attacks for ethical cybersecurity testing.
+Homepage: https://github.com/Midohajhouj/DDoS-Toolkit
+Depends: python3, python3-pip, python3-venv, libssl-dev, libffi-dev, build-essential

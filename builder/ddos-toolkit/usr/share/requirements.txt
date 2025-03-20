@@ -1,0 +1,12 @@
+colorama
+argparse
+threading 
+asyncio
+dnspython
+cloudscraper
+hashlib 
+aiohttp
+openai 
+scapy 
+tqdm 
+psutil
