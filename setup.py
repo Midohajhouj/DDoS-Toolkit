@@ -1,6 +1,7 @@
 import os
 import sys
 import subprocess
+import logging
 from setuptools import setup, find_packages
 from setuptools.command.install import install
 
@@ -11,12 +12,16 @@ BLUE = "\033[1;34m"
 RED = "\033[1;31m"
 RESET = "\033[0m"  # Reset color
 
+# Logging configuration
+PIP_LOG = "pip_install.log"
+logging.basicConfig(filename=PIP_LOG, level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
 def display_banner():
     """Display a stylish banner."""
     print(f"{BLUE}")
     print("██████████████████████████████████████████████████")
     print("██                                              ██")
-    print("██         DDoS Toolkit Coded by MIDO          ██")
+    print("██         DDoS Toolkit Coded by MIDO           ██")
     print("██                Setup Script                  ██")
     print("██       This script sets up the environment    ██")
     print("██           for running the DDoS Toolkit       ██")
@@ -43,30 +48,35 @@ def install_system_dependencies():
         print(f"{RED}[ERROR]{RESET} Failed to install system packages: {e}")
         sys.exit(1)
 
-# Install required Python packages in the background and log output
-echo -e "${GREEN}[INFO]${NC} Installing required Python packages (output logged to ${PIP_LOG})..."
+def install_python_packages():
+    """Install required Python packages and log the output."""
+    print(f"{GREEN}[INFO]{RESET} Installing required Python packages (output logged to {PIP_LOG})...")
+    packages = [
+        "aiohttp==3.8.1",
+        "asyncio==3.4.3",
+        "dnspython==2.1.0",
+        "openai==0.27.0",
+        "psutil==5.8.0",
+        "requests==2.28.2",
+        "scapy==2.4.5",
+        "tabulate==0.9.0",
+        "tqdm==4.64.1",
+        "colorama",
+    ]
 
-# Run each pip command in the background and append output to the log file
-pip install --break-system-packages aiohttp==3.8.1 >> "$PIP_LOG" 2>&1 &
-pip install --break-system-packages asyncio==3.4.3 >> "$PIP_LOG" 2>&1 &
-pip install --break-system-packages dnspython==2.1.0 >> "$PIP_LOG" 2>&1 &
-pip install --break-system-packages openai==0.27.0 >> "$PIP_LOG" 2>&1 &
-pip install --break-system-packages psutil==5.8.0 >> "$PIP_LOG" 2>&1 &
-pip install --break-system-packages requests==2.28.2 >> "$PIP_LOG" 2>&1 &
-pip install --break-system-packages scapy==2.4.5 >> "$PIP_LOG" 2>&1 &
-pip install --break-system-packages tabulate==0.9.0 >> "$PIP_LOG" 2>&1 &
-pip install --break-system-packages tqdm==4.64.1 >> "$PIP_LOG" 2>&1 &
-pip install --break-system-packages colorama >> "$PIP_LOG" 2>&1 &
-pip install --break-system-packages threading >> "$PIP_LOG" 2>&1 &
-pip install --break-system-packages itertools >> "$PIP_LOG" 2>&1 &
-pip install --break-system-packages collections >> "$PIP_LOG" 2>&1 &
-pip install --break-system-packages ssl >> "$PIP_LOG" 2>&1 &
-pip install --break-system-packages cmd >> "$PIP_LOG" 2>&1 &
-pip install --break-system-packages argparse >> "$PIP_LOG" 2>&1 &
-
-# Wait for all background pip processes to finish
-wait
-
+    for package in packages:
+        try:
+            subprocess.run(
+                ["pip", "install", "--break-system-packages", package],
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            logging.info(f"Successfully installed {package}")
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Failed to install {package}: {e.stderr.decode()}")
+            print(f"{RED}[ERROR]{RESET} Failed to install {package}. Check {PIP_LOG} for details.")
+            sys.exit(1)
 
 def create_symlink():
     """Create a symlink for easy access to the DDoS Toolkit."""
@@ -116,13 +126,8 @@ class CustomInstall(install):
         # Install system dependencies
         install_system_dependencies()
 
-        # Install Python packages using setuptools
-        print(f"{GREEN}[INFO]{RESET} Installing required Python packages...")
-        try:
-            install.run(self)
-        except Exception as e:
-            print(f"{RED}[ERROR]{RESET} Failed to install Python packages: {e}")
-            sys.exit(1)
+        # Install Python packages
+        install_python_packages()
 
         # Create a symlink for easy access
         create_symlink()
@@ -144,7 +149,7 @@ class CustomInstall(install):
 # Define the setup configuration
 setup(
     name="ddos_toolkit",
-    version="2.0",
+    version="1.0",
     author="MIDØ",
     author_email="midohajhouj11@gmail.com",
     description="A toolkit designed for simulating various types of Distributed Denial of Service (DDoS) attacks for ethical cybersecurity testing.",
@@ -156,9 +161,13 @@ setup(
         "aiohttp==3.8.1",
         "asyncio==3.4.3",
         "dnspython==2.1.0",
+        "openai==0.27.0",
         "psutil==5.8.0",
+        "requests==2.28.2",
         "scapy==2.4.5",
+        "tabulate==0.9.0",
         "tqdm==4.64.1",
+        "colorama",
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
