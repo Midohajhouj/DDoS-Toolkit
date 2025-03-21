@@ -80,7 +80,13 @@ and
 sudo python3 setup.py install
 ```
 
-### 3. Install dependencies:
+### 3. Build Debian PKG:
+```bash
+cd build
+```
+```bash
+chmod +x builder.sh
+```
 ```bash
 dpkg -i ddos-toolkit.deb
 ```
