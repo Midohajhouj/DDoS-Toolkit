@@ -38,7 +38,7 @@
 
 ## Requirements
 
-This tool's configuration have file paths specifically  for /opt/DDoS-Toolkit/. several key functionalities will not work properly unless the tool directory is located in the /opt directory. 
+This tool's configuration includes file paths specifically set for /opt/DDoS-Toolkit/. Several key functionalities will not work properly unless the tool's directory is located in the /opt directory.
 
 ### Python Libraries
 - aiohttp
