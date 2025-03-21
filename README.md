@@ -82,7 +82,8 @@ and
 sudo python3 setup.py install
 ```
 
-### 3. Build Debian PKG(if u have a Debian distro u can automase the below with this command):
+### 3. Build Debian PKG
+If u have a Debian distro u can automase the below with this command:
 ```bash
 cd build
 ```
