@@ -25,10 +25,7 @@ def check_library(lib_name):
         print(f"{lib_name} is not installed.")
         print(f"Install it using: pip install {lib_name} --break-system-packages")
         sys.exit(1)
-
-# ================== Standard Libraries ===================
-# No checks needed for standard libraries.
-
+        
 # ================== Third-Party Libraries ==================
 # Check for third-party libraries.
 required_libraries = [
