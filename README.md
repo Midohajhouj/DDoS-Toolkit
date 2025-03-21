@@ -88,6 +88,9 @@ cd build
 chmod +x builder.sh
 ```
 ```bash
+sudo ./builder.sh
+```
+```bash
 dpkg -i ddos-toolkit.deb
 ```
 
