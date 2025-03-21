@@ -12,39 +12,60 @@
 # + LIONMAD <https://github.com/Midohajhouj>
 # Version:           v.1.0
 # License:           MIT License - https://opensource.org/licenses/MIT
-### END INIT INFO ###
+## END INIT INFO ##
 
-# ================== Standard Libraries ===================
-import aiohttp  # Asynchronous HTTP requests for attack simulation.
-import asyncio  # Event loop for handling async tasks.
-import time  # Timing functions for attack intervals.
-import argparse  # Parsing command-line arguments.
-import threading  # Multithreading for concurrent attacks.
-from concurrent.futures import ThreadPoolExecutor, as_completed  # Managing parallel tasks.
-import random  # Randomization for payloads and attack patterns.
-import json  # Handling JSON configuration and outputs.
-from itertools import cycle  # Cycling iterators for proxy rotation.
-from collections import deque  # Efficient data handling for queues.
-from uuid import uuid4  # Unique identifiers for attack instances.
-from base64 import b64encode  # Encoding payloads for attacks.
-import hashlib  # Generating checksums for data integrity.
-import zlib  # Compressing data for payload optimization.
-import hmac  # Creating secure message digests.
-import signal  # Managing process signals (e.g., interruptions).
-import sys  # System-level functions (e.g., exiting on error).
-import os  # Operating system-level operations.
-import subprocess  # Running external commands/tools.
-import socket  # Creating and managing socket connections.
-import struct  # Handling low-level data structures.
-import logging  # Logging attack progress and errors.
-import psutil  # Monitoring system resource usage.
-import shutil  # File operations (copy, move, execute, etc.)
+import sys # Install module with pip sys --break-system-packages
+import importlib # Install module with pip importlib --break-system-packages
 
+def check_library(lib_name):
+    """Checks if a library is installed and prompts to install it if not."""
+    try:
+        importlib.import_module(lib_name)
+    except ImportError:
+        print(f"{lib_name} is not installed.")
+        print(f"Install it using: pip install {lib_name} --break-system-packages")
+        sys.exit(1)
+        
 # ================== Third-Party Libraries ==================
-import scapy.all as scapy  # Crafting and analyzing packets.
-import dns.resolver  # Resolving DNS queries for amplification.
-from colorama import init, Fore, Style  # Adding color to console outputs.
-from tqdm import tqdm  # Displaying progress bars during attacks.
+# Check for third-party libraries.
+required_libraries = [
+    "aiohttp", "asyncio", "argparse", "scapy.all", "dns.resolver",
+    "colorama", "tqdm"
+]
+
+for lib in required_libraries:
+    # Handle libraries with dot notation like 'scapy.all'
+    check_library(lib.split(".")[0])
+
+# Libraries are now guaranteed to be installed. Import them.
+import aiohttp  # Install module with pip aiohttp --break-system-packages
+import asyncio  # Install module with pip asyncio --break-system-packages
+import time  # Install module with pip time --break-system-packages
+import argparse  # Install module with pip argparse --break-system-packages
+import threading  # Install module with pip threading --break-system-packages
+from concurrent.futures import ThreadPoolExecutor, as_completed  # Install module with pip concurrent.futures --break-system-packages
+import random  # Install module with pip random --break-system-packages
+import json  # Install module with pip json --break-system-packages
+from itertools import cycle  # Install module with pip itertools --break-system-packages
+from collections import deque  # Install module with pip collections --break-system-packages
+from uuid import uuid4  # Install module with pip uuid --break-system-packages
+from base64 import b64encode  # Install module with pip base64 --break-system-packages
+import hashlib  # Install module with pip hashlib --break-system-packages
+import zlib  # Install module with pip zlib --break-system-packages
+import hmac  # Install module with pip hmac --break-system-packages
+import signal  # Install module with pip signal --break-system-packages
+import sys  # Install module with pip sys --break-system-packages
+import os  # Install module with pip os --break-system-packages
+import subprocess  # Install module with pip subprocess --break-system-packages
+import socket  # Install module with pip socket --break-system-packages
+import struct  # Install module with pip struct --break-system-packages
+import logging  # Install module with pip logging --break-system-packages
+import psutil  # Install module with pip psutil --break-system-packages
+import shutil  # Install module with pip shutil --break-system-packages
+import scapy.all as scapy  # Install module with pip scapy --break-system-packages
+import dns.resolver  # Install module with pip dnspython --break-system-packages
+from colorama import init, Fore, Style  # Install module with pip colorama --break-system-packages
+from tqdm import tqdm  # Install module with pip tqdm --break-system-packages
 
 # Initialize colorama for colorized terminal output
 init(autoreset=True)
