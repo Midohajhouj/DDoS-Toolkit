@@ -14,8 +14,8 @@
 # License:           MIT License - https://opensource.org/licenses/MIT
 ## END INIT INFO ##
 
-import sys
-import importlib
+import sys # Install module with pip sys --break-system-packages
+import importlib # Install module with pip importlib --break-system-packages
 
 def check_library(lib_name):
     """Checks if a library is installed and prompts to install it if not."""
@@ -66,8 +66,6 @@ import scapy.all as scapy  # Install module with pip scapy --break-system-packag
 import dns.resolver  # Install module with pip dnspython --break-system-packages
 from colorama import init, Fore, Style  # Install module with pip colorama --break-system-packages
 from tqdm import tqdm  # Install module with pip tqdm --break-system-packages
-
-# Rest of your script logic goes here.
 
 # Initialize colorama for colorized terminal output
 init(autoreset=True)
