@@ -79,7 +79,7 @@ pip install -r requirements.txt --break-system-packages
 ```
 and
 ```bash
-sudo python3 setup.py install
+sudo ./setup.py install
 ```
 
 ### 3. Build Debian PKG
