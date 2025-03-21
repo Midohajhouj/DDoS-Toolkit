@@ -38,6 +38,8 @@
 
 ## Requirements
 
+This tool's configuration have file paths specifically  for /opt/DDoS-Toolkit/. several key functionalities will not work properly unless the tool directory is located in the /opt directory. 
+
 ### Python Libraries
 - aiohttp
 - asyncio
@@ -80,7 +82,7 @@ and
 sudo python3 setup.py install
 ```
 
-### 3. Build Debian PKG:
+### 3. Build Debian PKG(if u have a Debian distro u can automase the below with this command):
 ```bash
 cd build
 ```
