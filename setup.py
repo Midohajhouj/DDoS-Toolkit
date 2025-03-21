@@ -1,3 +1,18 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+### BEGIN INIT INFO
+# Provides:          ddos_toolkit_installer
+# Required-Start:    $network $remote_fs
+# Required-Stop:     $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: DDoS Attack Toolkit
+# Description:       A toolkit designed for simulating various types of Distributed Denial of Service (DDoS) attacks for ethical cybersecurity testing.
+# Author:
+# + LIONMAD <https://github.com/Midohajhouj>
+# License:           MIT License - https://opensource.org/licenses/MIT
+## END INIT INFO #
+
 import os
 import sys
 import subprocess
