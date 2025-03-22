@@ -81,7 +81,7 @@ sudo ./setup install
 ### 3. Build Debian PKG
 If u have a Debian distro u can automase the below with this command:
 ```bash
-cd build
+cd builder
 ```
 ```bash
 chmod +x builder.sh
