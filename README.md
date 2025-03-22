@@ -18,7 +18,7 @@
 
 > 🚨 **Note:** The author is not responsible for any misuse of this tool.Use at your own risk.
 
-This tool's configuration includes file paths specifically set for /opt/DDoS-Toolkit/. Several key functionalities will not work properly unless the tool's directory is located in the /opt directory.
+> This tool's configuration includes file paths specifically set for /opt/DDoS-Toolkit/. Several key functionalities will not work properly unless the tool's directory is located in the /opt directory.
 
 ---
 
