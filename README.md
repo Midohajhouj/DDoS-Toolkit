@@ -85,6 +85,8 @@ cd builder
 ```
 ```bash
 chmod +x builder.sh
+chmod +x /ddos-toolkit/DEBIAN/postinst
+
 ```
 ```bash
 sudo ./builder.sh
