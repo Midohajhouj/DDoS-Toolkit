@@ -75,7 +75,7 @@ sudo chmod +x *
 
 ### 2. Install dependencies:
 ```bash
-sudo ./setup.py install
+sudo ./setup install
 ```
 
 ### 3. Build Debian PKG
