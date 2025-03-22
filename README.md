@@ -75,10 +75,6 @@ sudo chmod +x *
 
 ### 2. Install dependencies:
 ```bash
-pip install -r requirements.txt --break-system-packages
-```
-and
-```bash
 sudo ./setup.py install
 ```
 
