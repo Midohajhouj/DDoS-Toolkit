@@ -9,7 +9,7 @@
 # Short-Description: DDoS Attack Toolkit
 # Description:       A toolkit designed for simulating various types of Distributed Denial of Service (DDoS) attacks for ethical cybersecurity testing.
 # Author:
-# + LIONMAD <https://github.com/Midohajhouj>
+# ++ LIONMAD <https://github.com/Midohajhouj>
 # Version:           v.1.0
 # License:           MIT License - https://opensource.org/licenses/MIT
 ### END INIT INFO ###
