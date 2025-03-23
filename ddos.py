@@ -66,7 +66,7 @@ import scapy.all as scapy  # Install module with pip scapy --break-system-packag
 import dns.resolver  # Install module with pip dnspython --break-system-packages
 from colorama import init, Fore, Style  # Install module with pip colorama --break-system-packages
 from tqdm import tqdm  # Install module with pip tqdm --break-system-packages
-from typing import Optional
+from typing import Optional # Install module with pip typing --break-system-packages
 
 # Initialize colorama for colorized terminal output
 init(autoreset=True)
