@@ -6,11 +6,10 @@
 # Required-Stop:     $remote_fs
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: WiFi Deauthentication Toolkit
+# Short-Description: WiFi Deauthentication
 # Description:       A toolkit designed for WiFi network scanning and deauthentication attacks for ethical cybersecurity testing.
 # Author:
 # ++ LIONMAD <https://github.com/Midohajhouj>
-# Version:           v.1.0
 # License:           MIT License - https://opensource.org/licenses/MIT
 #### END INIT INFO ####
 
