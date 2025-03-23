@@ -5,6 +5,7 @@ chmod +x /usr/local/bin/ddos-install
 mkdir opt/DDoS-Toolkit/
 mkdir opt/DDoS-Toolkit/assets/
 mv /usr/local/bin/netscan opt/DDoS-Toolkit/assets/
+mv /usr/local/bin/wifideauth opt/DDoS-Toolkit/assets/
 mv /usr/local/bin/anonymizer opt/DDoS-Toolkit/assets/
 mv /usr/share/README.md opt/DDoS-Toolkit/
 mv /usr/share/logs opt/DDoS-Toolkit/
