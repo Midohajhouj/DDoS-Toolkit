@@ -59,8 +59,6 @@ cd /opt/DDoS-Toolkit
 ```bash
 sudo chmod +x *
 ```
-
-### **Install Dependencies**
 ```bash
 sudo ./setup install
 ```
