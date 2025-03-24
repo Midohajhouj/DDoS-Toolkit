@@ -10,7 +10,7 @@
 </p>
 
 **DDoS Toolkit is a powerful and customizable tool designed for ethical cybersecurity testing and research. It enables users to simulate a wide range of Distributed Denial of Service (DDoS) attacks and includes additional modules for network scanning, anonymization, and Wi-Fi deauthentication.**                                                                                               
-**This tool is designed to work on Kali Linux or any other distribution with a full Python 3 library support.**
+**This tool is designed to work on Kali Linux or any other distribution with a full Python3 library support.**
 
 > 🚨 **Note: The author is not responsible for any misuse of this tool. Use it responsibly for educational and testing purposes.**
 
@@ -44,7 +44,9 @@
 
 **System Requirements**:  
 - Python 3.x  
-- Internet access for proxy validation and AI suggestions  
+- Internet access.
+- A distro with full Python 3 library support (Debian-based distro recommended)
+- A minimum of an i3 processor and 4 GB of RAM for opening multiple windows and handling multiple threads.
 
 --- 
 
