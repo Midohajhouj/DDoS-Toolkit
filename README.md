@@ -159,7 +159,7 @@ A script to ensure complete anonymity during attacks by routing traffic through 
 
 #### Usage:
 ```bash
-ddos anonymizer start
+ddos --anonymizer start
 ```
 
 ---
