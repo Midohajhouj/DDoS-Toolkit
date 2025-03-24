@@ -46,7 +46,7 @@
 - Python 3.x  
 - Internet access.
 - A distro with full Python 3 library support (Debian-based Distro recommended)
-- Few basic pentesting tools like `Nmap`, `Aircrak-ng`, `Tor'. (optional for extensions modules, the tool main foncunality will work with out them.)
+- Few basic pentesting tools like `Nmap`, `Aircrak-ng`, `Tor`. (optional for extensions modules, the tool main foncunality will work with out them.)
 - A minimum of an i3 processor and 4 GB of RAM.
 
 --- 
