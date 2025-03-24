@@ -71,11 +71,19 @@ sudo ./builder.sh
 sudo dpkg -i ddos-toolkit.deb
 ```
 
-Resolve missing modules by manually installing them:
+If you encounter an error related to missing modules or dependencies, you can install each one individually. For example:
+
 ```bash
 pip install <module_name>
 ```
-# Example
+
+For example, if the error is:
+
+```
+ModuleNotFoundError: No module named 'aiohttp'
+```
+
+You can resolve it by running:
 
 ```bash
 pip install aiohttp --break-system-packages
