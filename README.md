@@ -21,12 +21,12 @@ DDoS Toolkit is a powerful and customizable tool designed for ethical cybersecur
 
 # Table of Contents
 
-- [Features](#features)                                          
-- [Installation](#installation)    
-- [Usage](#usage)
-- [Extensions](#extensions)
-- [Dependencies](#dependencies)               
-- [Contributing](#contributing)
+- [Features](#Features)                                          
+- [Installation](#Installation)    
+- [Usage](#Usage)
+- [Extensions](#Extensions)
+- [Dependencies](#Dependencies)               
+- [Contributing](#Contributing)
  
 ---
 
