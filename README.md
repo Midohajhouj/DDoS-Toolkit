@@ -64,7 +64,7 @@ sudo chmod +x *
 sudo ./setup install
 ```
 
-### **Build Debian Package (Optional for Debian-based Distros)**
+### **Build Debian Package or Download it from the release note page (Optional for Debian-based Distros)**
 ```bash
 cd builder
 ```
