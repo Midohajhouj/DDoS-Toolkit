@@ -1,7 +1,6 @@
 <p align="center"> 
   <img src="/test/imgs.jpg"> 
 </p>
-
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-Kali Linux-a80505?style=flat-square">
   <img src="https://img.shields.io/badge/License-MIT-a80505?style=flat-square">
@@ -34,7 +33,11 @@
 ### Clone the Repository
 ```bash
 sudo git clone https://github.com/Midohajhouj/DDoS-Toolkit.git /opt/DDoS-Toolkit
+```
+```bash
 cd /opt/DDoS-Toolkit
+```
+```bash
 sudo chmod +x *
 ```
 
@@ -46,15 +49,24 @@ sudo ./setup install
 ### Build Debian Package (Optional for Debian-based Distros)
 ```bash
 cd builder
+```
+```bash
 chmod +x builder.sh
+```
+```bash
 sudo ./builder.sh
+```
+```bash
 sudo dpkg -i ddos-toolkit.deb
 ```
 
 Resolve missing modules by manually installing them:
 ```bash
 pip install <module_name>
+```
 # Example
+
+```bash
 pip install aiohttp --break-system-packages
 ```
 
@@ -64,7 +76,7 @@ pip install aiohttp --break-system-packages
 
 ### Basic Attack
 ```bash
-sudo ddos -u https://target.com/
+sudo ddos -u 192.168.48.165 
 ```
 
 ### Command-Line Arguments
@@ -80,7 +92,7 @@ sudo ddos -u https://target.com/
 ### Examples
 HTTP flood attack:
 ```bash
-ddos -u http://target.com -t 20 -p 0.1 -d 300
+ddos -u 192.168.48.165 -t 20 -p 0.1 -d 300
 ```
 
 SYN flood attack:
@@ -103,7 +115,7 @@ ddos -u 192.168.48.165 --attack-mode syn-flood -d 60
 
 ## 🌟 Extensions
 
-### 1. **Network Scanner (`netscan.py`)**
+### 1. **Network Scanner (`netscan`)**
 This extension provides advanced network analysis and vulnerability assessment capabilities.
 
 #### Features:
@@ -116,12 +128,12 @@ This extension provides advanced network analysis and vulnerability assessment c
 
 #### Usage:
 ```bash
-python3 netscan.py -t 192.168.1.1
+ddos -u 192.168.48.165 -s
 ```
 
 ---
 
-### 2. **Wi-Fi Deauthentication Tool (`wifideauth.py`)**
+### 2. **Wi-Fi Deauthentication Tool (`wifideauth`)**
 This tool provides comprehensive Wi-Fi network management and attack functionalities for cybersecurity testing.
 
 #### Features:
@@ -131,12 +143,12 @@ This tool provides comprehensive Wi-Fi network management and attack functionali
 
 #### Usage:
 ```bash
-python3 wifideauth.py wlan0 -i
+ddos --wifi-deauth
 ```
 
 ---
 
-### 3. **Anonymizer (`anonymizer.sh`)**
+### 3. **Anonymizer (`anonymizer`)**
 A script to ensure complete anonymity during attacks by routing traffic through the Tor network.
 
 #### Features:
@@ -146,7 +158,7 @@ A script to ensure complete anonymity during attacks by routing traffic through 
 
 #### Usage:
 ```bash
-sudo ./anonymizer.sh start
+ddos anonymizer start
 ```
 
 ---
