@@ -1,0 +1,10 @@
+aiohttp
+asyncio
+concurrent-log-handler
+psutil
+scapy
+dnspython
+colorama
+tqdm
+requests
+tabulate
