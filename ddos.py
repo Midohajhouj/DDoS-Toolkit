@@ -305,7 +305,7 @@ def wifi_deauth(mode):
             return
 
         # Build the command
-        command = ["python3", wifideauth_path, "wlan0"]
+        command = ["python3", wifideauth_path, "wlan0", "-i"]
 
         # Execute the command
         print(f"{BLUE}[*] Starting network scan on wlan0..{RESET}")
