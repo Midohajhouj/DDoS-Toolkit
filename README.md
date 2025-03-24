@@ -45,7 +45,7 @@
 - Python 3.x  
 - Internet access.
 - A distro with full Python 3 library support (Debian-based distro recommended)
-- A minimum of an i3 processor and 4 GB of RAM for opening multiple windows and handling multiple threads.
+- A minimum of an i3 processor and 4 GB of RAM.
 
 --- 
 
