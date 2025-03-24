@@ -80,7 +80,7 @@ sudo ./builder.sh
 sudo dpkg -i ddos-toolkit.deb
 ```
 
-### **If you encounter an error related to missing modules or dependencies, you can install each one individually. I have also added a built-in script error handler for this issue. For example:**
+### **I have added a built-in script error handler for errors related to missing modules For example:**
 ```bash
 pip install <module_name>
 ```
