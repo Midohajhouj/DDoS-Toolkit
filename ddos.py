@@ -12,7 +12,7 @@
 # ++ LIONMAD <https://github.com/Midohajhouj>
 # Version:           v.1.0
 # License:           MIT License - https://opensource.org/licenses/MIT
-### END INIT INFO ###
+#### END INIT INFO ####
 
 import sys # Install module with pip sys --break-system-packages
 import importlib # Install module with pip importlib --break-system-packages
