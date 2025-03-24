@@ -15,8 +15,6 @@
 
 > 🚨 **Note:** The tool's configuration relies on the directory path `/opt/DDoS-Toolkit/`. Ensure proper installation .
 
----
-
 # Table of Contents
 
 - [Features](#Features)                                          
