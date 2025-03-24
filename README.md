@@ -16,18 +16,18 @@
 
 > 🚨 **Note: The tool's configuration relies on the directory path `/opt/DDoS-Toolkit/`. Ensure proper installation .**
 
-# Table of Contents
+# **Table of Contents**
 
-- [Features](#Features)                                          
+- [Features](#Features)
+- [Dependencies](#Dependencies)                                                         
 - [Installation](#Installation)    
 - [Usage](#Usage)
 - [Extensions](#Extensions)
-- [Dependencies](#Dependencies)               
 - [Contributing](#Contributing)
  
 ---
 
-## 📋 Features
+## **📋 Features**
 
 - **Multiple Attack Modes**: HTTP/HTTP2 Flood, Slowloris, UDP Flood, SYN Flood, SSH Flood, SSL Flood, FTP Flood, and more.
 - **Rate-Limited Attacks**: Customize request rates for precision testing.
@@ -38,10 +38,18 @@
 - **Integrated Modules**: Network scanning, anonymization, and Wi-Fi deauthentication tools.
 
 ---
+## **🔌 Dependencies**
+**Python Libraries**:  
+`aiohttp`, `asyncio`, `scapy`, `colorama`, `tqdm`, `psutil`, `dnspython`, `hashlib`, `zlib`.  
 
-## 🛠️ Installation
+**System Requirements**:  
+- Python 3.x  
+- Internet access for proxy validation and AI suggestions  
 
-### Clone the Repository
+--- 
+
+## **🛠️ Installation ** 
+### **Clone the Repository**
 ```bash
 sudo git clone https://github.com/Midohajhouj/DDoS-Toolkit.git /opt/DDoS-Toolkit
 ```
@@ -52,12 +60,12 @@ cd /opt/DDoS-Toolkit
 sudo chmod +x *
 ```
 
-### Install Dependencies
+### **Install Dependencies**
 ```bash
 sudo ./setup install
 ```
 
-### Build Debian Package (Optional for Debian-based Distros)
+### **Build Debian Package (Optional for Debian-based Distros)**
 ```bash
 cd builder
 ```
@@ -71,19 +79,18 @@ sudo ./builder.sh
 sudo dpkg -i ddos-toolkit.deb
 ```
 
-If you encounter an error related to missing modules or dependencies, you can install each one individually. For example:
-
+### **If you encounter an error related to missing modules or dependencies, you can install each one individually. For example:**
 ```bash
 pip install <module_name>
 ```
 
-For example, if the error is:
+**For example, if the error is:**
 
 ```
 ModuleNotFoundError: No module named 'aiohttp'
 ```
 
-You can resolve it by running:
+**You can resolve it by running:**
 
 ```bash
 pip install aiohttp --break-system-packages
@@ -91,14 +98,14 @@ pip install aiohttp --break-system-packages
 
 ---
 
-## ⚙️ Usage
+## **⚙️ Usage**
 
-### Basic Attack
+### **Basic Attack**
 ```bash
 sudo ddos -u 192.168.48.165 
 ```
 
-### Command-Line Arguments
+### **Command-Line Arguments**
 - **`-u, --url`**: Target URL/IP (required).
 - **`-t, --threads`**: Number of threads (default: 10).
 - **`-p, --pause`**: Pause time between requests (default: 0.1 seconds).
@@ -108,7 +115,7 @@ sudo ddos -u 192.168.48.165
 - **`--attack-mode`**: Attack type (`http-flood`, `syn-flood`, etc., default is `http-flood`).
 - **`--results`**: Save attack results to JSON (optional).
 
-### Examples
+### **Examples**
 HTTP flood attack:
 ```bash
 ddos -u 192.168.48.165 -t 20 -p 0.1 -d 300
@@ -121,18 +128,7 @@ ddos -u 192.168.48.165 --attack-mode syn-flood -d 60
 
 ---
 
-## 🔌 Dependencies
-
-**Python Libraries**:  
-`aiohttp`, `asyncio`, `scapy`, `colorama`, `tqdm`, `psutil`, `dnspython`, `hashlib`, `zlib`.  
-
-**System Requirements**:  
-- Python 3.x  
-- Internet access for proxy validation and AI suggestions  
-
----
-
-## 🌟 Extensions
+## **🌟 Extensions**
 
 ### 1. **Network Scanner (`netscan`)**
 This extension provides advanced network analysis and vulnerability assessment capabilities.
@@ -182,7 +178,7 @@ ddos --anonymizer start
 
 ---
 
-## 🤝 Contributing
+## **🤝 Contributing**
 Contributions are welcome! Submit an issue or pull request to improve the toolkit.
 
 <p align="center"> Developed by <a href="https://github.com/Midohajhouj">MIDO</a> </p>
