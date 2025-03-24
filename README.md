@@ -88,7 +88,7 @@ pip install <module_name>
 **For example, if the error is:**
 
 ```
-ModuleNotFoundError: No module named 'aiohttp'
+ModuleNotFoundError: No module named 'aiohttp' Install it using: pip install aiohttp --break-system-packages
 ```
 
 **You can resolve it by running:**
