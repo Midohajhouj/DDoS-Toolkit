@@ -45,7 +45,8 @@
 **System Requirements**:  
 - Python 3.x  
 - Internet access.
-- A distro with full Python 3 library support (Debian-based distro recommended)
+- A distro with full Python 3 library support (Debian-based Distro recommended)
+- Few basic pentesting tools like `Nmap`, `Aircrak-ng`, `Tor'. (optional for extensions modules, the tool main foncunality will work with out them.)
 - A minimum of an i3 processor and 4 GB of RAM.
 
 --- 
@@ -131,7 +132,7 @@ ddos -u 192.168.48.165 --attack-mode syn-flood -d 60
 ## **🌟 Extensions**
 
 ### 1. **Network Scanner (`netscan`)**
-This extension provides advanced network analysis and vulnerability assessment capabilities.
+This extension provides advanced network analysis and vulnerability assessment capabilities. (Nmap optional)
 
 #### Features:
 - **Port Scanning**: Identify open TCP and UDP ports on target systems.
@@ -139,7 +140,7 @@ This extension provides advanced network analysis and vulnerability assessment c
 - **Firewall Detection**: Detect the presence of firewalls using ICMP pings.
 - **CVE Assessment**: Match open services to known CVEs for detailed risk analysis.
 - **Report Generation**: Create JSON and HTML reports of scan results.
-- **External Tool Integration**: Run Nmap, Metasploit, or Shodan scans directly from the tool.
+- **External Tool Integration**: Run Nmap, or Shodan scans directly from the tool.
 
 #### Usage:
 ```bash
@@ -149,7 +150,7 @@ ddos -u 192.168.48.165 -s
 ---
 
 ### 2. **Wi-Fi Deauthentication Tool (`wifideauth`)**
-This tool provides comprehensive Wi-Fi network management and attack functionalities for cybersecurity testing.
+This tool provides comprehensive Wi-Fi network management and attack functionalities for cybersecurity testing. (Aircrak-ng optional)
 
 #### Features:
 - **Wi-Fi Network Scanning**: Detect nearby networks with details like SSID, BSSID, channel, and signal strength.
@@ -164,7 +165,7 @@ ddos --wifi-deauth
 ---
 
 ### 3. **Anonymizer (`anonymizer`)**
-A script to ensure complete anonymity during attacks by routing traffic through the Tor network.
+A script to ensure complete anonymity during attacks by routing traffic through the Tor network. (Required Tor)
 
 #### Features:
 - **Tor Integration**: Redirect all network traffic through Tor for anonymity.
