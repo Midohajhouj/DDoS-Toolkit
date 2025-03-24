@@ -48,7 +48,7 @@
 
 --- 
 
-## **🛠️ Installation ** 
+## **🛠️ Installation** 
 ### **Clone the Repository**
 ```bash
 sudo git clone https://github.com/Midohajhouj/DDoS-Toolkit.git /opt/DDoS-Toolkit
