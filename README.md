@@ -39,7 +39,8 @@
 ---
 ## **🔌 Dependencies**
 **Python Libraries**:  
-`aiohttp`, `asyncio`, `scapy`, `colorama`, `tqdm`, `psutil`, `dnspython`, `hashlib`, `zlib`.  
+`aiohttp`, `asyncio`, `scapy`, `colorama`, `tqdm`, `psutil`, `dnspython`, `hashlib`, `zlib`, `concurrent-log-handler`, `requests`
+`tabulate`>
 
 **System Requirements**:  
 - Python 3.x  
