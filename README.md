@@ -13,7 +13,7 @@ DDoS Toolkit is a powerful and customizable tool designed for ethical cybersecur
 
 > 🚨 **Note:** The author is not responsible for any misuse of this tool. Use it responsibly for educational and testing purposes only.
 
-> 🚨 **Note:** This tool is designed to work seamlessly on Kali Linux or any other distribution with a full Python 3 library support.
+> 🚨 **Note:** This tool is designed to work on Kali Linux or any other distribution with a full Python 3 library support.
 
 > 🚨 **Note:** The tool's configuration relies on the directory path `/opt/DDoS-Toolkit/`. Ensure proper installation .
 
