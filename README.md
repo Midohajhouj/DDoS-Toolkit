@@ -15,6 +15,8 @@
 
 > 🚨 **Note: The tool's configuration relies on the directory path `/opt/DDoS-Toolkit/`, Ensure proper installation below 👇.**
 
+> 🚨 **Note: I use a single versioning technique. You will always find version 1.0, but it has been upgraded while maintaining the same version number.**
+
 # **Table of Contents**
 
 - [Features](#Features)
@@ -180,6 +182,6 @@ ddos --anonymizer start
 ---
 
 ## **🤝 Contributing**
-Contributions are welcome! Submit an issue or pull request to improve the toolkit.
+Contributions are welcome! Submit an issue or pull request to improve the toolkit.  
 
 <p align="center"> Developed by <a href="https://github.com/Midohajhouj">LIONMAD</a> </p>
