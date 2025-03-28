@@ -126,7 +126,7 @@ USER_AGENTS = [
 ]
 
 # Supported HTTP methods
-HTTP_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"]
+HTTP_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "TRACE", "CONNECT"]
 
 # Configure logging
 logging.basicConfig(
