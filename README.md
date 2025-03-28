@@ -8,10 +8,7 @@
   <img src="https://img.shields.io/badge/Open%20Source-Yes-darkviolet?style=flat-square&color=a80505">
   <img src="https://img.shields.io/github/languages/top/Midohajhouj/DDoS-Toolkit?color=a80505">
   <img src="https://img.shields.io/github/issues/Midohajhouj/DDoS-Toolkit?color=a80505">
-  <img src="https://img.shields.io/github/issues-closed/Midohajhouj/DDoS-Toolkit?color=green">
-  <img src="https://img.shields.io/github/forks/Midohajhouj/DDoS-Toolkit?color=blue&style=flat-square">
-  <img src="https://img.shields.io/github/stars/Midohajhouj/DDoS-Toolkit?color=yellow&style=flat-square">
-  <img src="https://img.shields.io/github/last-commit/Midohajhouj/DDoS-Toolkit?color=orange&style=flat-square">
+  <img src="https://img.shields.io/github/last-commit/Midohajhouj/DDoS-Toolkit?color=a80505&style=flat-square">
 </p>
 
 **DDoS Toolkit is a powerful and customizable tool designed for ethical cybersecurity testing and research. It enables users to simulate a wide range of Distributed Denial of Service (DDoS) attacks and includes additional modules for network scanning, anonymization, and Wi-Fi deauthentication.**                                                                                               
