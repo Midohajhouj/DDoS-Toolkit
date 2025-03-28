@@ -1,6 +1,9 @@
 #!/bin/bash
 # Post-installation script for Ghost Framework
 chmod +x /usr/local/bin/ddos
+chmod +x /usr/local/bin/netscan
+chmod +x /usr/local/bin/wifideauth
+chmod +x /usr/local/bin/anonymizer
 chmod +x /usr/local/bin/ddos-install
 mkdir opt/DDoS-Toolkit/
 mkdir opt/DDoS-Toolkit/assets/
