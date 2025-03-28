@@ -15,7 +15,7 @@
 
 > 🚨 **Note: The tool's configuration relies on the directory path `/opt/DDoS-Toolkit/`, Ensure proper installation below 👇.**
 
-> 🚨 **Note: I use a single versioning technique. You will always find version 1.0, but it has been upgraded while maintaining the same version number.**
+> 🚨 **Note: I use a single versioning technique. I upgrade the source code while maintaining the same version number.**
 
 # **Table of Contents**
 
