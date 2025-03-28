@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/github/v/release/Midohajhouj/DDoS-Toolkit?label=Version&color=a80505&style=plastic">
   <img src="https://img.shields.io/badge/Open%20Source-Yes-darkviolet?style=plastic&color=a80505">
   <img src="https://img.shields.io/github/languages/top/Midohajhouj/DDoS-Toolkit?color=a80505&style=plastic">
-  <img src="https://img.shields.io/github/last-commit/Midohajhouj/DDoS-Toolkit?color=orange&style=plastic">
+  <img src="https://img.shields.io/github/last-commit/Midohajhouj/DDoS-Toolkit?color=a80505&style=plastic">
 </p>
 
 
