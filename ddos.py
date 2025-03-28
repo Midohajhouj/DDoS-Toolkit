@@ -139,7 +139,7 @@ logger = logging.getLogger(__name__)  # Module-level logger
 def display_banner():
     print(f"""
 {BLUE}
-██████████████████████████████████████████████████████████████████████████████████████████████████                                     
+███████████████████████████████████████████████████████████████████████████████████████████████████                                     
  ▄▄▄▄▄    ▄▄▄▄▄      ▄▄▄▄     ▄▄▄▄     ▄▄▄▄▄▄▄▄   ▄▄▄▄     ▄▄▄▄   ▄▄      ▄▄   ▄▄▄ ▄▄▄▄▄▄ ▄▄▄▄▄▄▄▄         
  ██▀▀▀██  ██▀▀▀██   ██▀▀██  ▄█▀▀▀▀█    ▀▀▀██▀▀▀  ██▀▀██   ██▀▀██  ██      ██  ██▀  ▀▀██▀▀ ▀▀▀██▀▀▀ 
  ██    ██ ██    ██ ██    ██ ██▄           ██    ██    ██ ██    ██ ██      ██▄██      ██      ██    
@@ -147,15 +147,15 @@ def display_banner():
  ██    ██ ██    ██ ██    ██      ▀██      ██    ██    ██ ██    ██ ██      ██  ██▄    ██      ██    
  ██▄▄▄██  ██▄▄▄██   ██▄▄██  █▄▄▄▄▄█▀      ██     ██▄▄██   ██▄▄██  ██▄▄▄▄▄ ██   ██▄ ▄▄██▄▄    ██         
  ▀▀▀▀▀    ▀▀▀▀▀      ▀▀▀▀    ▀▀▀▀▀        ▀▀      ▀▀▀▀     ▀▀▀▀   ▀▀▀▀▀▀▀ ▀▀    ▀▀ ▀▀▀▀▀▀    ▀▀    
- |U|S|E| |T|H|E| |T|O|O|L|  |A|T| |Y|O|U|R| |O|W|N| |R|I|S|K|  |M|I|D|O|  |S|A|L|U|T|   |Y|O|U|                                                                                        
-██████████████████████████████████████████████████████████████████████████████████████████████████
+|U|S|E| |T|H|E| |T|O|O|L|  |A|T| |Y|O|U|R| |O|W|N| |R|I|S|K|  |L|I|O|N|M|A|D|  |S|A|L|U|T|  |Y|O|U|                                                                                        
+███████████████████████████████████████████████████████████████████████████████████████████████████
 {RESET}
 """)
 
 def display_help():
     print(f"""
 {YELLOW}╔═════════════════════════════════════════════════════════════╗
-{YELLOW}║ {BLUE}DDoS Toolkit by MIDO   -   Comprehensive help information   {YELLOW}║
+{YELLOW}║ {BLUE}DDoS Toolkit by LIONMAD   -   Comprehensive help information{YELLOW}║
 {YELLOW}╚═════════════════════════════════════════════════════════════╝
 {RESET}
 {GREEN}Usage: {CYAN}ddos [OPTIONS]{RESET}
@@ -1118,7 +1118,7 @@ async def main():
 
     if args.version:
         print(f"{CYAN}DDoS Toolkit v1.0{RESET}")
-        print(f"{YELLOW}Author: MIDO | License: MIT{RESET}")
+        print(f"{YELLOW}Author: LIONMAD | License: MIT{RESET}")
         sys.exit(0)
 
     display_banner()
