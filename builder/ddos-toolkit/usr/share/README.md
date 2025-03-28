@@ -1,66 +1,57 @@
 <p align="center">
-<img src="/img/imgs.jpg">
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Platform-Linux-a80505?style=flat-square">
+  <img src="https://img.shields.io/badge/Platform-Kali Linux-a80505?style=flat-square">
   <img src="https://img.shields.io/badge/License-MIT-a80505?style=flat-square">
   <img src="https://img.shields.io/github/v/release/Midohajhouj/DDoS-Toolkit?label=Version&color=a80505">
   <img src="https://img.shields.io/badge/Open%20Source-Yes-darkviolet?style=flat-square&color=a80505">
-  <img src="https://img.shields.io/github/stars/Midohajhouj/DDoS-Toolkit?style=flat&label=Stars&color=a80505">  
-  <img src="https://img.shields.io/github/repo-size/Midohajhouj/DDoS-Toolkit?label=Size&color=a80505">
   <img src="https://img.shields.io/github/languages/top/Midohajhouj/DDoS-Toolkit?color=a80505">
 </p>
 
+**DDoS Toolkit is a powerful and customizable tool designed for ethical cybersecurity testing and research. It enables users to simulate a wide range of Distributed Denial of Service (DDoS) attacks and includes additional modules for network scanning, anonymization, and Wi-Fi deauthentication.**                                                                                               
+
+> 🚨 **Note: The author is not responsible for any misuse of this tool. Use it responsibly for educational and testing purposes.**
+ 
+> 🚨 **Note: I use a single versioning technique. I upgrade the source code while maintaining the same version number.**
+
+> 🚨 **Note: The tool's configuration relies on the directory path `/opt/DDoS-Toolkit/`, Ensure proper installation below 👇.**
+
+# **Table of Contents**
+
+- [Features](#Features)
+- [Dependencies](#Dependencies)                                                         
+- [Installation](#Installation)    
+- [Usage](#Usage)
+- [Extensions](#Extensions)
+- [Contributing](#Contributing)
+ 
 ---
 
-**DDoS Toolkit** is a powerful and customizable tool designed to simulate various types of Distributed Denial of Service (DDoS) attacks, including HTTP/HTTP2 Flood, Slowloris, UDP Flood, SYN Flood, SSH Flood, SSL Flood, and FTP Flood. It offers features like rate-limited attacks, proxy support, custom payload generation, and system resource monitoring, making it suitable for testing and research purposes in ethical cybersecurity simulations.
+## **📋 Features**
 
-> 🚨 **Note:** The author is not responsible for any misuse of this tool. Use at your own risk.
-
----
-
-## Table of Contents
-
-- [Features](##features)
-- [Installation](##installation)
-- [Usage](##usage)
-- [Contact](##contact)
+- **Multiple Attack Modes**: HTTP/HTTP2 Flood, Slowloris, UDP Flood, SYN Flood, SSH Flood, SSL Flood, FTP Flood, and more.
+- **Rate-Limited Attacks**: Customize request rates for precision testing.
+- **Proxy Support**: Efficient and masked attacks via proxy lists.
+- **Custom Payloads**: JSON, XML, and Form data payload options.
+- **Real-time Monitoring**: Track attack progress and resource usage.
+- **Interactive Mode**: Simplified usage with an interactive CLI.
+- **Integrated Modules**: Network scanning, anonymization, and Wi-Fi deauthentication tools.
 
 ---
+## **🔌 Dependencies**
+**Python Libraries**:  
+`aiohttp`, `asyncio`, `scapy`, `colorama`, `tqdm`, `psutil`, `dnspython`, `hashlib`, `zlib`, `concurrent-log-handler`, `requests`
+`tabulate`.
 
-## 📋 Features
-- **Multiple Attack Modes:** Supports HTTP Flood, Slowloris, UDP Flood, and SYN Flood.
-- **Rate-Limited Attacks:** Customize the rate of requests sent to the target.
-- **Proxy Support:** Use proxies to mask your requests and make attacks more efficient.
-- **Custom Payloads:** Generate various types of payloads such as JSON, XML, and Form data.
-- **Real-time Monitoring:** Track system resource usage and attack progress.
+**System Requirements**:  
+- Python 3.x  
+- Internet access.
+- A distro with full Python 3 library support (Debian-based Distro recommended)
+- Few basic pentesting tools like `Nmap`, `Aircrak-ng`, `Tor`. (optional for extensions modules, the tool main foncunality will work with out them.)
+- A minimum of an i3 processor and 4 GB of RAM.
 
-## Requirements
+--- 
 
-### Python Libraries
-- aiohttp
-- asyncio
-- argparse
-- threading
-- scapy
-- psutil
-- colorama
-- tqdm
-- openai
-- dns.resolver
-- hashlib
-- zlib
-
-### System Requirements
-- Python 3.x
-- Internet access for proxy validation and AI suggestions
-
----
-
-## 🛠️ Installation
-
-### 1. Clone the repository:
+## **🛠️ Installation** 
+### **Clone the Repository**
 ```bash
 sudo git clone https://github.com/Midohajhouj/DDoS-Toolkit.git /opt/DDoS-Toolkit
 ```
@@ -70,89 +61,124 @@ cd /opt/DDoS-Toolkit
 ```bash
 sudo chmod +x *
 ```
-
-### 2. Install dependencies:
 ```bash
-pip install -r requirements.txt --break-system-packages
-```
-and
-```bash
-sudo python3 setup.py install
+sudo ./setup install
 ```
 
-If you encounter an error related to missing modules or dependencies, you can install each one individually. For example:
+### **Build Debian Package or Download it from the release note page (Optional for Debian-based Distros)**
+```bash
+cd builder
+```
+```bash
+chmod +x builder.sh
+```
+```bash
+sudo ./builder.sh
+```
+```bash
+sudo dpkg -i ddos-toolkit.deb
+```
 
+### **I have added a built-in script error handler for errors related to missing modules For example:**
 ```bash
 pip install <module_name>
 ```
 
-For example, if the error is:
+**For example, if the error is:**
 
 ```
-ModuleNotFoundError: No module named 'aiohttp'
+ModuleNotFoundError: No module named 'aiohttp' Install it using: pip install aiohttp --break-system-packages
 ```
 
-You can resolve it by running:
+**You can resolve it by running:**
 
 ```bash
 pip install aiohttp --break-system-packages
 ```
+
 ---
 
-## ⚙️ Usage (be root or use sudo)
-Any result found in :
+## **⚙️ Usage**
+
+### **Basic Attack**
 ```bash
-opt/DDoS-Toolkit/logs
-```
-### Basic Attack
-To perform a basic attack with default settings:
-```bash
-sudo ddos -u https://google.com/
+sudo ddos -u 192.168.48.165 
 ```
 
-### Command-Line Arguments:
-- `-u, --url`: Target URL or IP address (required)
-- `-t, --threads`: Number of threads (default: 10)
-- `-p, --pause`: Pause time between requests (default: 0.1 seconds)
-- `-d, --duration`: Duration of the attack in seconds (default: 1500)
-- `--proxies`: Proxy list file (optional)
-- `--headers`: Custom headers as JSON string (optional)
-- `--payload`: Payload type (`json`, `xml`, `form`), default is `json`
-- `--rate-limit`: Rate limit for requests per second (default: 100)
-- `--attack-mode`: Type of attack (`http-flood`, `slowloris`, `udp-flood`, `syn-flood`), default is `http-flood`
-- `--proxy-auth`: Proxy authentication (username:password), optional
-- `--retry`: Number of retries for failed requests (default: 3)
-- `--user-agents`: Custom user-agent list file (optional)
+### **Command-Line Arguments**
+- **`-u, --url`**: Target URL/IP (required).
+- **`-t, --threads`**: Number of threads (default: 10).
+- **`-p, --pause`**: Pause time between requests (default: 0.1 seconds).
+- **`-d, --duration`**: Duration of attack in seconds (default: 1500).
+- **`--proxies`**: Proxy list file (optional).
+- **`--rate-limit`**: Requests per second (default: 100).
+- **`--attack-mode`**: Attack type (`http-flood`, `syn-flood`, etc., default is `http-flood`).
+- **`--results`**: Save attack results to JSON (optional).
 
-### Example Usage:
-1. Perform an HTTP flood attack with 20 threads, 0.1s pause time, and for 300 seconds:
+### **Examples**
+HTTP flood attack:
 ```bash
-ddos -u http://192.168.48.165/ -t 20 -p 0.1 -d 300
+ddos -u 192.168.48.165 -t 20 -p 0.1 -d 300
 ```
 
-2. Perform a SYN flood attack on IP `192.168.48.165` for 60 seconds:
+SYN flood attack:
 ```bash
 ddos -u 192.168.48.165 --attack-mode syn-flood -d 60
 ```
 
-3. Use proxies for the attack:
+---
+
+## **🌟 Extensions**
+
+### 1. **Network Scanner (`netscan`)**
+This extension provides advanced network analysis and vulnerability assessment capabilities. (Nmap optional)
+
+#### Features:
+- **Port Scanning**: Identify open TCP and UDP ports on target systems.
+- **DDoS Vulnerability Detection**: Check for amplification vulnerabilities on common ports (e.g., DNS, NTP, SNMP).
+- **Firewall Detection**: Detect the presence of firewalls using ICMP pings.
+- **CVE Assessment**: Match open services to known CVEs for detailed risk analysis.
+- **Report Generation**: Create JSON and HTML reports of scan results.
+- **External Tool Integration**: Run Nmap, or Shodan scans directly from the tool.
+
+#### Usage:
 ```bash
-ddos -u http://192.168.48.165 --proxies proxies.txt
+ddos -u 192.168.48.165 -s
 ```
 
-4. Save attack results to a JSON file. 
+---
+
+### 2. **Wi-Fi Deauthentication Tool (`wifideauth`)**
+This tool provides comprehensive Wi-Fi network management and attack functionalities for cybersecurity testing. (Aircrak-ng optional)
+
+#### Features:
+- **Wi-Fi Network Scanning**: Detect nearby networks with details like SSID, BSSID, channel, and signal strength.
+- **Deauthentication Attacks**: Disconnect devices from networks using aireplay-ng or scapy.
+- **MAC Address Spoofing**: Change the attacker's MAC address to avoid detection.
+
+#### Usage:
 ```bash
-ddos -u http://192.168.48.165 --results attack_results.json
+ddos --wifi-deauth
 ```
 
-## Example Output
+---
+
+### 3. **Anonymizer (`anonymizer`)**
+A script to ensure complete anonymity during attacks by routing traffic through the Tor network. (Required Tor)
+
+#### Features:
+- **Tor Integration**: Redirect all network traffic through Tor for anonymity.
+- **DNS Leak Protection**: Prevent DNS queries from bypassing Tor.
+- **VPN Compatibility**: Combine with VPNs for added security.
+
+#### Usage:
 ```bash
-Starting attack on http://192.168.48.165...
-Requests Sent: 100 | Successful: 98 | Failed: 2 | RPS: 50.00 | CPU: 45% | Memory: 32%
+ddos --anonymizer start
 ```
 
-## Contributing
+---
 
-Contributions are welcome! If you have suggestions or improvements, feel free to open an issue or submit a pull request.
+## **🤝 Contributing**
+Contributions are welcome! Submit an issue or pull request to improve the toolkit.  
 
-**<p align="center"> Developed by <a href="https://github.com/Midohajhouj">MIDO</a> </p>**
+<p align="center"> Developed by <a href="https://github.com/Midohajhouj">LIONMAD</a> </p>
