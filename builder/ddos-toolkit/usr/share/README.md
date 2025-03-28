@@ -76,7 +76,7 @@ chmod +x builder.sh
 sudo ./builder.sh
 ```
 ```bash
-sudo dpkg -i ddos-toolkit.deb
+sudo dpkg -i ./ddos-toolkit.deb
 ```
 
 ### **I have added a built-in script error handler for errors related to missing modules For example:**
