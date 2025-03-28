@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 ### BEGIN INIT INFO
-# Provides:          wifi_toolkit
+# Provides:          ddos_toolkit_wifi_toolkit
 # Required-Start:    $network $remote_fs
 # Required-Stop:     $remote_fs
 # Default-Start:     2 3 4 5
@@ -10,7 +10,6 @@
 # Description:       A toolkit designed for WiFi network scanning and deauthentication attacks for ethical cybersecurity testing.
 # Author:
 # ++ LIONMAD <https://github.com/Midohajhouj>
-# Version:           v.1.0
 # License:           MIT License - https://opensource.org/licenses/MIT
 #### END INIT INFO ####
 
