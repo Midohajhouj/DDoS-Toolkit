@@ -15,7 +15,7 @@
 # Dependencies:      python3 (>=3.7), aiohttp, scapy, dnspython, colorama, tqdm, psutil
 # Support:           https://github.com/Midohajhouj/DDoS-Toolkit/issues
 # Security:          Requires root privileges for certain attacks.
-# Conflicts:         None
+# Conflicts:         None.
 # Packaging:         Available on GitHub for Debian Package and manual installation.
 # Disclaimer:        For authorized testing only. Use responsibly.
 ### END INIT INFO ###
