@@ -30,7 +30,7 @@ def check_library(lib_name):
         print(f"Install it using: pip install {lib_name} --break-system-packages")
         sys.exit(1)
         
-# ================== Third-Party Libraries ==================
+# ================== Third-Party Libraries =================
 # Check for third-party libraries.
 required_libraries = [
     "aiohttp", "asyncio", "argparse", "scapy.all", "dns.resolver",
