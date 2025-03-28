@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 ### BEGIN INIT INFO
-# Provides:          ddos_toolkit_wifi_toolkit
+# Provides:          wifi_toolkit
 # Required-Start:    $network $remote_fs
 # Required-Stop:     $remote_fs
 # Default-Start:     2 3 4 5
@@ -9,12 +9,28 @@
 # Short-Description: WiFi Deauthentication Toolkit
 # Description:       A toolkit designed for WiFi network scanning and deauthentication attacks for ethical cybersecurity testing.
 # Author:
-# ++ LIONMAD <https://github.com/Midohajhouj>
+# + LIONMAD <https://github.com/Midohajhouj>
 # License:           MIT License - https://opensource.org/licenses/MIT
 #### END INIT INFO ####
+import sys # Install module with pip sys --break-system-packages
+import importlib # Install module with pip importlib --break-system-packages
+
+def check_library(lib_name):
+    """Checks if a library is installed and prompts to install it if not."""
+    try:
+        importlib.import_module(lib_name)
+    except ImportError:
+        print(f"{lib_name} is not installed.")
+        print(f"Install it using: pip install {lib_name} --break-system-packages")
+        sys.exit(1)
+        
+# ================== Third-Party Libraries ==================
+# Check for third-party libraries.
+required_libraries = [
+    "aiohttp", "asyncio", "argparse", "scapy.all", "requests"
+]
 
 import os
-import sys
 import time
 import threading
 import signal
