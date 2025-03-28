@@ -2,8 +2,8 @@
   <img src="/test/imgs.jpg"> 
 </p>
 <p align="center">
-  <img src="https://img.shields.io/badge/Platform-Linux-a80505?style=for-the-badge">
-  <img src="https://img.shields.io/badge/License-MIT-a80505?style=for-the-badge">
+  <img src="https://img.shields.io/badge/Platform-Linux-a80505?style=plastic">
+  <img src="https://img.shields.io/badge/License-MIT-a80505?style=social">
   <img src="https://img.shields.io/github/v/release/Midohajhouj/DDoS-Toolkit?label=Version&color=a80505&style=for-the-badge">
   <img src="https://img.shields.io/badge/Open%20Source-Yes-darkviolet?style=for-the-badge&color=a80505">
   <img src="https://img.shields.io/github/languages/top/Midohajhouj/DDoS-Toolkit?color=a80505&style=for-the-badge">
