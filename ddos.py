@@ -10,15 +10,13 @@
 # Description:       Comprehensive toolkit for simulating various DDoS attacks for ethical cybersecurity testing, penetration testing, and network resilience evaluation. Includes 20+ attack vectors, proxy support, performance monitoring, and detailed reporting.
 # Author:            
 # + LIONMAD <https://github.com/Midohajhouj>
-# Version:           v.1.0
+# Version:           v1.0
 # License:           MIT License - https://opensource.org/licenses/MIT
 # Dependencies:      python3 (>=3.7), aiohttp, scapy, dnspython, colorama, tqdm, psutil
 # Support:           https://github.com/Midohajhouj/DDoS-Toolkit/issues
-# Security:          Requires root privileges for certain attacks.
-# Conflicts:         None.
-# Packaging:         Available on GitHub for Debian Package and manual installation.
+# Security:          Requires root privileges for certain attacks
 # Disclaimer:        For authorized testing only. Use responsibly.
-### END INIT INFO ###
+#### END INIT INFO ####
 
 import sys # Install module with pip sys --break-system-packages
 import importlib # Install module with pip importlib --break-system-packages
@@ -36,7 +34,7 @@ def check_library(lib_name):
 # Check for third-party libraries.
 required_libraries = [
     "aiohttp", "asyncio", "argparse", "scapy.all", "dns.resolver",
-    "colorama", "tqdm"
+    "colorama", "tqdm", "requests", "tabulate"
 ]
 
 for lib in required_libraries:
@@ -72,7 +70,7 @@ import scapy.all as scapy  # Install module with pip scapy --break-system-packag
 import dns.resolver  # Install module with pip dnspython --break-system-packages
 from colorama import init, Fore, Style  # Install module with pip colorama --break-system-packages
 from tqdm import tqdm  # Install module with pip tqdm --break-system-packages
-from typing import Optional # Install module with pip typing --break-system-packages
+from typing import Optional # Install module with pip requests --break-system-packages
 
 # Initialize colorama for colorized terminal output
 init(autoreset=True)
@@ -160,9 +158,8 @@ def display_help():
 {YELLOW}║ {BLUE}DDoS Toolkit by LIONMAD   -   Comprehensive help information{YELLOW}║
 {YELLOW}╚═════════════════════════════════════════════════════════════╝
 {RESET}
-{GREEN}Usage: {CYAN}ddos [OPTIONS]{RESET}
-
-{YELLOW}Core Options:{RESET}
+{CYAN}For more info, visit our website: https://ddostoolkit.vercel.app/ [OPTIONS]{RESET}
+{BLUE}Usage: ddos [OPTIONS]{RESET}
   {GREEN}-u, --url URL{RESET}              Target URL or IP address (required for most attacks)
   {GREEN}-a, --attack-mode MODE{RESET}     Type of attack to perform (see below)
   {GREEN}-t, --threads NUM{RESET}          Number of threads/workers (default: 10)
@@ -172,54 +169,32 @@ def display_help():
   {GREEN}--proxies FILE{RESET}             File containing proxy list (one per line)
   {GREEN}--results FILE{RESET}             Save attack results to JSON file
   {GREEN}-v, --version{RESET}              Show version information and exit FILE
-
-{YELLOW}Additional Features:{RESET}
   {GREEN}-s, --scan{RESET}                 Perform network scan before attack
   {GREEN}--anonymizer [start|stop]{RESET}  Enable/disable anonymizer for attack
   {GREEN}--wifi-deauth{RESET}              Perform Wi-Fi deauthentication attack
   {GREEN}-i, --interactive{RESET}          Start interactive command-line interface
 
 {YELLOW}Attack Modes:{RESET}
-  {CYAN}http-flood{RESET}             - Standard HTTP flood attack
-  {CYAN}slowloris{RESET}              - Slowloris attack (low-and-slow)
-  {CYAN}udp-flood{RESET}              - UDP flood attack
-  {CYAN}syn-flood{RESET}              - SYN flood attack
-  {CYAN}icmp-flood{RESET}             - ICMP ping flood
-  {CYAN}dns-amplification{RESET}      - DNS amplification attack
-  {CYAN}ntp-amplification{RESET}      - NTP amplification attack
-  {CYAN}memcached-amplification{RESET}- Memcached amplification attack
-  {CYAN}smurf{RESET}                  - Smurf attack
-  {CYAN}teardrop{RESET}               - Teardrop attack
-  {CYAN}http2-flood{RESET}            - HTTP/2 multiplexing attack
-  {CYAN}goldeneye{RESET}              - GoldenEye-style attack
-  {CYAN}slow-read{RESET}              - Slow read attack
-  {CYAN}zero-byte{RESET}              - Zero-byte attack
-  {CYAN}random-packets{RESET}         - Random packet flood
-  {CYAN}ssl-flood{RESET}              - SSL/TLS renegotiation attack
-  {CYAN}land-attack{RESET}            - LAND attack (send packets with source=dest)
-  {CYAN}ping-of-death{RESET}          - Ping of Death attack
-  {CYAN}slow-post{RESET}              - Slow POST attack
-  {CYAN}xml-bomb{RESET}               - XML Bomb attack
-  {CYAN}ntlm-auth-flood{RESET}        - NTLM authentication flood
-  {CYAN}char-gen{RESET}               - Character generator flood attack
-  {CYAN}rst-flood{RESET}              - TCP RST flood attack
-  {CYAN}ack-flood{RESET}              - TCP ACK flood attack
-  {CYAN}http-fragmentation{RESET}     - HTTP packet fragmentation attack
-  {CYAN}ws-dos{RESET}                 - WebSocket denial of service
-  {CYAN}quic-flood{RESET}             - QUIC protocol flood attack
-
-{YELLOW}Examples:{RESET}
-  {GREEN}Basic HTTP flood:{RESET}       ddos -u http://example.com/
-  {GREEN}SYN flood:{RESET}              ddos -u 192.168.1.1 -a syn-flood -d 300
-  {GREEN}With proxies:{RESET}           ddos -u example.com -a http-flood --proxies proxies.txt
-  {GREEN}Interactive mode:{RESET}       ddos -i
-
-{YELLOW}Warning:{RESET} {RED}This tool should only be used for authorized security testing.{RESET}
+  {CYAN}http-flood{RESET}               {CYAN}slowloris{RESET}
+  {CYAN}udp-flood{RESET}                {CYAN}syn-flood{RESET} 
+  {CYAN}icmp-flood{RESET}               {CYAN}dns-amplification{RESET} 
+  {CYAN}ntp-amplification{RESET}        {CYAN}memcached-amplification{RESET}
+  {CYAN}smurf{RESET}                    {CYAN}teardrop{RESET} 
+  {CYAN}http2-flood{RESET}              {CYAN}goldeneye{RESET}             
+  {CYAN}slow-read{RESET}                {CYAN}zero-byte{RESET}              
+  {CYAN}random-packets{RESET}           {CYAN}ssl-flood{RESET}              
+  {CYAN}land-attack{RESET}              {CYAN}ping-of-death{RESET}          
+  {CYAN}slow-post{RESET}                {CYAN}xml-bomb{RESET}              
+  {CYAN}ntlm-auth-flood{RESET}          {CYAN}char-gen{RESET}                
+  {CYAN}rst-flood{RESET}                {CYAN}ack-flood{RESET}             
+  {CYAN}http-fragmentation{RESET}       {CYAN}ws-dos{RESET}                 
+  {CYAN}quic-flood{RESET}               {CYAN}slow-flood{RESET}             
+  
+  {YELLOW}Warning:{RESET} {RED}This tool should only be used for authorized security testing.{RESET}
 """)
 
 # ================== ARGUMENT PARSING ==================
 def parse_args():
-    """Parse command-line arguments with enhanced visual style."""
     parser = argparse.ArgumentParser(
         description=f"{YELLOW}Advanced DDoS Toolkit v1.0{RESET}",
         formatter_class=argparse.RawTextHelpFormatter,
@@ -246,7 +221,7 @@ def parse_args():
                           help="Rate limit per thread (requests per second)")
     core_group.add_argument("-p", "--pause", type=float, default=0.1,
                           help="Pause time between requests")
-    core_group.add_argument("-d", "--duration", type=int, default=60,
+    core_group.add_argument("-d", "--duration", type=int, default=1500,
                           help="Attack duration in seconds")
     core_group.add_argument("--proxies", help="File containing proxy list")
     core_group.add_argument("--results", help="File to save results (JSON)")
@@ -1119,8 +1094,7 @@ async def main():
         sys.exit(0)
 
     if args.version:
-        print(f"{CYAN}DDoS Toolkit v1.0{RESET}")
-        print(f"{YELLOW}Author: LIONMAD | License: MIT{RESET}")
+        print(f"DDoS Toolkit version 1.0#Stable | Platform: x86_64-pc-linux-gnu | License: MIT")
         sys.exit(0)
 
     display_banner()
