@@ -10,7 +10,7 @@
 # Description:       Comprehensive toolkit for simulating various DDoS attacks for ethical cybersecurity testing, penetration testing, and network resilience evaluation. Includes 20+ attack vectors, proxy support, performance monitoring, and detailed reporting.
 # Author:            
 # + LIONMAD <https://github.com/Midohajhouj>
-# Version:           v1.0
+# Version:           v.1.0
 # License:           MIT License - https://opensource.org/licenses/MIT
 # Dependencies:      python3 (>=3.7), aiohttp, scapy, dnspython, colorama, tqdm, psutil
 # Support:           https://github.com/Midohajhouj/DDoS-Toolkit/issues
