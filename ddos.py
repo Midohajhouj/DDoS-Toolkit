@@ -14,8 +14,10 @@
 # License:           MIT License - https://opensource.org/licenses/MIT
 # Dependencies:      python3 (>=3.7), aiohttp, scapy, dnspython, colorama, tqdm, psutil
 # Support:           https://github.com/Midohajhouj/DDoS-Toolkit/issues
-# Security:          Requires root privileges for certain attacks
-# Disclaimer:        For authorized testing only. Use responsibly..
+# Security:          Requires root privileges for certain attacks.
+# Conflicts:         None
+# Packaging:         Available on GitHub for Debian Package and manual installation.
+# Disclaimer:        For authorized testing only. Use responsibly.
 ### END INIT INFO ###
 
 import sys # Install module with pip sys --break-system-packages
