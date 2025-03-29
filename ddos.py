@@ -6,11 +6,11 @@
 # Required-Stop:     $remote_fs $syslog
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: Advanced DDoS Attack Toolkit
+# Short-Description: DDoS Toolkit
 # Description:       Comprehensive toolkit for simulating various DDoS attacks for ethical cybersecurity testing, penetration testing, and network resilience evaluation. Includes 20+ attack vectors, proxy support, performance monitoring, and detailed reporting.
 # Author:            
 # + LIONMAD <https://github.com/Midohajhouj>
-# Version:           v1.0
+# Version:           v.1.0
 # License:           MIT License - https://opensource.org/licenses/MIT
 # Dependencies:      python3 (>=3.7), aiohttp, scapy, dnspython, colorama, tqdm, psutil.
 # Support:           https://github.com/Midohajhouj/DDoS-Toolkit/issues
@@ -158,7 +158,7 @@ def display_help():
 {YELLOW}║ {BLUE}DDoS Toolkit by LIONMAD   -   Comprehensive help information{YELLOW}║
 {YELLOW}╚═════════════════════════════════════════════════════════════╝
 {RESET}
-{CYAN}For more info, visit our website: https://ddostoolkit.vercel.app/ [OPTIONS]{RESET}
+{CYAN}For more info, visit our website: https://ddostoolkit.vercel.app/{RESET}
 {BLUE}Usage: ddos [OPTIONS]{RESET}
   {GREEN}-u, --url URL{RESET}              Target URL or IP address (required for most attacks)
   {GREEN}-a, --attack-mode MODE{RESET}     Type of attack to perform (see below)
@@ -196,7 +196,7 @@ def display_help():
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description=f"{YELLOW}Advanced DDoS Toolkit v1.0{RESET}",
+        description=f"{YELLOW}DDoS Toolkit v.1.0{RESET}",
         formatter_class=argparse.RawTextHelpFormatter,
         add_help=False
     )
