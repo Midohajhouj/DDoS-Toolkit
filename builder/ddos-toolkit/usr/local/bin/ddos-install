@@ -1,91 +1,305 @@
-#!/bin/bash
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+### BEGIN INIT INFO
+# Provides:          ddos_installer
+# Required-Start:    $network $remote_fs
+# Required-Stop:     $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Advanced DDoS Toolkit
+# Description:       Comprehensive toolkit for simulating various DDoS attacks for ethical cybersecurity testing, penetration testing and network resilience evaluation.
+# Author:
+# + LIONMAD
+# License:           MIT License - https://opensource.org/licenses/MIT
+### END INIT INFO ###
 
-# ------------------------------------------------------
-#    DDoS Toolkit - Setup Script
-#    Coded by LIONMAD
-#    This script sets up the environment for running the DDoS Toolkit
-# ------------------------------------------------------
+import os
+import sys
+import subprocess
+import logging
+from setuptools import setup, find_packages
+from setuptools.command.install import install
 
 # Colors for stylish output
-YELLOW="\033[1;33m"
-GREEN="\033[1;32m"
-BLUE="\033[1;34m"
-RED="\033[1;31m"
-RESET="\033[0m" # Reset color
+YELLOW = "\033[1;33m"
+GREEN = "\033[1;32m"
+BLUE = "\033[1;34m"
+RED = "\033[1;31m"
+RESET = "\033[0m"  # Reset color
 
-# Ensure the script is being run as root or with sudo for system-wide installations
-if [[ $EUID -ne 0 ]]; then
-    echo -e "${RED}[ERROR] This script must be run as root or with sudo.${NC}"
-    exit 1
-fi
+# Logging configuration
+PIP_LOG = "pip_install.log"
+logging.basicConfig(filename=PIP_LOG, level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-# Log file for pip output
-PIP_LOG="/var/log/ddos-install-pip.log"
+def display_banner():
+    """Display a stylish banner."""
+    print(f"{BLUE}")
+    print("██████████████████████████████████████████████████")
+    print("██                                              ██")
+    print("██          DDoS Toolkit Setup                  ██")
+    print("██       Advanced Network Testing               ██")
+    print("██                                              ██")
+    print("██  Supports: HTTP/HTTPS, TCP, UDP, ICMP,      ██")
+    print("██  DNS, NTP, Memcached, and 20+ other         ██")
+    print("██  attack vectors                             ██")
+    print("██                                              ██")
+    print("██████████████████████████████████████████████████")
+    print(f"{RESET}")
 
-# Start installation
-echo -e "${GREEN}[INFO]${NC} Updating package list..."
-apt-get update -y
+def install_system_dependencies():
+    """Install system dependencies using apt-get."""
+    print(f"{GREEN}[INFO]{RESET} Updating package list...")
+    try:
+        subprocess.run(["apt-get", "update", "-y"], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"{YELLOW}[WARNING]{RESET} Failed to update package list: {e}")
+        print(f"{YELLOW}[WARNING]{RESET} Continuing with installation...")
+        return False
+    return True
 
-# Install system dependencies (if not already installed)
-echo -e "${GREEN}[INFO]${NC} Installing required system packages..."
-apt-get install -y python3 python3-pip python3-venv libssl-dev libffi-dev build-essential
+def install_apt_packages():
+    """Install apt packages with error handling."""
+    apt_packages = [
+        "python3", "python3-pip", "python3-venv",
+        "libssl-dev", "libffi-dev",
+        "nmap", "tor", "proxychains", "aircrack-ng",
+        "tcpdump", "dnsutils", "net-tools"
+    ]
+    
+    failed_packages = []
+    print(f"{GREEN}[INFO]{RESET} Installing required system packages...")
+    
+    for pkg in apt_packages:
+        try:
+            subprocess.run(["apt-get", "install", "-y", pkg], check=True)
+        except subprocess.CalledProcessError as e:
+            print(f"{YELLOW}[WARNING]{RESET} Failed to install {pkg}: {e}")
+            failed_packages.append(pkg)
+    
+    if failed_packages:
+        print(f"{YELLOW}[WARNING]{RESET} The following packages failed to install: {', '.join(failed_packages)}")
+        print(f"{YELLOW}[WARNING]{RESET} Some features may not work properly without these packages")
+        return False
+    return True
 
-# Install required Python packages in the background and log output
-echo -e "${GREEN}[INFO]${NC} Installing required Python packages (output logged to ${PIP_LOG})..."
+def install_python_packages():
+    """Install required Python packages with error handling."""
+    print(f"{GREEN}[INFO]{RESET} Installing required Python packages (output logged to {PIP_LOG})...")
+    packages = [
+        "aiohttp",
+        "scapy",
+        "dnspython",
+        "colorama",
+        "tqdm",
+        "requests",
+        "tabulate",
+        "psutil",
+        "argparse",
+        "uuid",
+        "hmac",
+        "ipaddress",
+        "urllib3",
+        "pyOpenSSL",
+        "python-nmap"
+    ]
 
-# Run each pip command in the background and append output to the log file
-pip install --break-system-packages aiohttp==3.8.1 >> "$PIP_LOG" 2>&1 &
-pip install --break-system-packages asyncio==3.4.3 >> "$PIP_LOG" 2>&1 &
-pip install --break-system-packages dnspython==2.1.0 >> "$PIP_LOG" 2>&1 &
-pip install --break-system-packages openai==0.27.0 >> "$PIP_LOG" 2>&1 &
-pip install --break-system-packages psutil==5.8.0 >> "$PIP_LOG" 2>&1 &
-pip install --break-system-packages requests==2.28.2 >> "$PIP_LOG" 2>&1 &
-pip install --break-system-packages scapy==2.4.5 >> "$PIP_LOG" 2>&1 &
-pip install --break-system-packages tabulate==0.9.0 >> "$PIP_LOG" 2>&1 &
-pip install --break-system-packages tqdm==4.64.1 >> "$PIP_LOG" 2>&1 &
-pip install --break-system-packages colorama >> "$PIP_LOG" 2>&1 &
-pip install --break-system-packages threading >> "$PIP_LOG" 2>&1 &
-pip install --break-system-packages itertools >> "$PIP_LOG" 2>&1 &
-pip install --break-system-packages collections >> "$PIP_LOG" 2>&1 &
-pip install --break-system-packages ssl >> "$PIP_LOG" 2>&1 &
-pip install --break-system-packages cmd >> "$PIP_LOG" 2>&1 &
-pip install --break-system-packages argparse >> "$PIP_LOG" 2>&1 &
+    failed_packages = []
+    for package in packages:
+        try:
+            subprocess.run(
+                ["pip", "install", "--break-system-packages", package],
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            logging.info(f"Successfully installed {package}")
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Failed to install {package}: {e.stderr.decode()}")
+            print(f"{YELLOW}[WARNING]{RESET} Failed to install {package}. Check {PIP_LOG} for details.")
+            failed_packages.append(package)
+    
+    if failed_packages:
+        print(f"{YELLOW}[WARNING]{RESET} The following Python packages failed to install: {', '.join(failed_packages)}")
+        print(f"{YELLOW}[WARNING]{RESET} Some features may not work properly without these packages")
+        return False
+    return True
 
-# Wait for all background pip processes to finish
-wait
-
-# Function to create a symlink for easy access
-create_symlink() {
-    echo -e "${YELLOW}[*] Creating symlink for easy access...${NC}"
+def create_symlink():
+    """Create a symlink for easy access to the DDoS toolkit."""
+    print(f"{YELLOW}[*]{RESET} Creating symlink for easy access...")
 
     # Check if the source file exists
-    if [ ! -f "$(pwd)/ddos" ]; then
-        echo -e "${RED}[ERROR] ddos not found in the current directory.${NC}"
-        return 1
-    fi
+    if not os.path.isfile("ddos.py"):
+        print(f"{RED}[ERROR]{RESET} ddos.py not found in the current directory.")
+        return False
 
-    # Remove existing symlink if present
-    if [ -L "/usr/local/bin/ddos" ]; then
-        echo -e "${YELLOW}[INFO] Removing existing symlink...${NC}"
-        sudo rm "/usr/local/bin/ddos"
-    fi
+    try:
+        # Remove existing symlink if present
+        if os.path.exists("/usr/local/bin/ddos"):
+            print(f"{YELLOW}[INFO]{RESET} Removing existing symlink...")
+            subprocess.run(["sudo", "rm", "/usr/local/bin/ddos"], check=True)
 
-    # Create a new symlink
-    sudo cp "$(pwd)/ddos" /usr/local/bin/ddos
+        # Create a new symlink
+        subprocess.run(["sudo", "cp", "ddos.py", "/usr/local/bin/ddos"], check=True)
+        subprocess.run(["sudo", "chmod", "+x", "/usr/local/bin/ddos"], check=True)
 
-    # Verify symlink creation
-    if [ -L "/usr/local/bin/ddos" ]; then
-        echo -e "${GREEN}[SUCCESS] Symlink created! You can now run 'ddos' from anywhere.${NC}"
-    else
-        echo -e "${GREEN}[SUCCESS] Symlink created! You can now run 'ddos' from anywhere.${NC}"
-        return 1
-    fi
-}
+        # Verify symlink creation
+        if os.path.exists("/usr/local/bin/ddos"):
+            print(f"{GREEN}[SUCCESS]{RESET} Symlink created! You can now run 'ddos' from anywhere.")
+            return True
+        else:
+            print(f"{YELLOW}[WARNING]{RESET} Symlink creation failed.")
+            return False
+    except subprocess.CalledProcessError as e:
+        print(f"{YELLOW}[WARNING]{RESET} Failed to create symlink: {e}")
+        return False
 
-# Call the symlink creation function
-create_symlink
+def create_directories():
+    """Create required directories for the toolkit."""
+    print(f"{GREEN}[INFO]{RESET} Creating required directories...")
+    
+    # List of directories to create, including the path '/opt/DDoS-Toolkit'
+    directories = ['/opt/DDoS-Toolkit/wordlists']
+    
+    failed_dirs = []
+    
+    for directory in directories:
+        try:
+            # Create the directory with the specified path
+            os.makedirs(directory, exist_ok=True)
+            print(f"{GREEN}[+] Created directory: {directory}{RESET}")
+        except Exception as e:
+            print(f"{YELLOW}[WARNING]{RESET} Failed to create directory {directory}: {e}")
+            failed_dirs.append(directory)
+    
+    if failed_dirs:
+        print(f"{YELLOW}[WARNING]{RESET} Failed to create these directories: {', '.join(failed_dirs)}")
+        return False
+    return True
+    
+def download_default_wordlists():
+    """Download default wordlists if they don't exist."""
+    print(f"{GREEN}[INFO]{RESET} Checking for default wordlists...")
+    wordlists = {
+        'common_ports.txt': 'https://raw.githubusercontent.com/danielmiessler/SecLists/refs/heads/master/Discovery/Infrastructure/common-http-ports.txt',
+        'http_headers.txt': 'https://raw.githubusercontent.com/devanshbatham/headerpwn/refs/heads/main/headers.txt',
+        'user_agents.txt': 'https://gist.githubusercontent.com/pzb/b4b6f57144aea7827ae4/raw/cf847b76a142955b1410c8bcef3aabe221a63db1/user-agents.txt'
+    }
 
-# Completion message with a stylish output
-echo -e "${GREEN}[INFO]${NC} Setup complete! The necessary packages have been installed system-wide."
-echo -e "${BLUE}You can now run the DDoS Toolkit script directly using:${NC}"
-echo -e "${GREEN}ddos${NC}"
+    failed_downloads = []
+    for filename, url in wordlists.items():
+        filepath = os.path.join('/opt/DDoS-Toolkit/wordlists', filename)
+        if not os.path.exists(filepath):
+            try:
+                print(f"{YELLOW}[*]{RESET} Downloading {filename}...")
+                subprocess.run(["wget", "-O", filepath, url], check=True)
+                print(f"{GREEN}[+] Successfully downloaded {filename}{RESET}")
+            except subprocess.CalledProcessError as e:
+                print(f"{YELLOW}[WARNING]{RESET} Failed to download {filename}: {e}")
+                failed_downloads.append(filename)
+    
+    if failed_downloads:
+        print(f"{YELLOW}[WARNING]{RESET} Failed to download these wordlists: {', '.join(failed_downloads)}")
+        return False
+    return True
+
+class CustomInstall(install):
+    """Custom installation class to handle system dependencies and setup."""
+
+    def run(self):
+        """Run the custom installation process."""
+        display_banner()
+
+        # Ensure the script is being run as root or with sudo
+        if os.geteuid() != 0:
+            print(f"{RED}[ERROR]{RESET} This script must be run as root or with sudo.")
+            sys.exit(1)
+
+        # Track installation success
+        overall_success = True
+        
+        # Install system dependencies
+        if not install_system_dependencies():
+            overall_success = False
+        
+        # Install apt packages
+        if not install_apt_packages():
+            overall_success = False
+
+        # Install Python packages
+        if not install_python_packages():
+            overall_success = False
+
+        # Create required directories
+        if not create_directories():
+            overall_success = False
+
+        # Download default wordlists
+        if not download_default_wordlists():
+            overall_success = False
+
+        # Create a symlink for easy access
+        if not create_symlink():
+            overall_success = False
+
+        # Completion message
+        if overall_success:
+            print(f"{GREEN}[SUCCESS]{RESET} Setup completed successfully!")
+        else:
+            print(f"{YELLOW}[WARNING]{RESET} Setup completed with some warnings. Some features may not work properly.")
+        
+        print(f"{BLUE}You can now run the tool using:{RESET}")
+        print(f"{GREEN}ddos{RESET}")
+
+        print(f"{BLUE}")
+        print("████████████████████████████████████████████████████")
+        print("██                                                ██")
+        print("██           Installation Complete               ██")
+        print("██      DDoS Toolkit Ready                       ██")
+        print("██                                                ██")
+        print("████████████████████████████████████████████████████")
+        print(f"{RESET}")
+
+# Define the setup configuration
+setup(
+    name="ddos-toolkit",
+    version="1.0",
+    author="LIONMAD",
+    description="Advanced DDoS toolkit for penetration testing",
+    long_description=open("README.md").read() if os.path.exists("README.md") else "Advanced DDoS testing toolkit",
+    long_description_content_type="text/markdown",
+    url="https://github.com/Midohajhouj/ddos",
+    packages=find_packages(),
+    install_requires=[
+        "aiohttp>=3.8.1",
+        "scapy>=2.4.5",
+        "dnspython>=2.2.1",
+        "colorama>=0.4.4",
+        "tqdm>=4.62.3",
+        "requests>=2.26.0",
+        "tabulate>=0.8.9",
+        "psutil>=5.8.0",
+        "pyOpenSSL>=20.0.1",
+        "python-nmap>=0.7.1"
+    ],
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: POSIX :: Linux",
+        "Development Status :: 4 - Beta",
+        "Environment :: Console",
+        "Intended Audience :: Information Technology",
+        "Intended Audience :: System Administrators",
+        "Topic :: Security",
+        "Topic :: System :: Systems Administration",
+    ],
+    python_requires='>=3.6',
+    entry_points={
+        'console_scripts': [
+            'ddos=ddos:main',
+        ],
+    },
+    cmdclass={
+        'install': CustomInstall,
+    },
+)
