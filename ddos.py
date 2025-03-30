@@ -206,9 +206,9 @@ def display_banner() -> None:
 def display_help() -> None:
     """Display comprehensive help information."""
     print(f"""
-{YELLOW}╔═════════════════════════════════════════════════════════════╗
-{YELLOW}║ {BLUE}Advanced DDoS Toolkit v2.0 - Help Information{YELLOW}             ║
-{YELLOW}╚═════════════════════════════════════════════════════════════╝
+{YELLOW}╔══════════════════════════════════════════════════════╗
+{YELLOW}║ {BLUE}DDoS Toolkit v2.0 - Help Information{YELLOW}     ║
+{YELLOW}╚══════════════════════════════════════════════════════╝
 {RESET}
 {CYAN}For more info, visit our website: https://ddostoolkit.vercel.app/{RESET}
 {BLUE}Usage: ddos [OPTIONS]{RESET}
@@ -245,22 +245,13 @@ def display_help() -> None:
   {CYAN}arp-spoofing{RESET}             {CYAN}dhcp-starvation{RESET}         {CYAN}ntp-monlist{RESET}
   {CYAN}ssdp-amplification{RESET}       {CYAN}snmp-amplification{RESET}      {CYAN}ldap-amplification{RESET}
 
-{YELLOW}Advanced Features:{RESET}
-  - Auto-proxy rotation and health checking
-  - Real-time attack statistics and monitoring
-  - Multiple concurrent attack vectors
-  - Custom payload generation
-  - Network scanning and reconnaissance
-  - Tor and proxy chain support
-  - Detailed reporting and logging
-
 {YELLOW}Warning:{RESET} {RED}This tool should only be used for authorized security testing.{RESET}
 """)
 
 def parse_args() -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
-        description=f"{YELLOW}Advanced DDoS Toolkit v2.0{RESET}",
+        description=f"{YELLOW}DDoS Toolkit v.1.0{RESET}",
         formatter_class=argparse.RawTextHelpFormatter,
         add_help=False
     )
@@ -1709,7 +1700,7 @@ def simple_status(attack_name: str, target: str, duration: int) -> None:
     
     print(f"{GREEN}{attack_name} completed.{RESET}")
 
-def signal_handler(sig: int, frame: Any) -> None:
+def signal_handler(sig: int, frame: any) -> None:
     """Handle interrupt signals for graceful shutdown."""
     global stop_event
     print(f"{RED}\nInterrupted by user. Exiting gracefully...{RESET}")
@@ -1734,7 +1725,7 @@ async def main() -> None:
         sys.exit(0)
 
     if args.version:
-        print(f"Advanced DDoS Toolkit version 2.0 | Platform: {sys.platform} | License: MIT")
+        print(f"DDoS Toolkit version 1.0 | Platform: {sys.platform} | License: MIT")
         sys.exit(0)
 
     display_banner()
