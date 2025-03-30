@@ -7,7 +7,8 @@
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # Short-Description: DDoS Toolkit
-# Description:       Comprehensive toolkit for simulating various DDoS attacks for ethical cybersecurity testing, penetration testing, and network resilience evaluation. Includes 20+ attack vectors, proxy support, performance monitoring, and detailed reporting.
+# Description:       Comprehensive toolkit for simulating various DDoS attacks for ethical cybersecurity testing, penetration testing
+# and network resilience evaluation. Includes 20+ attack vectors, proxy support, performance monitoring, and detailed reporting.
 # Author:            
 # + LIONMAD <https://github.com/Midohajhouj>
 # Version:           v.1.0
