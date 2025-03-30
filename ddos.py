@@ -207,7 +207,7 @@ def display_help() -> None:
     """Display comprehensive help information."""
     print(f"""
 {YELLOW}╔══════════════════════════════════════════════════════╗
-{YELLOW}║ {BLUE}DDoS Toolkit v2.0 - Help Information{YELLOW}     ║
+{YELLOW}║ {BLUE}DDoS Toolkit v.1.0 - Help Information{YELLOW}     ║
 {YELLOW}╚══════════════════════════════════════════════════════╝
 {RESET}
 {CYAN}For more info, visit our website: https://ddostoolkit.vercel.app/{RESET}
