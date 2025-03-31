@@ -25,6 +25,12 @@ import gzip
 from typing import Optional, List, Dict, Tuple, Union
 from dataclasses import dataclass, field
 from enum import Enum, auto
+import re
+import ipaddress
+import ssl
+from urllib.parse import urlparse
+import requests
+from tabulate import tabulate
 
 class AttackType(Enum):
     HTTP_FLOOD = auto()
@@ -52,6 +58,7 @@ class AttackType(Enum):
     LAND_ATTACK = auto()
     PING_OF_DEATH = auto()
 
+
 def check_library(lib_name: str) -> None:
     """Checks if a library is installed and prompts to install it if not."""
     try:
@@ -73,82 +80,44 @@ required_libraries = [
 
 for lib in required_libraries:
     check_library(lib.split(".")[0])
+    
+import aiohttp  # Install module with pip aiohttp --break-system-packages
+import asyncio  # Install module with pip asyncio --break-system-packages
+import time  # Install module with pip time --break-system-packages
+import argparse  # Install module with pip argparse --break-system-packages
+import threading  # Install module with pip threading --break-system-packages
+from concurrent.futures import ThreadPoolExecutor, as_completed  # Install module with pip concurrent.futures --break-system-packages
+import random  # Install module with pip random --break-system-packages
+import json  # Install module with pip json --break-system-packages
+from itertools import cycle  # Install module with pip itertools --break-system-packages
+from collections import deque  # Install module with pip collections --break-system-packages
+from uuid import uuid4  # Install module with pip uuid --break-system-packages
+from base64 import b64encode  # Install module with pip base64 --break-system-packages
+import hashlib  # Install module with pip hashlib --break-system-packages
+import zlib  # Install module with pip zlib --break-system-packages
+import hmac  # Install module with pip hmac --break-system-packages
+import signal  # Install module with pip signal --break-system-packages
+import sys  # Install module with pip sys --break-system-packages
+import os  # Install module with pip os --break-system-packages
+import subprocess  # Install module with pip subprocess --break-system-packages
+import socket  # Install module with pip socket --break-system-packages
+import struct  # Install module with pip struct --break-system-packages
+import logging  # Install module with pip logging --break-system-packages
+import psutil  # Install module with pip psutil --break-system-packages
+import shutil  # Install module with pip shutil --break-system-packages
+import scapy.all as scapy  # Install module with pip scapy --break-system-packages
+import dns.resolver  # Install module with pip dnspython --break-system-packages
+from colorama import init, Fore, Style  # Install module with pip colorama --break-system-packages
+from tqdm import tqdm  # Install module with pip tqdm --break-system-packages
+from typing import Optional # Install module with pip typing --break-system-packages
+from dataclasses import dataclass
+import re
+import ipaddress # Install module with pip ipadress --break-system-packages
+import ssl # Install module with pip ssl --break-system-packages
+from urllib.parse import urlparse
+import requests  # Install module with pip requests --break-system-packages
+from tabulate import tabulate  # Install module with pip tabulate --break-system-packages
 
-# Import all required libraries
-import aiohttp  # Install module with pip aiohttp --break-system-packages
-import asyncio  # Install module with pip asyncio --break-system-packages
-import time  # Install module with pip time --break-system-packages
-import argparse  # Install module with pip argparse --break-system-packages
-import threading  # Install module with pip threading --break-system-packages
-from concurrent.futures import ThreadPoolExecutor, as_completed  # Install module with pip concurrent.futures --break-system-packages
-import random  # Install module with pip random --break-system-packages
-import json  # Install module with pip json --break-system-packages
-from itertools import cycle  # Install module with pip itertools --break-system-packages
-from collections import deque  # Install module with pip collections --break-system-packages
-from uuid import uuid4  # Install module with pip uuid --break-system-packages
-from base64 import b64encode  # Install module with pip base64 --break-system-packages
-import hashlib  # Install module with pip hashlib --break-system-packages
-import zlib  # Install module with pip zlib --break-system-packages
-import hmac  # Install module with pip hmac --break-system-packages
-import signal  # Install module with pip signal --break-system-packages
-import sys  # Install module with pip sys --break-system-packages
-import os  # Install module with pip os --break-system-packages
-import subprocess  # Install module with pip subprocess --break-system-packages
-import socket  # Install module with pip socket --break-system-packages
-import struct  # Install module with pip struct --break-system-packages
-import logging  # Install module with pip logging --break-system-packages
-import psutil  # Install module with pip psutil --break-system-packages
-import shutil  # Install module with pip shutil --break-system-packages
-import scapy.all as scapy  # Install module with pip scapy --break-system-packages
-import dns.resolver  # Install module with pip dnspython --break-system-packages
-from colorama import init, Fore, Style  # Install module with pip colorama --break-system-packages
-from tqdm import tqdm  # Install module with pip tqdm --break-system-packages
-from typing import Optional # Install module with pip typing --break-system-packages
-from dataclasses import dataclass
-import re
-import ipaddress # Install module with pip ipadress --break-system-packages
-import ssl # Install module with pip ssl --break-system-packages
-from urllib.parse import urlparse
-import requests  # Install module with pip requests --break-system-packages
-from tabulate import tabulate  # Install module with pip tabulate --break-system-packages
-from typing import List, Dict  # Already a part of typing
-import aiohttp  # Install module with pip aiohttp --break-system-packages
-import asyncio  # Install module with pip asyncio --break-system-packages
-import time  # Install module with pip time --break-system-packages
-import argparse  # Install module with pip argparse --break-system-packages
-import threading  # Install module with pip threading --break-system-packages
-from concurrent.futures import ThreadPoolExecutor, as_completed  # Install module with pip concurrent.futures --break-system-packages
-import random  # Install module with pip random --break-system-packages
-import json  # Install module with pip json --break-system-packages
-from itertools import cycle  # Install module with pip itertools --break-system-packages
-from collections import deque  # Install module with pip collections --break-system-packages
-from uuid import uuid4  # Install module with pip uuid --break-system-packages
-from base64 import b64encode  # Install module with pip base64 --break-system-packages
-import hashlib  # Install module with pip hashlib --break-system-packages
-import zlib  # Install module with pip zlib --break-system-packages
-import hmac  # Install module with pip hmac --break-system-packages
-import signal  # Install module with pip signal --break-system-packages
-import sys  # Install module with pip sys --break-system-packages
-import os  # Install module with pip os --break-system-packages
-import subprocess  # Install module with pip subprocess --break-system-packages
-import socket  # Install module with pip socket --break-system-packages
-import struct  # Install module with pip struct --break-system-packages
-import logging  # Install module with pip logging --break-system-packages
-import psutil  # Install module with pip psutil --break-system-packages
-import shutil  # Install module with pip shutil --break-system-packages
-import scapy.all as scapy  # Install module with pip scapy --break-system-packages
-import dns.resolver  # Install module with pip dnspython --break-system-packages
-from colorama import init, Fore, Style  # Install module with pip colorama --break-system-packages
-from tqdm import tqdm  # Install module with pip tqdm --break-system-packages
-from typing import Optional # Install module with pip typing --break-system-packages
-from dataclasses import dataclass
-import re
-import ipaddress # Install module with pip ipadress --break-system-packages
-import ssl # Install module with pip ssl --break-system-packages
-from urllib.parse import urlparse
-import requests  # Install module with pip requests --break-system-packages
-from tabulate import tabulate  # Install module with pip tabulate --break-system-packages
-from typing import List, Dict  # Already a part of typing
 
 # Initialize colorama
 init(autoreset=True)
