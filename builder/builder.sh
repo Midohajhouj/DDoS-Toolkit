@@ -1,5 +1,5 @@
 #!/bin/bash
-# Easter egg LIONMAD salut u 
+# Easter egg LIONMAD salut u  
 # Build the .deb package
 echo "Building .deb package..."
 cd ddos-toolkit/DEBIAN
