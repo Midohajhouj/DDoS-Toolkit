@@ -434,7 +434,7 @@ def wifi_deauth(mode: str) -> None:
             print(f"{RED}[!] Python3 is not installed or not in PATH. Please install it to proceed.{RESET}")
             return
 
-        command = ["python3", wifideauth_path, "wlan0"]
+        command = ["python3", wifideauth_path, "wlan0", "-i"]
 
         print(f"{BLUE}[*] Starting network scan on wlan0..{RESET}")
         subprocess.run(command, check=True)
