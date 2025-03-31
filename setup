@@ -27,7 +27,7 @@ display_banner() {
 
 install_system_dependencies() {
     echo -e "${GREEN}[INFO]${RESET} Updating package list..."
-    if ! apt-get update -y; then
+    if ! apt update -y; then
         echo -e "${YELLOW}[WARNING]${RESET} Failed to update package list"
         echo -e "${YELLOW}[WARNING]${RESET} Continuing with installation..."
         return 1
@@ -38,7 +38,7 @@ install_system_dependencies() {
 install_apt_packages() {
     local apt_packages=(
         "python3" "python3-pip" "python3-venv"
-        "libssl-dev" "libffi-dev"
+        "libssl-dev" "libffi-dev" "wget"
         "nmap" "tor" "proxychains" "aircrack-ng"
         "tcpdump" "dnsutils" "net-tools"
     )
@@ -47,7 +47,7 @@ install_apt_packages() {
     echo -e "${GREEN}[INFO]${RESET} Installing required system packages..."
     
     for pkg in "${apt_packages[@]}"; do
-        if ! apt-get install -y "$pkg"; then
+        if ! apt install -y "$pkg"; then
             echo -e "${YELLOW}[WARNING]${RESET} Failed to install $pkg"
             failed_packages+=("$pkg")
         fi
@@ -97,62 +97,49 @@ install_python_packages() {
     return 0
 }
 
-create_symlink() {
-    echo -e "${YELLOW}[*]${RESET} Creating symlink for easy access..."
-
-    # Check if the source file exists
-    if [ ! -f "ddos.py" ]; then
-        echo -e "${RED}[ERROR]${RESET} ddos.py not found in the current directory."
-        return 1
-    fi
-
-    # Remove existing symlink if present
-    if [ -e "/usr/local/bin/ddos" ]; then
-        echo -e "${YELLOW}[INFO]${RESET} Removing existing symlink..."
-        rm -f "/usr/local/bin/ddos"
-    fi
-
-    # Create a new symlink
-    cp "ddos.py" "/usr/local/bin/ddos"
-    chmod +x "/usr/local/bin/ddos"
-
-    mkdir opt/DDoS-Toolkit/
-    mkdir opt/DDoS-Toolkit/assets/
-    cp DDoS-Toolkit/assets/netscan "/opt/DDoS-Toolkit/assets/"
-    cp DDoS-Toolkit/assets/wifideauth "/opt/DDoS-Toolkit/assets/"
-    cp DDoS-Toolkit/assets/anonymizer "/opt/DDoS-Toolkit/assets/"
-    mkdir opt/DDoS-Toolkit/logs/
-
-
-    # Verify symlink creation
-    if [ -e "/usr/local/bin/ddos" ]; then
-        echo -e "${GREEN}[SUCCESS]${RESET} Symlink created! You can now run 'ddos' from anywhere."
-        return 0
-    else
-        echo -e "${YELLOW}[WARNING]${RESET} Symlink creation failed."
-        return 1
-    fi
-}
-
-create_directories() {
-    echo -e "${GREEN}[INFO]${RESET} Creating required directories..."
+create_directories_and_files() {
+    echo -e "${GREEN}[INFO]${RESET} Creating required directories and files..."
     
-    # List of directories to create, including the path '/opt/DDoS-Toolkit'
-    local directories=('/opt/DDoS-Toolkit/wordlists')
+    # List of directories to create
+    local directories=(
+        '/opt/DDoS-Toolkit'
+        '/opt/DDoS-Toolkit/assets'
+        '/opt/DDoS-Toolkit/logs'
+        '/opt/DDoS-Toolkit/wordlists'
+    )
     
-    local failed_dirs=()
+    local failed_ops=()
     
+    # Create directories
     for directory in "${directories[@]}"; do
         if ! mkdir -p "$directory"; then
             echo -e "${YELLOW}[WARNING]${RESET} Failed to create directory $directory"
-            failed_dirs+=("$directory")
+            failed_ops+=("$directory")
         else
             echo -e "${GREEN}[+] Created directory: $directory${RESET}"
         fi
     done
     
-    if [ ${#failed_dirs[@]} -gt 0 ]; then
-        echo -e "${YELLOW}[WARNING]${RESET} Failed to create these directories: ${failed_dirs[*]}"
+    # Copy asset files if they exist
+    if [ -d "assets" ]; then
+        for asset in "netscan" "wifideauth" "anonymizer"; do
+            if [ -f "assets/$asset" ]; then
+                if ! cp "assets/$asset" "/opt/DDoS-Toolkit/assets/"; then
+                    echo -e "${YELLOW}[WARNING]${RESET} Failed to copy asset $asset"
+                    failed_ops+=("asset:$asset")
+                fi
+            else
+                echo -e "${YELLOW}[WARNING]${RESET} Asset file assets/$asset not found"
+                failed_ops+=("asset:$asset")
+            fi
+        done
+    else
+        echo -e "${YELLOW}[WARNING]${RESET} Assets directory not found"
+        failed_ops+=("assets")
+    fi
+    
+    if [ ${#failed_ops[@]} -gt 0 ]; then
+        echo -e "${YELLOW}[WARNING]${RESET} Some directory/file operations failed: ${failed_ops[*]}"
         return 1
     fi
     return 0
@@ -171,9 +158,11 @@ download_default_wordlists() {
         local filepath="/opt/DDoS-Toolkit/wordlists/$filename"
         if [ ! -e "$filepath" ]; then
             echo -e "${YELLOW}[*]${RESET} Downloading $filename..."
-            if ! wget -O "$filepath" "${wordlists[$filename]}"; then
+            if ! wget -q -O "$filepath" "${wordlists[$filename]}"; then
                 echo -e "${YELLOW}[WARNING]${RESET} Failed to download $filename"
                 failed_downloads+=("$filename")
+                # Remove partially downloaded file
+                rm -f "$filepath"
             else
                 echo -e "${GREEN}[+] Successfully downloaded $filename${RESET}"
             fi
@@ -185,6 +174,39 @@ download_default_wordlists() {
         return 1
     fi
     return 0
+}
+
+create_symlink() {
+    echo -e "${YELLOW}[*]${RESET} Creating symlink for easy access..."
+
+    # Check if the source file exists
+    if [ ! -f "ddos.py" ]; then
+        echo -e "${RED}[ERROR]${RESET} ddos.py not found in the current directory."
+        return 1
+    fi
+
+    # Remove existing symlink if present
+    if [ -e "/usr/local/bin/ddos" ]; then
+        echo -e "${YELLOW}[INFO]${RESET} Removing existing symlink..."
+        rm -f "/usr/local/bin/ddos"
+    fi
+
+    # Create a new symlink
+    if ! cp "$(pwd)/ddos.py" "/usr/local/bin/ddos"; then
+        echo -e "${YELLOW}[WARNING]${RESET} Symlink creation failed."
+        return 1
+    fi
+
+    chmod +x "/usr/local/bin/ddos"
+
+    # Verify symlink creation
+    if [ -e "/usr/local/bin/ddos" ]; then
+        echo -e "${GREEN}[SUCCESS]${RESET} Symlink created! You can now run 'ddos' from anywhere."
+        return 0
+    else
+        echo -e "${YELLOW}[WARNING]${RESET} Symlink creation failed."
+        return 1
+    fi
 }
 
 main() {
@@ -214,8 +236,8 @@ main() {
         overall_success=1
     fi
 
-    # Create required directories
-    if ! create_directories; then
+    # Create required directories and files
+    if ! create_directories_and_files; then
         overall_success=1
     fi
 
