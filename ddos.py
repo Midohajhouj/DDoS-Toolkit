@@ -17,7 +17,7 @@
 # Support:           https://github.com/Midohajhouj/DDoS-Toolkit/issues
 # Security:          Requires root privileges for certain attacks
 # Disclaimer:        For authorized testing only. Use responsibly.
-#### END INIT INFO ####
+### END INIT INFO ###
 
 import sys
 import importlib
