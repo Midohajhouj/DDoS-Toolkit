@@ -75,7 +75,7 @@ for lib in required_libraries:
     check_library(lib.split(".")[0])
 
 # Import all required libraries
-=import aiohttp  # Install module with pip aiohttp --break-system-packages
+import aiohttp  # Install module with pip aiohttp --break-system-packages
 import asyncio  # Install module with pip asyncio --break-system-packages
 import time  # Install module with pip time --break-system-packages
 import argparse  # Install module with pip argparse --break-system-packages
