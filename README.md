@@ -63,7 +63,7 @@ cd /opt/DDoS-Toolkit
 sudo chmod +x *
 ```
 ```bash
-sudo ./setup install
+sudo ./setup
 ```
 
 ### **Build Debian Package or Download it from the release note page (Optional for Debian-based Distros)**
