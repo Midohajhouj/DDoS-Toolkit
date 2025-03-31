@@ -151,6 +151,7 @@ download_default_wordlists() {
         ['common_ports.txt']='https://raw.githubusercontent.com/danielmiessler/SecLists/refs/heads/master/Discovery/Infrastructure/common-http-ports.txt'
         ['http_headers.txt']='https://raw.githubusercontent.com/devanshbatham/headerpwn/refs/heads/main/headers.txt'
         ['user_agents.txt']='https://gist.githubusercontent.com/pzb/b4b6f57144aea7827ae4/raw/cf847b76a142955b1410c8bcef3aabe221a63db1/user-agents.txt'
+        ['proxy.txt']='https://raw.githubusercontent.com/TheSpeedX/PROXY-List/refs/heads/master/http.txt'
     )
 
     local failed_downloads=()
