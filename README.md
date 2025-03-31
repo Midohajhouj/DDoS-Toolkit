@@ -66,20 +66,6 @@ sudo chmod +x *
 sudo ./setup
 ```
 
-### **Build Debian Package or Download it from the release note page (Optional for Debian-based Distros)**
-```bash
-cd builder
-```
-```bash
-chmod +x builder.sh
-```
-```bash
-sudo ./builder.sh
-```
-```bash
-sudo dpkg -i ./ddos-toolkit.deb
-```
-
 ### **I have added a built-in script error handler for errors related to missing modules For example:**
 ```bash
 pip install <module_name>
