@@ -63,7 +63,7 @@ cd /opt/DDoS-Toolkit
 sudo chmod +x *
 ```
 ```bash
-sudo ./setup
+sudo ./setup.sh
 ```
 
 ### **I have added a built-in script error handler for errors related to missing modules For example:**
