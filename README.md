@@ -37,6 +37,7 @@
 - **Integrated Modules**: Network scanning, anonymization, and Wi-Fi deauthentication tools.
 
 ---
+
 ## **🔌 Dependencies**
 **Python Libraries**:  
 `aiohttp`, `asyncio`, `scapy`, `colorama`, `tqdm`, `psutil`, `dnspython`, `hashlib`, `zlib`, `concurrent-log-handler`, `requests`
