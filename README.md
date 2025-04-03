@@ -68,12 +68,7 @@ sudo ./setup.sh
 ```
 
 ### **I have added a built-in script error handler for errors related to missing modules For example:**
-```bash
-pip install <module_name>
-```
-
-**For example, if the error is:**
-
+**If the error is:**
 ```
 ModuleNotFoundError: No module named 'aiohttp' Install it using: pip install aiohttp --break-system-packages
 ```
