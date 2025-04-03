@@ -58,7 +58,7 @@
 sudo git clone https://github.com/Midohajhouj/DDoS-Toolkit.git 
 ```
 ```bash
-cd /DDoS-Toolkit
+cd DDoS-Toolkit
 ```
 ```bash
 sudo chmod +x *
