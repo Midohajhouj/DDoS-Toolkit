@@ -226,7 +226,7 @@ def display_help() -> None:
   {GREEN}-u, --url URL{RESET}              Target URL or IP address (required for most attacks)
   {GREEN}-a, --attack-mode MODE{RESET}     Type of attack to perform (see below)
   {GREEN}-t, --threads NUM{RESET}          Number of threads/workers (default: 10)
-  {GREEN}-d, --duration SEC{RESET}         Attack duration in seconds (default: 60)
+  {GREEN}-d, --duration SEC{RESET}         Attack duration in seconds (default: 1500)
   {GREEN}-r, --rate-limit RPS{RESET}       Rate limit per thread (default: 100)
   {GREEN}-p, --pause SEC{RESET}            Delay between requests (default: 0.1)
   {GREEN}--proxies FILE{RESET}             File containing proxy list (one per line)
