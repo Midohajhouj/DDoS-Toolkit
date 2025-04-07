@@ -1,103 +1,57 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 ### BEGIN INIT INFO
-# Provides:          ddos_toolkit_network_scanner
+# Provides:          advanced_network_scanner
 # Required-Start:    $network $remote_fs
 # Required-Stop:     $remote_fs
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: Network Scanner and Security Analyzer (Extension of DDoS Toolkit)
-# Description:       An extension of the DDoS Toolkit, designed for network scanning, vulnerability assessment.
-# Author:
-# + LIONMAD <https://github.com/Midohajhouj>
-# License:           MIT License - https://opensource.org/licenses/MIT
-###  END INIT INFO ###
+# Short-Description: Advanced Network Scanner with Vulnerability Assessment
+# Description:       Comprehensive scanning with CVE detection and vulnerability testing
+# Author:            LIONMAD <https://github.com/Midohajhouj>
+# License:           MIT License
+### END INIT INFO ###
 
-import sys # Install module with pip sys --break-system-packages
-import importlib # Install module with pip importlib --break-system-packages
-
-def check_library(lib_name):
-    """Checks if a library is installed and prompts to install it if not."""
-    try:
-        importlib.import_module(lib_name)
-    except ImportError:
-        print(f"{lib_name} is not installed.")
-        print(f"Install it using: pip install {lib_name} --break-system-packages")
-        sys.exit(1)
-        
-# ================== Third-Party Libraries ==================
-# Check for third-party libraries.
-required_libraries = [
-    "aiohttp", "asyncio", "argparse", "scapy.all", "requests", "tabulate"
-]
-
+import sys
+import os
 import socket
-import threading
-import subprocess
 import argparse
 import json
-import os
-import shutil
 import logging
-from concurrent.futures import ThreadPoolExecutor, as_completed
+import subprocess
 import asyncio
-import time
-import configparser
+import re
+import xml.etree.ElementTree as ET
+from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime
-
-# ================== Third-Party Libraries ==================
-from colorama import init, Fore, Style
+from collections import defaultdict
+from prettytable import PrettyTable, ALL
 import requests
-from tabulate import tabulate
-import scapy.all as scapy
+import dns.resolver
+from colorama import init, Fore, Style
+import ssl
+import whois
+from bs4 import BeautifulSoup
 
 # Initialize colorama
 init(autoreset=True)
 
 # Colors
-GREEN = Fore.GREEN
-RED = Fore.RED
-YELLOW = Fore.YELLOW
-BLUE = Fore.BLUE
+G = Fore.GREEN
+R = Fore.RED
+Y = Fore.YELLOW
+B = Fore.BLUE
+M = Fore.MAGENTA
+C = Fore.CYAN
+W = Fore.WHITE
 RESET = Style.RESET_ALL
 
 # Constants
-DEFAULT_PORTS = [80, 443, 53, 123, 161, 11211]
 LOG_DIR = "/var/log/network_scanner"
-CONFIG_FILE = "config.ini"
+CVE_DB_FILE = "cve-db.json"
 
-# Common DDoS amplification ports and their descriptions
-DDoS_PORTS = {
-    53: {"service": "DNS", "risk": "High", "description": "DNS amplification attacks"},
-    123: {"service": "NTP", "risk": "High", "description": "NTP amplification attacks"},
-    161: {"service": "SNMP", "risk": "High", "description": "SNMP amplification attacks"},
-    19: {"service": "CHARGEN", "risk": "High", "description": "CHARGEN amplification attacks"},
-    17: {"service": "QOTD", "risk": "Medium", "description": "QOTD amplification attacks"},
-    137: {"service": "NetBIOS", "risk": "Medium", "description": "NetBIOS amplification attacks"},
-    389: {"service": "LDAP", "risk": "High", "description": "LDAP amplification attacks"},
-    1900: {"service": "UPnP", "risk": "Medium", "description": "UPnP amplification attacks"},
-    11211: {"service": "Memcached", "risk": "High", "description": "Memcached amplification attacks"},
-    80: {"service": "HTTP", "risk": "Medium", "description": "Potential HTTP-based attacks (DDoS)"},
-    443: {"service": "HTTPS", "risk": "Medium", "description": "Potential HTTPS-based attacks (DDoS)"}
-}
-
-# Expanded CVE database for DDoS-related services
-CVE_DATABASE = {
-    "DNS": ["CVE-2020-1350", "CVE-2019-6477", "CVE-2017-14491"],
-    "NTP": ["CVE-2016-7431", "CVE-2015-8138", "CVE-2014-9295"],
-    "SNMP": ["CVE-2017-6742", "CVE-2012-2148", "CVE-2010-3847"],
-    "LDAP": ["CVE-2021-44228", "CVE-2020-15778", "CVE-2019-1309"],
-    "HTTP": ["CVE-2017-5638", "CVE-2018-7600", "CVE-2021-41773"],
-    "HTTPS": ["CVE-2018-11776", "CVE-2020-2551", "CVE-2021-3449"],
-    "Memcached": ["CVE-2018-1000115", "CVE-2016-8704"],
-    "UPnP": ["CVE-2020-12695", "CVE-2013-0229"],
-    "CHARGEN": ["CVE-1999-0635"],
-    "QOTD": ["CVE-1999-0635"],
-    "NetBIOS": ["CVE-1999-0519"]
-}
-
-# Logging configuration
+# Setup logging
 if not os.path.exists(LOG_DIR):
     os.makedirs(LOG_DIR)
 
@@ -105,557 +59,556 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
     handlers=[
-        logging.FileHandler(os.path.join(LOG_DIR, "network_scanner.log")),
+        logging.FileHandler(os.path.join(LOG_DIR, "scanner.log")),
         logging.StreamHandler()
     ]
 )
-
 logger = logging.getLogger(__name__)
 
-# ================== External Tools Integration ==================
+# Extended CVE Database with more vulnerabilities (no authentication tests)
+CVE_DATABASE = {
+    "DNS": {
+        "CVE-2020-1350": {
+            "score": 10.0,
+            "description": "Windows DNS Server RCE Vulnerability",
+            "test": "dig +short @target TXT cve-2020-1350.test",
+            "safe": True
+        },
+        "CVE-2017-14491": {
+            "score": 9.8,
+            "description": "Dnsmasq multiple vulnerabilities",
+            "test": "dig +short @target version.bind CHAOS TXT",
+            "safe": True
+        },
+        "CVE-2019-6470": {
+            "score": 8.1,
+            "description": "BIND 9 DoS vulnerability",
+            "test": "dig +short @target version.bind CHAOS TXT",
+            "safe": True
+        }
+    },
+    "HTTP": {
+        "CVE-2021-41773": {
+            "score": 9.8,
+            "description": "Apache HTTP Server Path Traversal",
+            "test": "curl -v --max-time 5 http://target/cgi-bin/.%2e/%2e%2e/%2e%2e/etc/passwd",
+            "safe": True
+        },
+        "CVE-2017-5638": {
+            "score": 10.0,
+            "description": "Apache Struts Remote Code Execution",
+            "test": "curl -X POST http://target/ -H 'Content-Type: %{(#_='multipart/form-data')}",
+            "safe": True
+        },
+        "CVE-2018-7600": {
+            "score": 9.8,
+            "description": "Drupal Remote Code Execution",
+            "test": "curl -v 'http://target/user/register?element_parents=account/mail/%23value'",
+            "safe": True
+        }
+    },
+    "SSH": {
+        "CVE-2018-15473": {
+            "score": 5.3,
+            "description": "OpenSSH User Enumeration",
+            "test": "nc -w 3 target 22 < /dev/null",
+            "safe": True
+        }
+    },
+    "FTP": {
+        "CVE-2015-3306": {
+            "score": 7.5,
+            "description": "ProFTPD Mod_Copy Command Execution",
+            "test": "echo 'QUIT' | nc -w 3 target 21",
+            "safe": True
+        }
+    },
+    "SSL/TLS": {
+        "CVE-2014-0160": {
+            "score": 7.5,
+            "description": "Heartbleed Vulnerability",
+            "test": "openssl s_client -connect target:443 -tlsextdebug 2>&1 | grep heartbeat",
+            "safe": True
+        },
+        "CVE-2016-2183": {
+            "score": 5.9,
+            "description": "SWEET32 Birthday Attack",
+            "test": "nmap -p 443 --script ssl-enum-ciphers target",
+            "safe": True
+        }
+    },
+    "SMB": {
+        "CVE-2017-0143": {
+            "score": 9.3,
+            "description": "EternalBlue SMB Remote Code Execution",
+            "test": "nmap --script smb-vuln-ms17-010 target -p 445",
+            "safe": True
+        }
+    },
+    "RDP": {
+        "CVE-2019-0708": {
+            "score": 9.8,
+            "description": "BlueKeep RDP Remote Code Execution",
+            "test": "nmap -p 3389 --script rdp-vuln-ms12-020 target",
+            "safe": True
+        }
+    }
+}
 
-def run_nmap_scan(ip: str, options: List[str] = None) -> None:
-    """Run a local Nmap scan with customizable options."""
-    if options is None:
-        options = ["-sV", "-p", "80,443,53,123,161,11211"]
-    
-    logger.info(f"Running Nmap scan on {ip} with options: {' '.join(options)}...")
-    try:
-        nmap_result = subprocess.run(["nmap"] + options + [ip], capture_output=True, text=True)
-        if nmap_result.returncode == 0:
-            logger.info("Nmap scan successful")
-            print(nmap_result.stdout)
-        else:
-            logger.error("Nmap scan failed")
-            print(nmap_result.stderr)
-    except FileNotFoundError:
-        logger.error("Nmap not found. Please install Nmap to run this scan.")
+# Service Database with more ports (no authentication tests)
+SERVICE_DB = {
+    21: {
+        "service": "FTP", "protocol": "TCP", "risk": "High",
+        "cves": ["CVE-2015-3306"],
+        "tests": {
+            "banner": "echo 'QUIT' | nc -w 3 target 21"
+        }
+    },
+    22: {
+        "service": "SSH", "protocol": "TCP", "risk": "High",
+        "cves": ["CVE-2018-15473"],
+        "tests": {
+            "banner": "nc -w 3 target 22 < /dev/null"
+        }
+    },
+    53: {
+        "service": "DNS", "protocol": "UDP", "risk": "Critical",
+        "cves": ["CVE-2020-1350", "CVE-2017-14491", "CVE-2019-6470"],
+        "tests": {
+            "query": "dig +short +time=2 +tries=1 @target version.bind CHAOS TXT"
+        }
+    },
+    80: {
+        "service": "HTTP", "protocol": "TCP", "risk": "High",
+        "cves": ["CVE-2021-41773", "CVE-2017-5638", "CVE-2018-7600"],
+        "tests": {
+            "headers": "curl -I --max-time 3 http://target",
+            "dir_traversal": "curl -v --path-as-is 'http://target/../../etc/passwd'"
+        }
+    },
+    443: {
+        "service": "HTTPS", "protocol": "TCP", "risk": "High",
+        "cves": ["CVE-2014-0160", "CVE-2016-2183"],
+        "tests": {
+            "headers": "curl -Ik --max-time 3 https://target",
+            "ssl_cert": "openssl s_client -connect target:443 -showcerts < /dev/null"
+        }
+    },
+    445: {
+        "service": "SMB", "protocol": "TCP", "risk": "Critical",
+        "cves": ["CVE-2017-0143"],
+        "tests": {
+            "smb_version": "smbclient -N -L //target"
+        }
+    },
+    3389: {
+        "service": "RDP", "protocol": "TCP", "risk": "High",
+        "cves": ["CVE-2019-0708"],
+        "tests": {
+            "banner": "nc -w 3 target 3389 < /dev/null"
+        }
+    }
+}
 
-def run_metasploit_scan(ip: str, port: int) -> None:
-    """Run a Metasploit scan on a specific port."""
-    logger.info(f"Running Metasploit scan on {ip}:{port}...")
-    try:
-        msf_command = f"use auxiliary/scanner/portscan/tcp\nset RHOSTS {ip}\nset PORTS {port}\nrun\nexit\n"
-        result = subprocess.run(["msfconsole", "-q", "-x", msf_command], capture_output=True, text=True)
-        if result.returncode == 0:
-            logger.info("Metasploit scan successful")
-            print(result.stdout)
-        else:
-            logger.error("Metasploit scan failed")
-            print(result.stderr)
-    except FileNotFoundError:
-        logger.error("Metasploit not found. Please install Metasploit to run this scan.")
+# ================== SCANNING FUNCTIONS ==================
 
-def run_shodan_scan(ip: str, api_key: str) -> None:
-    """Run a Shodan scan on the target IP."""
-    logger.info(f"Running Shodan scan on {ip}...")
+def resolve_target(target: str) -> Optional[str]:
+    """Resolve domain to IP address safely."""
     try:
-        url = f"https://api.shodan.io/shodan/host/{ip}?key={api_key}"
-        response = requests.get(url)
-        if response.status_code == 200:
-            logger.info("Shodan scan successful")
-            print(json.dumps(response.json(), indent=4))
-        else:
-            logger.error(f"Shodan scan failed: {response.status_code}")
-            print(response.text)
-    except Exception as e:
-        logger.error(f"Error running Shodan scan: {e}")
-        
-# ================== Main Script Functions ==================
-
-def resolve_domain_to_ip(domain: str) -> Optional[str]:
-    """Resolve a domain name to an IP address."""
-    try:
-        ip = socket.gethostbyname(domain)
-        logger.info(f"Resolved {domain} to IP: {ip}")
-        return ip
-    except socket.gaierror as e:
-        logger.error(f"Could not resolve domain: {domain}. Error: {e}")
+        if re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", target):
+            return target
+        return socket.gethostbyname(target)
+    except (socket.gaierror, socket.timeout) as e:
+        logger.error(f"Could not resolve {target}: {str(e)}")
         return None
-    except Exception as e:
-        logger.error(f"Unexpected error resolving domain: {domain}. Error: {e}")
-        return None
 
-def scan_port(ip: str, port: int) -> bool:
-    """Scan a single TCP port on the target IP."""
+def port_scan(target: str, port: int) -> Tuple[int, str, bool, str]:
+    """Scan a single port safely with timeout."""
     try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(1)
-        result = sock.connect_ex((ip, port))
-        return result == 0
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(2)
+            result = s.connect_ex((target, port)) == 0
+            banner = ""
+            if result:
+                try:
+                    s.send(b"GET / HTTP/1.0\r\n\r\n")
+                    banner = s.recv(1024).decode('utf-8', 'ignore').strip()
+                except:
+                    pass
+            return (port, SERVICE_DB.get(port, {}).get("service", "Unknown"), result, banner)
     except Exception as e:
-        logger.warning(f"Error scanning port {port}: {e}")
-        return False
-    finally:
-        sock.close()
+        logger.error(f"Error scanning port {port}: {str(e)}")
+        return (port, "Unknown", False, "")
 
-def scan_udp_port(ip: str, port: int) -> bool:
-    """Scan a single UDP port on the target IP."""
-    try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.settimeout(1)
-        sock.sendto(b'', (ip, port))
-        data, _ = sock.recvfrom(1024)
-        return True
-    except socket.timeout:
-        return False
-    except Exception as e:
-        logger.warning(f"Error scanning UDP port {port}: {e}")
-        return False
-    finally:
-        sock.close()
-
-async def scan_port_async(ip: str, port: int) -> bool:
-    """Asynchronously scan a single TCP port on the target IP."""
-    try:
-        reader, writer = await asyncio.wait_for(asyncio.open_connection(ip, port), timeout=1)
-        writer.close()
-        await writer.wait_closed()
-        return True
-    except:
-        return False
-
-async def scan_udp_port_async(ip: str, port: int) -> bool:
-    """Asynchronously scan a single UDP port on the target IP."""
-    try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.settimeout(1)
-        sock.sendto(b'', (ip, port))
-        await asyncio.wait_for(sock.recvfrom(1024), timeout=1)
-        return True
-    except socket.timeout:
-        return False
-    except Exception as e:
-        logger.warning(f"Error scanning UDP port {port}: {e}")
-        return False
-    finally:
-        sock.close()
-
-async def scan_ports_batch(ip: str, ports: List[int], udp: bool = False) -> List[bool]:
-    """Scan a batch of ports asynchronously."""
-    tasks = [scan_udp_port_async(ip, port) if udp else scan_port_async(ip, port) for port in ports]
-    results = await asyncio.gather(*tasks)
-    return results
-
-def rate_limited_scan(ip: str, port: int, delay: int = 1) -> bool:
-    """Scan a port with a delay to avoid rate limiting."""
-    time.sleep(delay)
-    return scan_port(ip, port)
-
-def detect_firewall(ip: str) -> Optional[bool]:
-    """Detect if a firewall is present using ICMP ping."""
-    try:
-        response = subprocess.run(["ping", "-c", "1", ip], capture_output=True, text=True)
-        if "1 received" in response.stdout:
-            logger.info("Firewall not detected (ICMP allowed)")
-            return False
-        else:
-            logger.warning("Firewall detected (ICMP blocked)")
-            return True
-    except Exception as e:
-        logger.error(f"Error detecting firewall: {e}")
-        return None
-
-def check_cves(service: str) -> List[str]:
-    """Check for common CVEs related to a service."""
-    return CVE_DATABASE.get(service, [])
-
-def scan_for_ddos_vulnerabilities(ip: str) -> List[Dict]:
-    """Scan for common DDoS amplification ports and classify them."""
+async def full_scan(target: str) -> List[Dict]:
+    """Perform comprehensive scan of all known ports."""
     results = []
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        futures = {executor.submit(scan_port_thread, ip, port, info): port for port, info in DDoS_PORTS.items()}
-        for future in as_completed(futures):
-            results.append(future.result())
-    return results
-
-async def scan_for_ddos_vulnerabilities_async(ip: str) -> List[bool]:
-    """Asynchronously scan for common DDoS amplification ports."""
-    tasks = [scan_port_async(ip, port) for port in DDoS_PORTS.keys()]
-    results = await asyncio.gather(*tasks)
-    return results
-
-def scan_http_https(ip: str) -> List[Dict]:
-    """Check if HTTP or HTTPS ports (80, 443) are open and vulnerable."""
-    results = []
-    for port in [80, 443]:
-        open_port = scan_port(ip, port)
-        if open_port:
-            service = DDoS_PORTS[port]["service"]
-            cves = check_cves(service)
+    with ThreadPoolExecutor(max_workers=50) as executor:
+        futures = [executor.submit(port_scan, target, port) for port in SERVICE_DB.keys()]
+        for future in futures:
+            port, service, is_open, banner = future.result()
             results.append({
                 "port": port,
                 "service": service,
-                "status": "Open",
-                "risk": DDoS_PORTS[port]["risk"],
-                "description": DDoS_PORTS[port]["description"],
-                "cves": cves
+                "status": "Open" if is_open else "Closed",
+                "protocol": SERVICE_DB.get(port, {}).get("protocol", "TCP"),
+                "risk": SERVICE_DB.get(port, {}).get("risk", "Unknown"),
+                "banner": banner[:200] if banner else ""
             })
     return results
 
-def scan_port_thread(ip: str, port: int, info: Dict) -> Dict:
-    """Thread function to scan a port and check for vulnerabilities."""
-    is_open = scan_port(ip, port)
-    if is_open:
-        cves = check_cves(info["service"])
+def test_cve(target: str, port: int, cve: str) -> Dict:
+    """Test for specific CVE vulnerability safely."""
+    service = SERVICE_DB.get(port, {}).get("service", "")
+    cve_info = CVE_DATABASE.get(service, {}).get(cve, {})
+    
+    if not cve_info:
+        return {"cve": cve, "status": "Not tested", "result": "No test available"}
+    
+    test_cmd = cve_info.get("test", "").replace("target", target)
+    if not test_cmd:
+        return {"cve": cve, "status": "Not tested", "result": "No test available"}
+    
+    try:
+        result = subprocess.run(
+            test_cmd,
+            shell=True,
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        
+        vulnerable = "VULNERABLE" in result.stdout.upper()
+        output = result.stdout[:200] + ("..." if len(result.stdout) > 200 else "")
+        
         return {
-            "port": port,
-            "service": info["service"],
-            "status": "Open",
-            "risk": info["risk"],
-            "description": info["description"],
-            "cves": cves
+            "cve": cve,
+            "status": "Vulnerable" if vulnerable else "Not vulnerable",
+            "result": output,
+            "score": cve_info.get("score", 0.0),
+            "description": cve_info.get("description", "")
         }
-    else:
-        return {
-            "port": port,
-            "service": info["service"],
-            "status": "Closed",
-            "risk": "None",
-            "description": "No DDoS risk",
-            "cves": []
-        }
+    except subprocess.TimeoutExpired:
+        return {"cve": cve, "status": "Timeout", "result": "Test timed out"}
+    except Exception as e:
+        return {"cve": cve, "status": "Test failed", "result": str(e)}
 
-def print_scan_report(scan_results: List[Dict]) -> None:
-    """Print the scan results in a tabular format."""
-    headers = ["Port", "Service", "Status", "Risk", "Description", "CVEs"]
-    table_data = []
+def run_vulnerability_tests(target: str, open_ports: List[Dict]) -> List[Dict]:
+    """Run vulnerability tests for all open ports safely."""
+    results = []
+    for port_info in open_ports:
+        port = port_info["port"]
+        
+        # Test all CVEs for this service
+        for cve in SERVICE_DB.get(port, {}).get("cves", []):
+            results.append(test_cve(target, port, cve))
+            
+        # Run standard service tests
+        for test_name, test_cmd in SERVICE_DB.get(port, {}).get("tests", {}).items():
+            try:
+                test_cmd = test_cmd.replace("target", target)
+                result = subprocess.run(
+                    test_cmd,
+                    shell=True,
+                    capture_output=True,
+                    text=True,
+                    timeout=5
+                )
+                output = result.stdout[:200] + ("..." if len(result.stdout) > 200 else "")
+                results.append({
+                    "test": test_name,
+                    "port": port,
+                    "result": output,
+                    "status": "Tested"
+                })
+            except subprocess.TimeoutExpired:
+                results.append({
+                    "test": test_name,
+                    "port": port,
+                    "result": "Test timed out",
+                    "status": "Timeout"
+                })
+            except Exception as e:
+                results.append({
+                    "test": test_name,
+                    "port": port,
+                    "result": f"Test failed: {str(e)}",
+                    "status": "Failed"
+                })
+    
+    return results
+
+# ================== REPORTING FUNCTIONS ==================
+
+def generate_scan_table(scan_results: List[Dict]) -> PrettyTable:
+    """Generate formatted scan results table."""
+    table = PrettyTable()
+    table.field_names = ["Port", "Service", "Status", "Protocol", "Risk", "Banner"]
+    table.align = "l"
+    table.hrules = ALL
     
     for result in scan_results:
-        cve_list = ", ".join(result["cves"]) if result["cves"] else "None"
-        table_data.append([
+        status = f"{G}{result['status']}{RESET}" if result["status"] == "Closed" else f"{R}{result['status']}{RESET}"
+        risk = ""
+        if result["risk"] == "Critical":
+            risk = f"{R}{result['risk']}{RESET}"
+        elif result["risk"] == "High":
+            risk = f"{Y}{result['risk']}{RESET}"
+        else:
+            risk = result["risk"]
+        
+        table.add_row([
             result["port"],
             result["service"],
-            result["status"],
-            result["risk"],
-            result["description"],
-            cve_list
+            status,
+            result["protocol"],
+            risk,
+            result.get("banner", "")[:50] + ("..." if len(result.get("banner", "")) > 50 else "")
         ])
     
-    print(tabulate(table_data, headers, tablefmt="pretty"))
+    return table
 
-def generate_html_report(scan_results: List[Dict], filename: str = "scan_report.html") -> None:
-    """Generate an HTML report."""
-    html_report = """
+def generate_vuln_table(vuln_results: List[Dict]) -> PrettyTable:
+    """Generate formatted vulnerability results table."""
+    table = PrettyTable()
+    table.field_names = ["Test/CVE", "Port", "Score", "Status", "Result"]
+    table.align = "l"
+    table.max_width = 50
+    table.hrules = ALL
+    
+    for result in vuln_results:
+        status = ""
+        if "status" in result:
+            if "Vulnerable" in result["status"]:
+                status = f"{R}{result['status']}{RESET}"
+            elif "Failed" in result["status"] or "Timeout" in result["status"]:
+                status = f"{Y}{result['status']}{RESET}"
+            else:
+                status = f"{G}{result['status']}{RESET}"
+        else:
+            status = "Tested"
+        
+        test_name = result.get("cve", result.get("test", "Unknown"))
+        score = result.get("score", "N/A")
+        if isinstance(score, float):
+            if score >= 9.0:
+                score = f"{R}{score}{RESET}"
+            elif score >= 7.0:
+                score = f"{Y}{score}{RESET}"
+            else:
+                score = f"{G}{score}{RESET}"
+        
+        table.add_row([
+            test_name,
+            result.get("port", ""),
+            score,
+            status,
+            result["result"][:100] + ("..." if len(result["result"]) > 100 else "")
+        ])
+    
+    return table
+
+def generate_html_report(scan_results: List[Dict], vuln_results: List[Dict], target: str) -> str:
+    """Generate comprehensive HTML report."""
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    open_ports = [r for r in scan_results if r["status"] == "Open"]
+    critical_vulns = [r for r in vuln_results if "status" in r and "Vulnerable" in r["status"] and r.get("score", 0) >= 9.0]
+    
+    html = f"""
+    <!DOCTYPE html>
     <html>
     <head>
-        <title>Network Security Scan Report</title>
+        <title>Security Scan Report - {target}</title>
         <style>
-            table { width: 100%; border-collapse: collapse; }
-            th, td { border: 1px solid black; padding: 8px; text-align: left; }
-            th { background-color: #f2f2f2; }
+            body {{ font-family: Arial, sans-serif; margin: 20px; }}
+            h1, h2, h3 {{ color: #2c3e50; }}
+            table {{ border-collapse: collapse; width: 100%; margin-bottom: 20px; }}
+            th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+            th {{ background-color: #f2f2f2; }}
+            .critical {{ background-color: #ffdddd; }}
+            .high {{ background-color: #fff3cd; }}
+            .vulnerable {{ background-color: #ffdddd; }}
+            .open {{ color: #d9534f; font-weight: bold; }}
+            .closed {{ color: #5cb85c; }}
+            pre {{ white-space: pre-wrap; word-wrap: break-word; }}
         </style>
     </head>
     <body>
-        <h1>Network Security Scan Report</h1>
-        <h2>Scan Results</h2>
+        <h1>Security Scan Report</h1>
+        <p>Target: {target}</p>
+        <p>Scan date: {timestamp}</p>
+        
+        <h2>Scan Summary</h2>
+        <p>Total ports scanned: {len(scan_results)}</p>
+        <p>Open ports: {len(open_ports)}</p>
+        <p>Critical vulnerabilities found: {len(critical_vulns)}</p>
+        
+        <h2>Port Scan Results</h2>
         <table>
-            <tr><th>Port</th><th>Service</th><th>Status</th><th>Risk</th><th>Description</th><th>CVEs</th></tr>
+            <tr>
+                <th>Port</th>
+                <th>Service</th>
+                <th>Status</th>
+                <th>Protocol</th>
+                <th>Risk Level</th>
+                <th>Banner</th>
+            </tr>
     """
     
     for result in scan_results:
-        cve_list = ", ".join(result["cves"]) if result["cves"] else "None"
-        html_report += f"""
-            <tr>
+        risk_class = ""
+        if result["risk"] == "Critical":
+            risk_class = "critical"
+        elif result["risk"] == "High":
+            risk_class = "high"
+        
+        status_class = "open" if result["status"] == "Open" else "closed"
+        
+        html += f"""
+            <tr class="{risk_class}">
                 <td>{result['port']}</td>
                 <td>{result['service']}</td>
-                <td>{result['status']}</td>
+                <td class="{status_class}">{result['status']}</td>
+                <td>{result['protocol']}</td>
                 <td>{result['risk']}</td>
-                <td>{result['description']}</td>
-                <td>{cve_list}</td>
+                <td><pre>{result.get('banner', '')}</pre></td>
             </tr>
         """
     
-    html_report += """
+    html += """
         </table>
+    """
+    
+    if vuln_results:
+        html += """
+        <h2>Vulnerability Test Results</h2>
+        <table>
+            <tr>
+                <th>Test/CVE</th>
+                <th>Port</th>
+                <th>CVSS Score</th>
+                <th>Status</th>
+                <th>Result</th>
+            </tr>
+        """
+        
+        for result in vuln_results:
+            status_class = "vulnerable" if "status" in result and "Vulnerable" in result["status"] else ""
+            test_name = result.get("cve", result.get("test", "Unknown"))
+            
+            html += f"""
+            <tr class="{status_class}">
+                <td>{test_name}</td>
+                <td>{result.get('port', '')}</td>
+                <td>{result.get('score', 'N/A')}</td>
+                <td>{result.get('status', 'Tested')}</td>
+                <td><pre>{result['result']}</pre></td>
+            </tr>
+            """
+        
+        html += """
+        </table>
+        """
+    
+    html += """
     </body>
     </html>
     """
     
-    filepath = os.path.join(LOG_DIR, filename)
-    with open(filepath, "w") as file:
-        file.write(html_report)
-    logger.info(f"HTML report saved to {filepath}")
+    return html
 
-def save_scan_results_to_json(scan_results: List[Dict], filename: str = "scan_results.json") -> None:
-    """Save scan results to a JSON file."""
-    filepath = os.path.join(LOG_DIR, filename)
-    with open(filepath, "w") as file:
-        json.dump(scan_results, file, indent=4)
-    logger.info(f"Scan results saved to {filepath}")
+# ================== MAIN FUNCTIONS ==================
 
-def load_config() -> Dict:
-    """Load configuration from a file."""
-    config = configparser.ConfigParser()
-    config.read(CONFIG_FILE)
-    return config
-
-def save_config(config: Dict) -> None:
-    """Save configuration to a file."""
-    with open(CONFIG_FILE, 'w') as configfile:
-        config.write(configfile)
-
-def analyze_scan_results(scan_results: List[Dict]) -> Dict:
-    """Analyze scan results and suggest the best attack mode, threads, and rate."""
-    suggestions = {
-        "attack_mode": None,
-        "threads": 10,  # Default number of threads
-        "rate": 100,    # Default rate (requests per second)
-    }
-
-    # Analyze open ports and services
-    open_ports = [result for result in scan_results if result["status"] == "Open"]
-    tcp_ports = [port for port in open_ports if port["service"] in ["HTTP", "HTTPS", "DNS"]]
-    udp_ports = [port for port in open_ports if port["service"] in ["DNS", "NTP", "SNMP", "Memcached"]]
-
-    # Suggest attack mode based on open ports
-    if tcp_ports:
-        suggestions["attack_mode"] = "SYN Flood"
-    elif udp_ports:
-        suggestions["attack_mode"] = "UDP Flood"
-    else:
-        suggestions["attack_mode"] = "ICMP Flood"
-
-    # Adjust threads and rate based on the number of open ports
-    if len(open_ports) > 5:
-        suggestions["threads"] = 50
-        suggestions["rate"] = 500
-    elif len(open_ports) > 2:
-        suggestions["threads"] = 20
-        suggestions["rate"] = 200
-
-    return suggestions
-
-def print_suggestions(suggestions: Dict) -> None:
-    """Print the attack suggestions."""
-    print("\nAttack Suggestions:")
-    print(f"Attack Mode: {suggestions['attack_mode']}")
-    print(f"Threads: {suggestions['threads']}")
-    print(f"Rate: {suggestions['rate']} requests per second")
-
-def interactive_mode() -> None:
-    """Run the scanner in interactive mode."""
-    target = input("Enter target IP or domain: ")
-    ip = resolve_domain_to_ip(target)
+def interactive_scan():
+    """Run interactive scanning mode."""
+    print(f"\n{C}=== Advanced Network Scanner ==={RESET}")
+    target = input(f"{B}Enter target IP/hostname:{RESET} ")
+    
+    ip = resolve_target(target)
     if not ip:
-        print("Invalid target.")
+        print(f"{R}Invalid target or unable to resolve{RESET}")
         return
     
-    print(f"Scanning target: {ip}")
-    scan_results = scan_for_ddos_vulnerabilities(ip)
-    print_scan_report(scan_results)
+    print(f"\n{Y}[*] Scanning {ip}...{RESET}")
+    
+    # Phase 1: Port scanning
+    try:
+        scan_results = asyncio.run(full_scan(ip))
+    except Exception as e:
+        print(f"{R}Error during scan: {str(e)}{RESET}")
+        return
+    
+    print(f"\n{B}=== SCAN RESULTS ==={RESET}")
+    print(generate_scan_table(scan_results))
+    
+    # Phase 2: Vulnerability testing
+    open_ports = [r for r in scan_results if r["status"] == "Open"]
+    if open_ports:
+        print(f"\n{Y}[*] Running vulnerability tests...{RESET}")
+        try:
+            vuln_results = run_vulnerability_tests(ip, open_ports)
+            print(f"\n{B}=== VULNERABILITY RESULTS ==={RESET}")
+            print(generate_vuln_table(vuln_results))
+        except Exception as e:
+            print(f"{R}Error during vulnerability tests: {str(e)}{RESET}")
+            vuln_results = []
+    else:
+        print(f"\n{G}No open ports found{RESET}")
+        vuln_results = []
+    
+    # Save report
+    if input(f"\n{B}Save full report? (y/n):{RESET} ").lower() == "y":
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        report_file = os.path.join(LOG_DIR, f"scan_report_{ip}_{timestamp}.html")
+        
+        try:
+            html_report = generate_html_report(scan_results, vuln_results, ip)
+            with open(report_file, "w") as f:
+                f.write(html_report)
+            print(f"\n{G}Report saved to: {report_file}{RESET}")
+        except Exception as e:
+            print(f"{R}Error saving report: {str(e)}{RESET}")
 
-    # Analyze scan results and suggest attack mode
-    suggestions = analyze_scan_results(scan_results)
-    print_suggestions(suggestions)
-
-    # Offer to save results
-    save = input("Do you want to save the results? (y/n): ")
-    if save.lower() == 'y':
-        save_scan_results_to_json(scan_results)
-
-async def main_async():
-    """Main function to run the advanced network scanner asynchronously."""
-    parser = argparse.ArgumentParser(description="Advanced Network Scanner and Security Analyzer")
-    parser.add_argument("-t", "--target", required=True, help="Target IP address or domain name")
+def main():
+    """Main entry point."""
+    parser = argparse.ArgumentParser(description="Advanced Network Scanner")
+    parser.add_argument("-t", "--target", help="Target IP/hostname to scan")
     parser.add_argument("-i", "--interactive", action="store_true", help="Run in interactive mode")
-    parser.add_argument("-m", "--multiple", nargs="+", help="Scan multiple targets")
-    parser.add_argument("-p", "--ports", nargs="+", type=int, help="Custom ports to scan")
-    parser.add_argument("-s", "--sniff", action="store_true", help="Enable packet sniffing")
-    parser.add_argument("-a", "--analyze", action="store_true", help="Analyze HTTP headers")
+    parser.add_argument("-o", "--output", help="Output file for report (HTML format)")
     args = parser.parse_args()
 
-    if args.interactive:
-        interactive_mode()
-        return
-
-    if args.multiple:
-        targets = args.multiple
-        logger.info(f"Scanning multiple targets: {targets}")
-        for target in targets:
-            ip = resolve_domain_to_ip(target) if not target.replace(".", "").isdigit() else target
+    try:
+        if args.interactive:
+            interactive_scan()
+        elif args.target:
+            ip = resolve_target(args.target)
             if not ip:
-                logger.error(f"Invalid target: {target}")
-                continue
-
-            logger.info(f"Scanning target IP: {ip} for vulnerabilities")
-            run_nmap_scan(ip)
-            firewall_detected = detect_firewall(ip)
-            scan_results = scan_for_ddos_vulnerabilities(ip)
-            http_https_scan = scan_http_https(ip)
-
-            logger.info("Scan Report:")
-            print_scan_report(scan_results)
-
-            # Analyze scan results and suggest attack mode
-            suggestions = analyze_scan_results(scan_results)
-            print_suggestions(suggestions)
-
-            # Generate unique filenames based on IP and timestamp
-            timestamp = time.strftime("%Y%m%d_%H%M%S")
-            html_filename = f"scan_report_{ip}_{timestamp}.html"
-            json_filename = f"scan_results_{ip}_{timestamp}.json"
-
-            # Generate and save HTML report
-            generate_html_report(scan_results, html_filename)
-
-            # Save scan results to JSON
-            save_scan_results_to_json(scan_results, json_filename)
-        return
-
-    target = args.target
-    ip = resolve_domain_to_ip(target) if not target.replace(".", "").isdigit() else target
-
-    if not ip:
-        logger.error("Invalid target.")
-        return
-
-    logger.info(f"Scanning target IP: {ip} for vulnerabilities")
-
-    # Run Nmap scan
-    run_nmap_scan(ip)
-
-    # Detect firewall
-    firewall_detected = detect_firewall(ip)
-
-    # Scan for DDoS vulnerabilities
-    scan_results = scan_for_ddos_vulnerabilities(ip)
-    http_https_scan = scan_http_https(ip)
-
-    # Print scan report
-    logger.info("Scan Report:")
-    print_scan_report(scan_results)
-
-    # Analyze scan results and suggest attack mode
-    suggestions = analyze_scan_results(scan_results)
-    print_suggestions(suggestions)
-
-    # Generate unique filenames based on IP and timestamp
-    timestamp = time.strftime("%Y%m%d_%H%M%S")
-    html_filename = f"scan_report_{ip}_{timestamp}.html"
-    json_filename = f"scan_results_{ip}_{timestamp}.json"
-
-    # Generate and save HTML report
-    generate_html_report(scan_results, html_filename)
-
-    # Save scan results to JSON
-    save_scan_results_to_json(scan_results, json_filename)
-
-    # Additional features
-    if args.sniff:
-        sniff_packets(ip, save_pcap=True)
-
-    if args.analyze:
-        analyze_headers(f"http://{ip}")
+                print(f"{R}Invalid target or unable to resolve{RESET}")
+                return
+            
+            print(f"{Y}[*] Scanning {ip}...{RESET}")
+            scan_results = asyncio.run(full_scan(ip))
+            print(generate_scan_table(scan_results))
+            
+            open_ports = [r for r in scan_results if r["status"] == "Open"]
+            if open_ports:
+                vuln_results = run_vulnerability_tests(ip, open_ports)
+                print(generate_vuln_table(vuln_results))
+            
+            if args.output:
+                try:
+                    html_report = generate_html_report(scan_results, vuln_results if open_ports else [], ip)
+                    with open(args.output, "w") as f:
+                        f.write(html_report)
+                    print(f"\n{G}Report saved to: {args.output}{RESET}")
+                except Exception as e:
+                    print(f"{R}Error saving report: {str(e)}{RESET}")
+        else:
+            parser.print_help()
+    except KeyboardInterrupt:
+        print(f"\n{R}Scan interrupted by user{RESET}")
+    except Exception as e:
+        print(f"\n{R}Error during scan: {str(e)}{RESET}")
 
 if __name__ == "__main__":
-    asyncio.run(main_async())
-
-# Configure logging
-logging.basicConfig(filename='network_analysis.log', level=logging.INFO, format='%(asctime)s - %(message)s')
-
-def sniff_packets(target_ip, save_pcap=False):
-    print(f"{Fore.GREEN}Starting packet sniffing on {target_ip}...{Style.RESET_ALL}")
-    
-    def packet_callback(packet):
-        if packet.haslayer(scapy.IP):
-            src_ip = packet[scapy.IP].src
-            dst_ip = packet[scapy.IP].dst
-            protocol = packet[scapy.IP].proto
-            print(f"{Fore.BLUE}Packet: {src_ip} -> {dst_ip} Protocol: {protocol}{Style.RESET_ALL}")
-            
-            # Deep Packet Inspection for HTTP
-            if packet.haslayer(scapy.TCP) and packet.haslayer(scapy.Raw):
-                payload = packet[scapy.Raw].load
-                if b"HTTP" in payload:
-                    print(f"{Fore.YELLOW}HTTP Payload: {payload}{Style.RESET_ALL}")
-    
-    if save_pcap:
-        scapy.sniff(filter=f"host {target_ip}", prn=packet_callback, count=100, store=True)
-        scapy.wrpcap(f"capture_{target_ip}.pcap", scapy.sniffed)
-    else:
-        scapy.sniff(filter=f"host {target_ip}", prn=packet_callback, count=100)
-
-def analyze_headers(url):
-    print(f"{Fore.GREEN}Analyzing HTTP headers for {url}...{Style.RESET_ALL}")
-    
-    try:
-        response = requests.get(url)
-        headers = response.headers
-        
-        print(f"{Fore.BLUE}HTTP Headers:{Style.RESET_ALL}")
-        for header, value in headers.items():
-            print(f"{header}: {value}")
-        
-        # Check for common security headers
-        security_headers = {
-            "Strict-Transport-Security": "Missing",
-            "Content-Security-Policy": "Missing",
-            "X-Content-Type-Options": "Missing",
-            "X-Frame-Options": "Missing",
-            "X-XSS-Protection": "Missing",
-        }
-        
-        for header in security_headers:
-            if header in headers:
-                security_headers[header] = "Present"
-        
-        print(f"\n{Fore.BLUE}Security Headers Analysis:{Style.RESET_ALL}")
-        for header, status in security_headers.items():
-            print(f"{header}: {status}")
-        
-        # Analyze cookies
-        if 'Set-Cookie' in headers:
-            cookies = headers['Set-Cookie'].split(',')
-            print(f"\n{Fore.BLUE}Cookie Analysis:{Style.RESET_ALL}")
-            for cookie in cookies:
-                print(f"Cookie: {cookie}")
-                if 'HttpOnly' in cookie:
-                    print("  HttpOnly: Yes")
-                if 'Secure' in cookie:
-                    print("  Secure: Yes")
-                if 'SameSite' in cookie:
-                    print(f"  SameSite: {cookie.split('SameSite=')[1].split(';')[0]}")
-    
-    except requests.RequestException as e:
-        print(f"{Fore.RED}Error analyzing headers: {e}{Style.RESET_ALL}")
-        logging.error(f"Error analyzing headers for {url}: {e}")
-
-def port_scan(target_ip, ports):
-    print(f"{Fore.GREEN}Scanning ports on {target_ip}...{Style.RESET_ALL}")
-    open_ports = []
-
-    def scan_port(port):
-        try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(1)
-            result = sock.connect_ex((target_ip, port))
-            if result == 0:
-                open_ports.append(port)
-                print(f"{Fore.GREEN}Port {port} is open{Style.RESET_ALL}")
-            sock.close()
-        except socket.error as e:
-            print(f"{Fore.RED}Error scanning port {port}: {e}{Style.RESET_ALL}")
-            logging.error(f"Error scanning port {port} on {target_ip}: {e}")
-
-    threads = []
-    for port in ports:
-        thread = threading.Thread(target=scan_port, args=(port,))
-        threads.append(thread)
-        thread.start()
-
-    for thread in threads:
-        thread.join()
-
-    print(f"\n{Fore.BLUE}Open ports: {open_ports}{Style.RESET_ALL}")
-
-def generate_html_report(data, filename="report.html"):
-    print(f"{Fore.GREEN}Generating HTML report...{Style.RESET_ALL}")
-    with open(filename, "w") as f:
-        f.write("<html><body>")
-        f.write("<h1>Network Analysis Report</h1>")
-        f.write(f"<p>Generated on: {datetime.now()}</p>")
-        f.write("<h2>Packet Sniffing Results</h2>")
-        f.write(f"<pre>{json.dumps(data, indent=4)}</pre>")
-        f.write("</body></html>")
-    print(f"{Fore.GREEN}Report saved to {filename}{Style.RESET_ALL}")
+    main()
