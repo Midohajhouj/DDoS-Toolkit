@@ -125,8 +125,7 @@ ddos -u 192.168.48.165 -a ftp-flood
 ## **🌟 Extensions**
 
 ### 1. **Network Scanner (`netscan`)**
-This extension provides advanced network analysis and vulnerability assessment capabilities. (Nmap optional) (Unstable function cause i am working on upgrade)
-
+This extension provides advanced network analysis and vulnerability assessment capabilities. (Nmap optional)
 #### Features:
 - **Port Scanning**: Identify open TCP and UDP ports on target systems.
 - **DDoS Vulnerability Detection**: Check for amplification vulnerabilities on common ports (e.g., DNS, NTP, SNMP).
