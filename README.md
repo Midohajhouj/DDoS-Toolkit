@@ -174,4 +174,4 @@ ddos --anonymizer start
 ## **🤝 Contributing**
 Contributions are welcome! Submit an issue or pull request to improve the toolkit.  
 
-<p align="center"> Developed by <a href="https://github.com/Midohajhouj">LIONMAD</a> </p>
+**<p align="center"> Developed by <a href="https://github.com/Midohajhouj">LIONMAD</a> </p>**
