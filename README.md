@@ -1,5 +1,5 @@
 <p align="center"> 
-  <img src="/test/IMG.jpg"> 
+  <img src="/test/banner.jpg"> 
 </p>
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-Linux-a80505?style=plastic">
